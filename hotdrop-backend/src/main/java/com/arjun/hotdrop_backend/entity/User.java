@@ -36,8 +36,7 @@ public class User {
     @NotBlank
     @Column(nullable = false, unique = true, length = 100)
     private String email;
-    @Column(nullable = false)
-    private LocalDate dateOfBirth;
+
     @Column(nullable = false)
     private String password;
 
