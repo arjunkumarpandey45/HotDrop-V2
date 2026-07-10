@@ -4,8 +4,7 @@ import com.arjun.hotdrop_backend.enums.AuthProvider;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.*;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -17,6 +16,10 @@ import java.util.UUID;
 @Table(name = "users")
 @Getter
 @Setter
+@AllArgsConstructor
+@NoArgsConstructor
+@Builder
+@ToString
 public class User {
 
     @Id

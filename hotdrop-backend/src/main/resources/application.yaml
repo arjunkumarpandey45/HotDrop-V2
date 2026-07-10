@@ -10,7 +10,7 @@ spring:
 
   jpa:
     hibernate:
-      ddl-auto: create-drop
+      ddl-auto: validate
     show-sql: true
     properties:
       hibernate:
@@ -18,4 +18,4 @@ spring:
 
 
   flyway:
-    enabled: false
+    enabled: true
