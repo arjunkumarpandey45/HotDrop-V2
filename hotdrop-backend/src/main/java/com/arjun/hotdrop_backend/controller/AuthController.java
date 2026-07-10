@@ -1,5 +1,4 @@
-package com.arjun.hotdrop_backend.service.controller;
-
+package com.arjun.hotdrop_backend.controller;
 import com.arjun.hotdrop_backend.dto.RegisterRequestDto;
 import com.arjun.hotdrop_backend.dto.UserResponseDto;
 import com.arjun.hotdrop_backend.service.AuthService;

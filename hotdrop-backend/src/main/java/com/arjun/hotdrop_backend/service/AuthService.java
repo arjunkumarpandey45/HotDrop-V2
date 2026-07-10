@@ -8,9 +8,14 @@ import com.arjun.hotdrop_backend.enums.AuthProvider;
 import com.arjun.hotdrop_backend.enums.RoleType;
 import com.arjun.hotdrop_backend.repository.RoleRepo;
 import com.arjun.hotdrop_backend.repository.UserRepo;
+import com.arjun.hotdrop_backend.utils.JwtUtils;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -21,6 +26,8 @@ public class AuthService {
     private final UserRepo userRepo;
     private  final RoleRepo roleRepo;
     private final PasswordEncoder passwordEncoder;
+    private final JwtUtils jwtUtils;
+    private  final EmailService emailService;
     public UserResponseDto register(RegisterRequestDto registerRequestDto) {
 
         if (userRepo.existsByUsername(registerRequestDto.getUsername())) {
@@ -40,6 +47,10 @@ public class AuthService {
                . firstName(registerRequestDto.getFirstName())
                 .lastName(registerRequestDto.getLastName()).build());
 
+
+        String token =jwtUtils.generateEmailVerificationToken(user.getEmail());
+        String verificationLink = "http://localhost:8080/auth/verify-email?token=" + token;
+        emailService.sendVerificationEmail(user.getEmail(),user.getFirstName(),verificationLink);
         return UserResponseDto.builder()
                 .id(user.getId())
                 .firstName(user.getFirstName())
@@ -54,4 +65,6 @@ public class AuthService {
                 )
                 .build();
     }
+
+
 }
