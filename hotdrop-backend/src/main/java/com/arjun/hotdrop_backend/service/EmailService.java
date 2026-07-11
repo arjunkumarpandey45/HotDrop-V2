@@ -19,11 +19,11 @@ public class EmailService {
         try {
             MimeMessage message = mailSender.createMimeMessage();
             MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
-
+            helper.setFrom("hotdrop1229@gmail.com", "HotDrop");
             helper.setTo(toEmail);
             helper.setSubject("Verify your HotDrop Account ");
 
-        
+
             String htmlContent = String.format(
                     "<h3>Hey %s, welcome to HotDrop!</h3>" +
                             "<p>Please click the link below to verify your developer profile and activate your account:</p>" +

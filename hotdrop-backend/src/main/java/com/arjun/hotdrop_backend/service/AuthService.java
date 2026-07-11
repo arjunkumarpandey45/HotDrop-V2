@@ -24,12 +24,15 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class AuthService {
     private final UserRepo userRepo;
-    private  final RoleRepo roleRepo;
+    private final RoleRepo roleRepo;
     private final PasswordEncoder passwordEncoder;
     private final JwtUtils jwtUtils;
-    private  final EmailService emailService;
-    public UserResponseDto register(RegisterRequestDto registerRequestDto) {
+    private final EmailService emailService;
 
+    public UserResponseDto register(RegisterRequestDto registerRequestDto) {
+        if (userRepo.existsByUsername(registerRequestDto.getUsername()) && userRepo.existsByEmail(registerRequestDto.getEmail())) {
+            throw new IllegalArgumentException("Please try again in 15 minutes");
+        }
         if (userRepo.existsByUsername(registerRequestDto.getUsername())) {
             throw new IllegalArgumentException("Username already exists");
         }
@@ -38,19 +41,19 @@ public class AuthService {
         }
         Role userRole = roleRepo.findByRoleName(RoleType.USER)
                 .orElseThrow(() -> new RuntimeException("Default role not found"));
-       User user = userRepo.save(User.builder()
+        User user = userRepo.save(User.builder()
                 .username(registerRequestDto.getUsername())
                 .password(passwordEncoder.encode(registerRequestDto.getPassword()))
                 .email(registerRequestDto.getEmail())
-               .authProvider(AuthProvider.LOCAL)
-               .roles(Set.of(userRole))
-               . firstName(registerRequestDto.getFirstName())
+                .authProvider(AuthProvider.LOCAL)
+                .roles(Set.of(userRole))
+                .firstName(registerRequestDto.getFirstName())
                 .lastName(registerRequestDto.getLastName()).build());
 
 
-        String token =jwtUtils.generateEmailVerificationToken(user.getEmail());
+        String token = jwtUtils.generateEmailVerificationToken(user.getEmail());
         String verificationLink = "http://localhost:8080/auth/verify-email?token=" + token;
-        emailService.sendVerificationEmail(user.getEmail(),user.getFirstName(),verificationLink);
+        emailService.sendVerificationEmail(user.getEmail(), user.getFirstName(), verificationLink);
         return UserResponseDto.builder()
                 .id(user.getId())
                 .firstName(user.getFirstName())
@@ -66,5 +69,31 @@ public class AuthService {
                 .build();
     }
 
+    @GetMapping("/verify-email")
+    @Transactional
+    public ResponseEntity<String> verifyEmail(@RequestParam("token") String token) {
 
+        if (!jwtUtils.validateEmailToken(token)) {
+            return ResponseEntity.badRequest().body("Invalid or expired verification token.");
+        }
+
+
+        String email = jwtUtils.getEmailFromToken(token);
+        var userOptional = userRepo.findByEmail(email);
+
+        if (userOptional.isEmpty()) {
+            return ResponseEntity.badRequest().body("User not found.");
+        }
+
+        var user = userOptional.get();
+        if (user.isEmailVerified()) {
+            return ResponseEntity.ok("Email is already verified.");
+        }
+
+
+        user.setEmailVerified(true);
+        userRepo.save(user);
+
+        return ResponseEntity.ok("Account verified successfully! You can now log in.");
+    }
 }
