@@ -21,6 +21,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -94,28 +95,40 @@ public class AuthService {
         userRepo.save(user);
     }
 
-    public LoginResponseDto login(LoginRequestDto loginRequestDto) {
+    public String login(LoginRequestDto loginRequestDto) {
         User user = userRepo.findByUsername(loginRequestDto.getUsernameOrEmail())
                 .or(() -> userRepo.findByEmail(loginRequestDto.getUsernameOrEmail()))
                 .orElseThrow(() -> new RuntimeException("Email or Username is not valid"));
         if (!user.isEmailVerified()) {
             throw new RuntimeException("Please verify your email first");
         }
+        if(user.isBanned()){
+            throw new RuntimeException("Your account has been banned.");
+        }
         Authentication authentication = authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(user.getUsername(), loginRequestDto.getPassword()));
-        String jwtToken = jwtUtils.generateToken(authentication);
-        user.setLoggedIn(true);
+
+        user.setLastLoginAt(LocalDateTime.now());
         userRepo.save(user);
-        UserDetails userDetails = (UserDetails) authentication.getPrincipal();
-        List<String> roles = userDetails.getAuthorities().stream()
-                .map(GrantedAuthority::getAuthority)
+
+
+        return jwtUtils.generateToken(authentication);
+    }
+
+    public LoginResponseDto getLoginResponseDetails(String usernameOrEmail) {
+        User user = userRepo.findByUsername(usernameOrEmail)
+                .or(() -> userRepo.findByEmail(usernameOrEmail))
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        List<String> roles = user.getRoles().stream()
+                .map(role ->   role.getRoleName().name())
                 .toList();
-        return LoginResponseDto.builder().isLoggedIn(true)
-                .token(jwtToken)
-                .type("Bearer")
+
+        return LoginResponseDto.builder()
                 .username(user.getUsername())
                 .email(user.getEmail())
                 .roles(roles)
+                .isLoggedIn(true)
                 .build();
     }
 }
