@@ -1,5 +1,7 @@
 package com.arjun.hotdrop_backend.service;
 
+import com.arjun.hotdrop_backend.dto.LoginRequestDto;
+import com.arjun.hotdrop_backend.dto.LoginResponseDto;
 import com.arjun.hotdrop_backend.dto.RegisterRequestDto;
 import com.arjun.hotdrop_backend.dto.UserResponseDto;
 import com.arjun.hotdrop_backend.entity.Role;
@@ -11,12 +13,15 @@ import com.arjun.hotdrop_backend.repository.UserRepo;
 import com.arjun.hotdrop_backend.utils.JwtUtils;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.ResponseEntity;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 
+import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -28,6 +33,7 @@ public class AuthService {
     private final PasswordEncoder passwordEncoder;
     private final JwtUtils jwtUtils;
     private final EmailService emailService;
+    private final AuthenticationManager authenticationManager;
 
     public UserResponseDto register(RegisterRequestDto registerRequestDto) {
         if (userRepo.existsByUsername(registerRequestDto.getUsername()) && userRepo.existsByEmail(registerRequestDto.getEmail())) {
@@ -69,31 +75,47 @@ public class AuthService {
                 .build();
     }
 
-    @GetMapping("/verify-email")
+
     @Transactional
-    public ResponseEntity<String> verifyEmail(@RequestParam("token") String token) {
-
+    public void verifyEmail(String token) {
         if (!jwtUtils.validateEmailToken(token)) {
-            return ResponseEntity.badRequest().body("Invalid or expired verification token.");
+            throw new IllegalArgumentException("Invalid or expired verification token.");
         }
-
 
         String email = jwtUtils.getEmailFromToken(token);
-        var userOptional = userRepo.findByEmail(email);
+        User user = userRepo.findByEmail(email)
+                .orElseThrow(() -> new IllegalArgumentException("User not found."));
 
-        if (userOptional.isEmpty()) {
-            return ResponseEntity.badRequest().body("User not found.");
-        }
-
-        var user = userOptional.get();
         if (user.isEmailVerified()) {
-            return ResponseEntity.ok("Email is already verified.");
+            throw new IllegalStateException("Email is already verified.");
         }
-
 
         user.setEmailVerified(true);
         userRepo.save(user);
+    }
 
-        return ResponseEntity.ok("Account verified successfully! You can now log in.");
+    public LoginResponseDto login(LoginRequestDto loginRequestDto) {
+        User user = userRepo.findByUsername(loginRequestDto.getUsernameOrEmail())
+                .or(() -> userRepo.findByEmail(loginRequestDto.getUsernameOrEmail()))
+                .orElseThrow(() -> new RuntimeException("Email or Username is not valid"));
+        if (!user.isEmailVerified()) {
+            throw new RuntimeException("Please verify your email first");
+        }
+        Authentication authentication = authenticationManager.authenticate(
+                new UsernamePasswordAuthenticationToken(user.getUsername(), loginRequestDto.getPassword()));
+        String jwtToken = jwtUtils.generateToken(authentication);
+        user.setLoggedIn(true);
+        userRepo.save(user);
+        UserDetails userDetails = (UserDetails) authentication.getPrincipal();
+        List<String> roles = userDetails.getAuthorities().stream()
+                .map(GrantedAuthority::getAuthority)
+                .toList();
+        return LoginResponseDto.builder().isLoggedIn(true)
+                .token(jwtToken)
+                .type("Bearer")
+                .username(user.getUsername())
+                .email(user.getEmail())
+                .roles(roles)
+                .build();
     }
 }

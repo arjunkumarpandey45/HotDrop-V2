@@ -1,5 +1,7 @@
 package com.arjun.hotdrop_backend.controller;
 
+import com.arjun.hotdrop_backend.dto.LoginRequestDto;
+import com.arjun.hotdrop_backend.dto.LoginResponseDto;
 import com.arjun.hotdrop_backend.dto.RegisterRequestDto;
 import com.arjun.hotdrop_backend.dto.UserResponseDto;
 import com.arjun.hotdrop_backend.service.AuthService;
@@ -23,5 +25,9 @@ public class AuthController {
     public ResponseEntity<String> verifyEmail(@RequestParam("token") String token) {
         authService.verifyEmail(token);
         return ResponseEntity.ok("Email verified successfully!");
+    }
+    @PostMapping("/login")
+    public  ResponseEntity<LoginResponseDto> login(@Valid @RequestBody LoginRequestDto loginRequestDto){
+        return ResponseEntity.ok(authService.login(loginRequestDto));
     }
 }

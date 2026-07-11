@@ -2,7 +2,10 @@ package com.arjun.hotdrop_backend.utils;
 
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
 
 import java.nio.charset.StandardCharsets;
@@ -10,12 +13,15 @@ import java.security.Key;
 import java.util.Date;
 
 
+@Slf4j
 @Component
 public class JwtUtils {
     @Value("${SECRET_KEY}")
     private String jwtSecret;
-    @Value("${app.jwt.email-verification-expiration-ms:900000}") //
+    @Value("${app.jwt.email-verification-expiration-ms}")
     private long emailTokenExpirationMs;
+    @Value("${app.jwt.jwt-expiration-ms}")
+    private long jwtExpirationMs;
 
     private Key getSignInKey() {
         return Keys.hmacShaKeyFor(jwtSecret.getBytes(StandardCharsets.UTF_8));
@@ -48,4 +54,36 @@ public class JwtUtils {
             return  false;
         }
    }
+    public String generateToken(Authentication authentication) {
+        UserDetails userPrincipal = (UserDetails) authentication.getPrincipal();
+
+        return Jwts.builder()
+                .subject(userPrincipal.getUsername())
+                .issuedAt(new Date())
+                .expiration(new Date((new Date()).getTime() + jwtExpirationMs))
+                .signWith(getSignInKey())
+                .compact();
+    }
+    public String getUserNameFromJwtToken(String token) {
+        return Jwts.parser()
+                .verifyWith((javax.crypto.SecretKey) getSignInKey())
+                .build()
+                .parseSignedClaims(token)
+                .getPayload()
+                .getSubject();
+    }
+
+    public boolean validateJwtToken(String authToken) {
+        try {
+            Jwts.parser()
+                    .verifyWith((javax.crypto.SecretKey) getSignInKey())
+                    .build()
+                    .parseSignedClaims(authToken);
+            return true;
+        } catch (Exception e) {
+            log.error("Invalid JWT Token: {}", e.getMessage());
+
+            return false;
+        }
+    }
 }

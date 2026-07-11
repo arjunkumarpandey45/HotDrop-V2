@@ -33,7 +33,7 @@ spring:
             enable: true
             required: true
 
-
 app:
-   jwt:
-     email-verification-expiration-ms: 900000
+  jwt:
+    email-verification-expiration-ms: ${EMAIL_TOKEN_EXPIRY}
+    jwt-expiration-ms: ${JWT_EXPIRY}

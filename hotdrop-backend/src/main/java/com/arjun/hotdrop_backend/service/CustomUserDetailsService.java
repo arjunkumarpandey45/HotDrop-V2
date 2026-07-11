@@ -14,24 +14,24 @@ public class CustomUserDetailsService implements UserDetailsService {
     private final UserRepo userRepo;
 
     @Override
-    public UserDetails loadUserByUsername(String email) {
+    public UserDetails loadUserByUsername(String usernameOrEmail) {
 
-        var user = userRepo.findByEmail(email)
+        var user = userRepo.findByUsername(usernameOrEmail)
+                .or(() -> userRepo.findByEmail(usernameOrEmail))
                 .orElseThrow(() ->
                         new UsernameNotFoundException(
-                                "User not found: " + email
+                                "User not found with username or email: " + usernameOrEmail
                         )
                 );
 
+        // Spring Security UserDetails build karo
         return org.springframework.security.core.userdetails.User
-                .withUsername(user.getEmail())
+                .withUsername(user.getUsername()) // Humesha principal identity unique username rakho
                 .password(user.getPassword())
                 .authorities(
                         user.getRoles()
                                 .stream()
-                                .map(role ->
-                                        "ROLE_" + role.getRoleName().name()
-                                )
+                                .map(role -> "ROLE_" + role.getRoleName().name())
                                 .toArray(String[]::new)
                 )
                 .build();
