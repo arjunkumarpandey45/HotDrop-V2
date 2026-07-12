@@ -1,9 +1,6 @@
 package com.arjun.hotdrop_backend.controller;
 
-import com.arjun.hotdrop_backend.dto.LoginRequestDto;
-import com.arjun.hotdrop_backend.dto.LoginResponseDto;
-import com.arjun.hotdrop_backend.dto.RegisterRequestDto;
-import com.arjun.hotdrop_backend.dto.UserResponseDto;
+import com.arjun.hotdrop_backend.dto.*;
 import com.arjun.hotdrop_backend.entity.RefreshToken;
 import com.arjun.hotdrop_backend.repository.RefreshTokenRepo;
 import com.arjun.hotdrop_backend.service.AuthService;
@@ -81,7 +78,7 @@ public class AuthController {
                 .map(refreshTokenService::verifyExpiration)
                 .map(RefreshToken::getUser)
                 .map(user -> {
-                   
+
                     String newAccessToken = jwtUtils.generateTokenFromUsername(user.getUsername());
 
                     ResponseCookie newAccessCookie = ResponseCookie.from("accessToken", newAccessToken)
@@ -93,4 +90,15 @@ public class AuthController {
                 })
                 .orElseThrow(() -> new RuntimeException("Refresh token is not in database!"));
     }
+
+   @PostMapping("/forgot-password")
+    public ResponseEntity<String> forgotPassword(@Valid @RequestBody ForgotPasswordRequestDto requestDto){
+        authService.sendForgotPasswordOtp(requestDto);
+        return ResponseEntity.ok("OTP sent to Your E-Mail ");
+   }
+   @PostMapping("/verify-otp")
+    public ResponseEntity<String> resetPassword(@Valid @RequestBody ResetPasswordDto resetPasswordDto){
+        authService.resetPasswordWithOtp(resetPasswordDto);
+        return ResponseEntity.ok("Password reset successfully");
+   }
 }

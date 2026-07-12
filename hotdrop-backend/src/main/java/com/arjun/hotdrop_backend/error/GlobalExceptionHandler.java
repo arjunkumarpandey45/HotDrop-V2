@@ -4,31 +4,34 @@ import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.validation.FieldError;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 import java.time.LocalDateTime;
+import java.util.stream.Collectors;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
-
+    // 1. Single and Clean RuntimeException Handler (Merged & Fixed)
     @ExceptionHandler(RuntimeException.class)
     public ResponseEntity<ApiErrorResponseDto> handleRuntimeException(
             RuntimeException ex, HttpServletRequest request) {
 
         ApiErrorResponseDto errorResponse = ApiErrorResponseDto.builder()
                 .status(HttpStatus.BAD_REQUEST.value())
-                .error(HttpStatus.BAD_REQUEST.getReasonPhrase())
-                .message(ex.getMessage())
-                .timestamp(LocalDateTime.now())
+                .error("Bad Request / Business Logic Error")
+                .message(ex.getMessage()) // "OTP has expired", "Invalid OTP" etc.
+                .timestamp(LocalDateTime.now()) // Clean direct assign
                 .path(request.getRequestURI())
                 .build();
 
         return new ResponseEntity<>(errorResponse, HttpStatus.BAD_REQUEST);
     }
 
-
+    // 2. BadCredentials Exception Handler
     @ExceptionHandler(BadCredentialsException.class)
     public ResponseEntity<ApiErrorResponseDto> handleBadCredentials(
             BadCredentialsException ex, HttpServletRequest request) {
@@ -44,7 +47,29 @@ public class GlobalExceptionHandler {
         return new ResponseEntity<>(errorResponse, HttpStatus.UNAUTHORIZED);
     }
 
-    // 3. Koi unhandled extreme server issue catch karne ke liye
+    // 3. Validation Exception Handler (Fixed string parsing bug)
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    public ResponseEntity<ApiErrorResponseDto> handleValidationExceptions(
+            MethodArgumentNotValidException ex, HttpServletRequest request) {
+
+        String errorMessage = ex.getBindingResult()
+                .getFieldErrors()
+                .stream()
+                .map(FieldError::getDefaultMessage)
+                .collect(Collectors.joining(", "));
+
+        ApiErrorResponseDto errorResponse = ApiErrorResponseDto.builder()
+                .status(HttpStatus.BAD_REQUEST.value())
+                .error("Validation Failed")
+                .message(errorMessage)
+                .timestamp(LocalDateTime.now()) // Clean direct assign
+                .path(request.getRequestURI())
+                .build();
+
+        return new ResponseEntity<>(errorResponse, HttpStatus.BAD_REQUEST);
+    }
+
+    // 4. Fallback Global Exception Handler (For 500 errors)
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ApiErrorResponseDto> handleGlobalException(
             Exception ex, HttpServletRequest request) {

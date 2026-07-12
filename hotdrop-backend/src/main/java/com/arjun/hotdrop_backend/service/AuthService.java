@@ -1,13 +1,12 @@
 package com.arjun.hotdrop_backend.service;
 
-import com.arjun.hotdrop_backend.dto.LoginRequestDto;
-import com.arjun.hotdrop_backend.dto.LoginResponseDto;
-import com.arjun.hotdrop_backend.dto.RegisterRequestDto;
-import com.arjun.hotdrop_backend.dto.UserResponseDto;
+import com.arjun.hotdrop_backend.dto.*;
+import com.arjun.hotdrop_backend.entity.OtpVerification;
 import com.arjun.hotdrop_backend.entity.Role;
 import com.arjun.hotdrop_backend.entity.User;
 import com.arjun.hotdrop_backend.enums.AuthProvider;
 import com.arjun.hotdrop_backend.enums.RoleType;
+import com.arjun.hotdrop_backend.repository.OtpVerificationRepo;
 import com.arjun.hotdrop_backend.repository.RoleRepo;
 import com.arjun.hotdrop_backend.repository.UserRepo;
 import com.arjun.hotdrop_backend.utils.JwtUtils;
@@ -16,8 +15,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -35,6 +32,7 @@ public class AuthService {
     private final JwtUtils jwtUtils;
     private final EmailService emailService;
     private final AuthenticationManager authenticationManager;
+    private final OtpVerificationRepo otpVerificationRepo;
 
     public UserResponseDto register(RegisterRequestDto registerRequestDto) {
         if (userRepo.existsByUsername(registerRequestDto.getUsername()) && userRepo.existsByEmail(registerRequestDto.getEmail())) {
@@ -102,12 +100,12 @@ public class AuthService {
         if (!user.isEmailVerified()) {
             throw new RuntimeException("Please verify your email first");
         }
-        if(user.isBanned()){
+        if (user.isBanned()) {
             throw new RuntimeException("Your account has been banned.");
         }
         Authentication authentication = authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(user.getUsername(), loginRequestDto.getPassword()));
-
+        user.setLoggedIn(true);
         user.setLastLoginAt(LocalDateTime.now());
         userRepo.save(user);
 
@@ -121,7 +119,7 @@ public class AuthService {
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
         List<String> roles = user.getRoles().stream()
-                .map(role ->   role.getRoleName().name())
+                .map(role -> role.getRoleName().name())
                 .toList();
 
         return LoginResponseDto.builder()
@@ -130,5 +128,68 @@ public class AuthService {
                 .roles(roles)
                 .isLoggedIn(true)
                 .build();
+    }
+
+    @Transactional
+    public void sendForgotPasswordOtp(ForgotPasswordRequestDto request) {
+        User user = userRepo.findByEmail(request.getEmail())
+                .orElseThrow(() -> new RuntimeException("No account registered with this email address."));
+
+        if (user.isBanned()) {
+            throw new RuntimeException("Account is restricted.");
+        }
+
+
+        java.security.SecureRandom random = new java.security.SecureRandom();
+        int otpNum = 100000 + random.nextInt(900000);
+        String otp = String.valueOf(otpNum);
+
+
+        String hashedOtp = passwordEncoder.encode(otp);
+
+
+        LocalDateTime expiry = LocalDateTime.now().plusMinutes(5);
+
+
+        otpVerificationRepo.deleteByEmail(user.getEmail());
+        otpVerificationRepo.flush();
+        otpVerificationRepo.save(OtpVerification.builder()
+                .email(user.getEmail())
+                .otpHash(hashedOtp)
+                .expiryDate(expiry)
+                .build());
+
+
+
+        emailService.sendOTP(user.getEmail(), user.getFirstName(), otp);
+
+    }
+
+    @Transactional
+    public void resetPasswordWithOtp(ResetPasswordDto request) {
+
+        OtpVerification otpVerification = otpVerificationRepo.findByEmail(request.getEmail())
+                .orElseThrow(() -> new RuntimeException("OTP session not found or invalid request."));
+
+
+        if (otpVerification.getExpiryDate().isBefore(LocalDateTime.now())) {
+            otpVerificationRepo.delete(otpVerification);
+            throw new RuntimeException("OTP has expired. Please request a new one.");
+        }
+
+
+        if (!passwordEncoder.matches(request.getOtp(), otpVerification.getOtpHash())) {
+            throw new RuntimeException("Invalid OTP entered.");
+        }
+
+
+        User user = userRepo.findByEmail(request.getEmail())
+                .orElseThrow(() -> new RuntimeException("User not found."));
+
+        user.setPassword(passwordEncoder.encode(request.getNewPassword()));
+        userRepo.save(user);
+
+
+        otpVerificationRepo.delete(otpVerification);
     }
 }

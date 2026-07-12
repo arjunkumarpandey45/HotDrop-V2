@@ -24,9 +24,8 @@ public class CustomUserDetailsService implements UserDetailsService {
                         )
                 );
 
-        // Spring Security UserDetails build karo
         return org.springframework.security.core.userdetails.User
-                .withUsername(user.getUsername()) // Humesha principal identity unique username rakho
+                .withUsername(user.getUsername()) 
                 .password(user.getPassword())
                 .authorities(
                         user.getRoles()

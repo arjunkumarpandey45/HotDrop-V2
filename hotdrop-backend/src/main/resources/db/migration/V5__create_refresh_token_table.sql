@@ -1,5 +1,5 @@
 CREATE TABLE refresh_tokens (
-                                id BIGSERIAL PRIMARY KEY,
+                                id UUID PRIMARY KEY,
                                 token VARCHAR(255) NOT NULL UNIQUE,
                                 expiry_date TIMESTAMP NOT NULL,
                                 user_id UUID NOT NULL,
