@@ -7,6 +7,7 @@ import com.arjun.hotdrop_backend.entity.User;
 import com.arjun.hotdrop_backend.enums.AuthProvider;
 import com.arjun.hotdrop_backend.enums.RoleType;
 import com.arjun.hotdrop_backend.repository.OtpVerificationRepo;
+import com.arjun.hotdrop_backend.repository.RefreshTokenRepo;
 import com.arjun.hotdrop_backend.repository.RoleRepo;
 import com.arjun.hotdrop_backend.repository.UserRepo;
 import com.arjun.hotdrop_backend.utils.JwtUtils;
@@ -33,7 +34,7 @@ public class AuthService {
     private final EmailService emailService;
     private final AuthenticationManager authenticationManager;
     private final OtpVerificationRepo otpVerificationRepo;
-
+private final RefreshTokenRepo refreshTokenRepo;
     public UserResponseDto register(RegisterRequestDto registerRequestDto) {
         if (userRepo.existsByUsername(registerRequestDto.getUsername()) && userRepo.existsByEmail(registerRequestDto.getEmail())) {
             throw new IllegalArgumentException("Please try again in 15 minutes");
@@ -192,4 +193,16 @@ public class AuthService {
 
         otpVerificationRepo.delete(otpVerification);
     }
+
+    @Transactional
+    public void logout(String refreshToken) {
+        if (refreshToken != null && !refreshToken.isEmpty()) {
+            refreshTokenRepo.findByToken(refreshToken)
+                    .ifPresent(token -> {
+                       
+                        refreshTokenRepo.deleteByUser(token.getUser());
+                    });
+        }
+    }
+
 }

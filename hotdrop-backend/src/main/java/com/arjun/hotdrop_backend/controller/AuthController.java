@@ -91,14 +91,45 @@ public class AuthController {
                 .orElseThrow(() -> new RuntimeException("Refresh token is not in database!"));
     }
 
-   @PostMapping("/forgot-password")
-    public ResponseEntity<String> forgotPassword(@Valid @RequestBody ForgotPasswordRequestDto requestDto){
+    @PostMapping("/forgot-password")
+    public ResponseEntity<String> forgotPassword(@Valid @RequestBody ForgotPasswordRequestDto requestDto) {
         authService.sendForgotPasswordOtp(requestDto);
         return ResponseEntity.ok("OTP sent to Your E-Mail ");
-   }
-   @PostMapping("/verify-otp")
-    public ResponseEntity<String> resetPassword(@Valid @RequestBody ResetPasswordDto resetPasswordDto){
+    }
+
+    @PostMapping("/verify-otp")
+    public ResponseEntity<String> resetPassword(@Valid @RequestBody ResetPasswordDto resetPasswordDto) {
         authService.resetPasswordWithOtp(resetPasswordDto);
         return ResponseEntity.ok("Password reset successfully");
-   }
+    }
+
+    @PostMapping("/logout")
+    public ResponseEntity<String> logout(HttpServletRequest request) {
+        String refreshTokenFromCookie = null;
+        if (request.getCookies() != null) {
+            for (var cookie : request.getCookies()) {
+                if ("refreshToken".equals(cookie.getName())) {
+                    refreshTokenFromCookie = cookie.getValue();
+                    break;
+                }
+            }
+        }
+
+
+    authService.logout(refreshTokenFromCookie);
+ResponseCookie clearAccessCookie=ResponseCookie.from("accessToken","")
+        .maxAge(0)
+        .httpOnly(true)
+        .secure(false).path("/").sameSite("Strict").build();
+
+        ResponseCookie clearRefreshCookie=ResponseCookie.from("refreshToken","")
+                .maxAge(0)
+                .httpOnly(true)
+                .secure(false).path("/").sameSite("Strict").build();
+        
+        return ResponseEntity.ok().header(HttpHeaders.SET_COOKIE,clearAccessCookie.toString())
+                .header(HttpHeaders.SET_COOKIE,clearRefreshCookie.toString())
+                .body("Logged out successfully");
+
+    }
 }
