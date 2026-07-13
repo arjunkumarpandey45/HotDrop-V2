@@ -21,6 +21,7 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -36,9 +37,22 @@ public class AuthService {
     private final OtpVerificationRepo otpVerificationRepo;
 private final RefreshTokenRepo refreshTokenRepo;
     public UserResponseDto register(RegisterRequestDto registerRequestDto) {
-        if (userRepo.existsByUsername(registerRequestDto.getUsername()) && userRepo.existsByEmail(registerRequestDto.getEmail())) {
-            throw new IllegalArgumentException("Please try again in 15 minutes");
+        Optional<User> existingUser =
+                userRepo.findByEmail(registerRequestDto.getEmail());
+
+        if (existingUser.isPresent()) {
+
+            User user = existingUser.get();
+
+            if (!user.isEmailVerified()) {
+                throw new IllegalArgumentException(
+                        "Email not verified. Please try again in 15 minutes."
+                );
+            }
+
+            throw new IllegalArgumentException("Email already exists");
         }
+
         if (userRepo.existsByUsername(registerRequestDto.getUsername())) {
             throw new IllegalArgumentException("Username already exists");
         }
@@ -199,7 +213,7 @@ private final RefreshTokenRepo refreshTokenRepo;
         if (refreshToken != null && !refreshToken.isEmpty()) {
             refreshTokenRepo.findByToken(refreshToken)
                     .ifPresent(token -> {
-                       
+
                         refreshTokenRepo.deleteByUser(token.getUser());
                     });
         }

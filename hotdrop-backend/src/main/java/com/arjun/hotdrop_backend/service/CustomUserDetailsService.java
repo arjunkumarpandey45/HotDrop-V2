@@ -2,6 +2,7 @@ package com.arjun.hotdrop_backend.service;
 
 import com.arjun.hotdrop_backend.repository.UserRepo;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -24,8 +25,8 @@ public class CustomUserDetailsService implements UserDetailsService {
                         )
                 );
 
-        return org.springframework.security.core.userdetails.User
-                .withUsername(user.getUsername()) 
+        return User
+                .withUsername(user.getUsername())
                 .password(user.getPassword())
                 .authorities(
                         user.getRoles()
