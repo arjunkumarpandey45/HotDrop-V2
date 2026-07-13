@@ -32,9 +32,10 @@ spring:
           starttls:
             enable: true
             required: true
-
+ 
 app:
   jwt:
     email-verification-expiration-ms: ${EMAIL_TOKEN_EXPIRY}
     refresh-expiration-ms: ${REFRESH_TOKEN_EXPIRATION}
     jwt-expiration-ms: ${JWT_EXPIRY}
+

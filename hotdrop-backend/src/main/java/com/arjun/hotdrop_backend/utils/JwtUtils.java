@@ -1,6 +1,7 @@
 package com.arjun.hotdrop_backend.utils;
 
 import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -8,6 +9,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
 
+import javax.crypto.SecretKey;
 import java.nio.charset.StandardCharsets;
 import java.security.Key;
 import java.util.Date;
@@ -23,10 +25,10 @@ public class JwtUtils {
     @Value("${app.jwt.jwt-expiration-ms}")
     private long jwtExpirationMs;
 
-    private Key getSignInKey() {
-        return Keys.hmacShaKeyFor(jwtSecret.getBytes(StandardCharsets.UTF_8));
+    private SecretKey getSignInKey() {
+        byte[] keyBytes = Decoders.BASE64.decode(jwtSecret);
+        return Keys.hmacShaKeyFor(keyBytes);
     }
-
     public String generateEmailVerificationToken(String email) {
         return Jwts.builder()
                 .subject(email)
@@ -86,14 +88,14 @@ public class JwtUtils {
             return false;
         }
     }
-  
+
 
     public String generateTokenFromUsername(String username) {
         return Jwts.builder()
                 .subject(username)
                 .issuedAt(new Date())
-                .expiration(new Date((new Date()).getTime() + jwtExpirationMs))
-                .signWith(io.jsonwebtoken.SignatureAlgorithm.HS256, jwtSecret)
+                .expiration(new Date(System.currentTimeMillis() + jwtExpirationMs))
+                .signWith(getSignInKey())
                 .compact();
     }
 }
