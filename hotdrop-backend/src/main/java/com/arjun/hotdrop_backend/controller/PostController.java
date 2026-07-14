@@ -17,6 +17,8 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.util.UUID;
+
 @RestController
 @RequestMapping("/posts")
 @RequiredArgsConstructor
@@ -40,14 +42,13 @@ public class PostController {
     }
 
 
-
     @PostMapping(value = "/create", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<ApiResponse<PostResponseDto>> createPost(
             @Valid @ModelAttribute CreatePostDto createPostDto,
             @RequestParam("files") MultipartFile[] files,
             @AuthenticationPrincipal UserDetails userDetails) {
 
-        
+
         String userEmail = userDetails.getUsername();
 
         PostResponseDto savedPost = postService.createNewPost(createPostDto, files, userEmail);
@@ -58,4 +59,17 @@ public class PostController {
                 savedPost
         );
     }
+
+    @DeleteMapping("/{postId}/delete-post")
+    public ResponseEntity<ApiResponse<Void>> deletePost(@PathVariable UUID postId
+            , @AuthenticationPrincipal UserDetails userDetails) {
+        String currentHotdropId = userDetails.getUsername();
+        postService.deleteExistingPost(postId, currentHotdropId);
+        return ResponseHandler.generateResponse(
+                HttpStatus.OK
+                , "Project Dropped successfuly",
+                null);
+    }
+
+
 }

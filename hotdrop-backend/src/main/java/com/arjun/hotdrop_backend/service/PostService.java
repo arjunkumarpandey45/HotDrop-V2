@@ -149,7 +149,7 @@ public class PostService {
                 .user(authenticatedUser)
                 .build();
 
-        
+
         List<PostImage> postImages = new ArrayList<>();
         for (MultipartFile file : files) {
             Map<String, String> cloudMeta = cloudinaryService.uploadImage(file);
@@ -199,5 +199,26 @@ public class PostService {
                 .creator(userSummary)
                 .build();
     }
+    @Transactional
+    public void deleteExistingPost(UUID postId, String currentHotdropId) {
 
+        Post post = postRepo.findById(postId)
+                .orElseThrow(() -> new RuntimeException("Post not found!"));
+
+
+        if (!post.getUser().getHotdropId().equals(currentHotdropId)) {
+            throw new RuntimeException("You can only delete your post!!");
+        }
+
+
+        if (post.getImages() != null) {
+            for (PostImage img : post.getImages()) {
+                cloudinaryService.deleteImage(img.getPublicId());
+            }
+        }
+
+       
+        postRepo.delete(post);
+        log.info("Post ID: {} successfully evicted from core layers.", postId);
+    }
 }
