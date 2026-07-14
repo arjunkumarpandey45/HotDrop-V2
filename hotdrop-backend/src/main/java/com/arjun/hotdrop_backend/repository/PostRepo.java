@@ -23,6 +23,7 @@ public interface PostRepo extends JpaRepository<Post, UUID> {
                     "EXISTS (SELECT 1 FROM unnest(p.tags) AS tag WHERE LOWER(tag) LIKE LOWER(CONCAT('%', :keyword, '%')))",
             nativeQuery = true)
     Page<Post> searchFeedEngine(@Param("keyword") String keyword, Pageable pageable);
+    List<Post> findByUserId(UUID userId);
 }
 
 

@@ -1,9 +1,6 @@
 package com.arjun.hotdrop_backend.service;
 
-import com.arjun.hotdrop_backend.dto.CreatePostDto;
-import com.arjun.hotdrop_backend.dto.LinkVerificationResponseDto;
-import com.arjun.hotdrop_backend.dto.PostListResponseDto;
-import com.arjun.hotdrop_backend.dto.PostResponseDto;
+import com.arjun.hotdrop_backend.dto.*;
 import com.arjun.hotdrop_backend.entity.Post;
 import com.arjun.hotdrop_backend.entity.PostImage;
 import com.arjun.hotdrop_backend.entity.User;
@@ -238,23 +235,23 @@ public class PostService {
     }
 
     public PostListResponseDto getAllPostsCompiledFeed(int page, int size, String sortBy, String direction, String search) {
-        // 1. Dynamic sorting sequence structure set karo safely
+
         Sort sort = direction.equalsIgnoreCase(Sort.Direction.ASC.name())
                 ? Sort.by(sortBy).ascending()
                 : Sort.by(sortBy).descending();
 
         Pageable pageable = PageRequest.of(page, size, sort);
 
-        // 2. Repository engine se query match hit karo (keyword check ke sath)
+
         String cleanedKeyword = (search == null || search.isBlank()) ? null : search.trim();
         Page<Post> postPage = postRepo.searchFeedEngine(cleanedKeyword, pageable);
 
-        // 3. Entity metrics ko stream processing se response DTO collection me badlo
+
         List<PostResponseDto> postResponseDtos = postPage.getContent().stream()
-                .map(this::mapToResponseDto) // Jo hamara pehle ka custom mapping method hai
+                .map(this::mapToResponseDto)
                 .toList();
 
-        // 4. Clean corporate standard wrap up payload build karo
+
         return PostListResponseDto.builder()
                 .posts(postResponseDtos)
                 .pageNumber(postPage.getNumber())
@@ -264,4 +261,6 @@ public class PostService {
                 .isLastPage(postPage.isLast())
                 .build();
     }
+
+
 }
