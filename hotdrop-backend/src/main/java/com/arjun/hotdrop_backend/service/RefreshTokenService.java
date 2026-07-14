@@ -20,9 +20,9 @@ public class RefreshTokenService {
     private final RefreshTokenRepo refreshTokenRepo;
     private final UserRepo userRepo;
     @Transactional
-    public RefreshToken createRefreshToken(String username) {
-        var user = userRepo.findByUsername(username)
-                .orElseThrow(() -> new RuntimeException("User not found: " + username));
+    public RefreshToken createRefreshToken(String hotdropId) {
+        var user = userRepo.findByHotdropId(hotdropId)
+                .orElseThrow(() -> new RuntimeException("User not found: " + hotdropId));
 
 
         refreshTokenRepo.deleteByUser(user);

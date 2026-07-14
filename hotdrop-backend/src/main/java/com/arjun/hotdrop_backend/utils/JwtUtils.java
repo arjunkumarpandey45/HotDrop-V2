@@ -10,8 +10,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
 
 import javax.crypto.SecretKey;
-import java.nio.charset.StandardCharsets;
-import java.security.Key;
+
 import java.util.Date;
 
 
@@ -66,7 +65,7 @@ public class JwtUtils {
                 .signWith(getSignInKey())
                 .compact();
     }
-    public String getUserNameFromJwtToken(String token) {
+    public String getHotdropIdFromJwtToken(String token) {
         return Jwts.parser()
                 .verifyWith((javax.crypto.SecretKey) getSignInKey())
                 .build()
@@ -90,9 +89,9 @@ public class JwtUtils {
     }
 
 
-    public String generateTokenFromUsername(String username) {
+    public String generateTokenFromHotdropId(String hotdropId) {
         return Jwts.builder()
-                .subject(username)
+                .subject(hotdropId)
                 .issuedAt(new Date())
                 .expiration(new Date(System.currentTimeMillis() + jwtExpirationMs))
                 .signWith(getSignInKey())

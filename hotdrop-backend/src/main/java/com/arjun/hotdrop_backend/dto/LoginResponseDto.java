@@ -10,7 +10,7 @@ import java.util.List;
 @Builder
 public class LoginResponseDto {
 
-    private String username;
+    private String hotdropId;
     private String email;
     private boolean isLoggedIn;
     private List<String> roles;

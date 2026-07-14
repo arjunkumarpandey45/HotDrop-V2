@@ -1,23 +1,36 @@
 package com.arjun.hotdrop_backend.service;
 
+import com.arjun.hotdrop_backend.dto.CreatePostDto;
 import com.arjun.hotdrop_backend.dto.LinkVerificationResponseDto;
+import com.arjun.hotdrop_backend.dto.PostResponseDto;
+import com.arjun.hotdrop_backend.entity.Post;
+import com.arjun.hotdrop_backend.entity.PostImage;
+import com.arjun.hotdrop_backend.entity.User;
+import com.arjun.hotdrop_backend.repository.PostRepo;
+
+import com.arjun.hotdrop_backend.repository.UserRepo;
+import com.arjun.hotdrop_backend.utils.SlugifyUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.time.Duration;
-import java.util.List;
-import java.util.Random;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
 @Slf4j
 public class PostService {
-
+    private  final UserRepo userRepo;
+    private final PostRepo postRepo;
+    private final CloudinaryService cloudinaryService;
     private final List<String> userAgents;
     private final Random random;
 
@@ -65,11 +78,11 @@ public class PostService {
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             log.warn("HEAD verification thread context interrupted.");
-        } catch (Exception e) {
-            // Log fallback alert context quietly without crashing
+        } catch (Exception ignored) {
+
         }
 
-        // --- Phase 2: Full GET Fallback Strategy ---
+
         try {
             HttpRequest getRequest = HttpRequest.newBuilder()
                     .uri(URI.create(cleanUrl))
@@ -107,4 +120,84 @@ public class PostService {
                 .message("Link is dead or completely unreachable.")
                 .build();
     }
+
+    @Transactional
+    public PostResponseDto createNewPost(CreatePostDto dto, MultipartFile[] files, String hotdropId) {
+
+        if (files == null || files.length == 0 || files[0].isEmpty()) {
+            throw new RuntimeException("At least 1 image must be uploaded.");
+        }
+      User authenticatedUser = userRepo.findByHotdropId(String.valueOf(hotdropId))
+                .orElseThrow(() -> new RuntimeException("User not found "));
+
+        String uniqueShareUrl = SlugifyUtil.generateSlug(dto.getTitle());
+
+
+        List<String> cleanedTags = new ArrayList<>();
+        if (dto.getTags() != null && !dto.getTags().isBlank()) {
+            cleanedTags = Arrays.stream(dto.getTags().split(","))
+                    .map(tag -> tag.trim().toLowerCase())
+                    .collect(Collectors.toList());
+        }
+
+        Post post = Post.builder()
+                .title(dto.getTitle())
+                .description(dto.getDescription())
+                .projectUrl(dto.getProjectUrl())
+                .shareUrl(uniqueShareUrl)
+                .tags(cleanedTags)
+                .user(authenticatedUser)
+                .build();
+
+        
+        List<PostImage> postImages = new ArrayList<>();
+        for (MultipartFile file : files) {
+            Map<String, String> cloudMeta = cloudinaryService.uploadImage(file);
+
+            PostImage imageEntity = PostImage.builder()
+                    .url(cloudMeta.get("url"))
+                    .publicId(cloudMeta.get("publicId"))
+                    .post(post)
+                    .build();
+
+            postImages.add(imageEntity);
+        }
+
+
+        post.setImages(postImages);
+
+
+        Post savedPost = postRepo.save(post);
+        log.info("Project dropped successfully! Saved Post ID: {}", savedPost.getId());
+
+
+        return mapToResponseDto(savedPost);
+    }
+
+    private PostResponseDto mapToResponseDto(Post post) {
+        List<String> urls = post.getImages().stream()
+                .map(PostImage::getUrl)
+                .collect(Collectors.toList());
+
+        PostResponseDto.UserSummaryDto userSummary = PostResponseDto.UserSummaryDto.builder()
+                .id(post.getUser().getId())
+                .hotdropId(post.getUser().getHotdropId())
+                
+                .profilePicture(post.getUser().getProfileImageUrl())
+                .build();
+
+        return PostResponseDto.builder()
+                .id(post.getId())
+                .title(post.getTitle())
+                .description(post.getDescription())
+                .projectUrl(post.getProjectUrl())
+                .shareUrl(post.getShareUrl())
+                .isLinkDead(post.isLinkDead())
+                .createdAt(post.getCreatedAt())
+                .tags(post.getTags())
+                .imageUrls(urls)
+                .creator(userSummary)
+                .build();
+    }
+
 }

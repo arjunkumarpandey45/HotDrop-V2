@@ -42,7 +42,7 @@ public class GlobalExceptionHandler {
         ApiErrorResponseDto errorResponse = ApiErrorResponseDto.builder()
                 .status(HttpStatus.UNAUTHORIZED.value())
                 .error(HttpStatus.UNAUTHORIZED.getReasonPhrase())
-                .message("Invalid username/email or password credentials.")
+                .message("Invalid hotdropId/email or password credentials.")
                 .timestamp(LocalDateTime.now())
                 .path(request.getRequestURI())
                 .build();

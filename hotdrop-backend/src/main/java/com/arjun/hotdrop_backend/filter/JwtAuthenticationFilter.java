@@ -34,7 +34,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     ) throws ServletException, IOException {
 
         String jwt = null;
-        String username = null;
+        String hotdropId = null;
 
 
         if (request.getCookies() != null) {
@@ -50,10 +50,10 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             filterChain.doFilter(request, response);
             return;
         }
-        username = jwtUtils.getUserNameFromJwtToken(jwt);
+       hotdropId = jwtUtils.getHotdropIdFromJwtToken(jwt);
 
-        if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
-            UserDetails userDetails = this.userDetailsService.loadUserByUsername(username);
+        if (hotdropId != null && SecurityContextHolder.getContext().getAuthentication() == null) {
+            UserDetails userDetails = this.userDetailsService.loadUserByUsername(hotdropId);
 
             if (jwtUtils.validateJwtToken(jwt)) {
                 UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(

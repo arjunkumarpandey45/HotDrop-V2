@@ -15,18 +15,18 @@ public class CustomUserDetailsService implements UserDetailsService {
     private final UserRepo userRepo;
 
     @Override
-    public UserDetails loadUserByUsername(String usernameOrEmail) {
+    public UserDetails loadUserByUsername(String hotdropIdOrEmail) {
 
-        var user = userRepo.findByUsername(usernameOrEmail)
-                .or(() -> userRepo.findByEmail(usernameOrEmail))
+        var user = userRepo.findByHotdropId(hotdropIdOrEmail)
+                .or(() -> userRepo.findByEmail(hotdropIdOrEmail))
                 .orElseThrow(() ->
                         new UsernameNotFoundException(
-                                "User not found with username or email: " + usernameOrEmail
+                                "User not found with hotdrop Id or email: " + hotdropIdOrEmail
                         )
                 );
 
         return User
-                .withUsername(user.getUsername())
+                .withUsername(user.getHotdropId())
                 .password(user.getPassword())
                 .authorities(
                         user.getRoles()

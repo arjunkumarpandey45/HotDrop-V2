@@ -53,8 +53,8 @@ private final RefreshTokenRepo refreshTokenRepo;
             throw new IllegalArgumentException("Email already exists");
         }
 
-        if (userRepo.existsByUsername(registerRequestDto.getUsername())) {
-            throw new IllegalArgumentException("Username already exists");
+        if (userRepo.existsByHotdropId(registerRequestDto.getHotdropId())) {
+            throw new IllegalArgumentException("Hotdrop Id already exists");
         }
         if (userRepo.existsByEmail(registerRequestDto.getEmail())) {
             throw new IllegalArgumentException("Email already exists");
@@ -62,7 +62,7 @@ private final RefreshTokenRepo refreshTokenRepo;
         Role userRole = roleRepo.findByRoleName(RoleType.USER)
                 .orElseThrow(() -> new RuntimeException("Default role not found"));
         User user = userRepo.save(User.builder()
-                .username(registerRequestDto.getUsername())
+                .hotdropId(registerRequestDto.getHotdropId())
                 .password(passwordEncoder.encode(registerRequestDto.getPassword()))
                 .email(registerRequestDto.getEmail())
                 .authProvider(AuthProvider.LOCAL)
@@ -78,7 +78,7 @@ private final RefreshTokenRepo refreshTokenRepo;
                 .id(user.getId())
                 .firstName(user.getFirstName())
                 .lastName(user.getLastName())
-                .username(user.getUsername())
+                .hotdropId(user.getHotdropId())
                 .email(user.getEmail())
                 .roles(
                         user.getRoles()
@@ -109,9 +109,9 @@ private final RefreshTokenRepo refreshTokenRepo;
     }
 
     public String login(LoginRequestDto loginRequestDto) {
-        User user = userRepo.findByUsername(loginRequestDto.getUsernameOrEmail())
-                .or(() -> userRepo.findByEmail(loginRequestDto.getUsernameOrEmail()))
-                .orElseThrow(() -> new RuntimeException("Email or Username is not valid"));
+        User user = userRepo.findByHotdropId(loginRequestDto.getHotdropIdOrEmail())
+                .or(() -> userRepo.findByEmail(loginRequestDto.getHotdropIdOrEmail()))
+                .orElseThrow(() -> new RuntimeException("Email or Hotdrop Id is not valid"));
         if (!user.isEmailVerified()) {
             throw new RuntimeException("Please verify your email first");
         }
@@ -119,7 +119,7 @@ private final RefreshTokenRepo refreshTokenRepo;
             throw new RuntimeException("Your account has been banned.");
         }
         Authentication authentication = authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(user.getUsername(), loginRequestDto.getPassword()));
+                new UsernamePasswordAuthenticationToken(user.getHotdropId(), loginRequestDto.getPassword()));
         user.setLoggedIn(true);
         user.setLastLoginAt(LocalDateTime.now());
         userRepo.save(user);
@@ -128,9 +128,9 @@ private final RefreshTokenRepo refreshTokenRepo;
         return jwtUtils.generateToken(authentication);
     }
 
-    public LoginResponseDto getLoginResponseDetails(String usernameOrEmail) {
-        User user = userRepo.findByUsername(usernameOrEmail)
-                .or(() -> userRepo.findByEmail(usernameOrEmail))
+    public LoginResponseDto getLoginResponseDetails(String hotdropIdOrEmail) {
+        User user = userRepo.findByHotdropId(hotdropIdOrEmail)
+                .or(() -> userRepo.findByEmail(hotdropIdOrEmail))
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
         List<String> roles = user.getRoles().stream()
@@ -138,7 +138,7 @@ private final RefreshTokenRepo refreshTokenRepo;
                 .toList();
 
         return LoginResponseDto.builder()
-                .username(user.getUsername())
+                .hotdropId(user.getHotdropId())
                 .email(user.getEmail())
                 .roles(roles)
                 .isLoggedIn(true)

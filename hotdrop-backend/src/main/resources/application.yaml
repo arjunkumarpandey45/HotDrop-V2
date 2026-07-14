@@ -2,6 +2,10 @@ spring:
   application:
     name: hotdrop-backend
 
+  servlet:
+    multipart:
+      max-file-size: ${ONE_IMAGE_SIZE}
+      max-request-size: ${TOTAL_IMAGE_SIZE}
   datasource:
     url: ${POSTGRES_SQL_URI}
     username: postgres
@@ -32,10 +36,14 @@ spring:
           starttls:
             enable: true
             required: true
- 
+
 app:
   jwt:
     email-verification-expiration-ms: ${EMAIL_TOKEN_EXPIRY}
     refresh-expiration-ms: ${REFRESH_TOKEN_EXPIRATION}
     jwt-expiration-ms: ${JWT_EXPIRY}
 
+cloudinary:
+  cloud-name: ${CLOUDINARY_CLOUD_NAME}
+  api-key: ${CLOUDINARY_API_KEY}
+  api-secret: ${CLOUDINARY_API_SECRET}

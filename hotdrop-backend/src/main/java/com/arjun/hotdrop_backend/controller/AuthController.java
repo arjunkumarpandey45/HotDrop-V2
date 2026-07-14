@@ -37,8 +37,8 @@ public class AuthController {
     @PostMapping("/login")
     public ResponseEntity<LoginResponseDto> login(@Valid @RequestBody LoginRequestDto loginRequestDto) {
         String jwtToken = authService.login(loginRequestDto);
-        LoginResponseDto responseDto = authService.getLoginResponseDetails(loginRequestDto.getUsernameOrEmail());
-        var refreshToken = refreshTokenService.createRefreshToken(responseDto.getUsername());
+        LoginResponseDto responseDto = authService.getLoginResponseDetails(loginRequestDto.getHotdropIdOrEmail());
+        var refreshToken = refreshTokenService.createRefreshToken(responseDto.getHotdropId());
 
 
         ResponseCookie accessCookie = ResponseCookie.from("accessToken", jwtToken)
@@ -79,7 +79,7 @@ public class AuthController {
                 .map(RefreshToken::getUser)
                 .map(user -> {
 
-                    String newAccessToken = jwtUtils.generateTokenFromUsername(user.getUsername());
+                    String newAccessToken = jwtUtils.generateTokenFromHotdropId(user.getHotdropId());
 
                     ResponseCookie newAccessCookie = ResponseCookie.from("accessToken", newAccessToken)
                             .httpOnly(true).secure(false).path("/").maxAge(15 * 60).sameSite("Strict").build();
@@ -126,7 +126,7 @@ ResponseCookie clearAccessCookie=ResponseCookie.from("accessToken","")
                 .maxAge(0)
                 .httpOnly(true)
                 .secure(false).path("/").sameSite("Strict").build();
-        
+
         return ResponseEntity.ok().header(HttpHeaders.SET_COOKIE,clearAccessCookie.toString())
                 .header(HttpHeaders.SET_COOKIE,clearRefreshCookie.toString())
                 .body("Logged out successfully");

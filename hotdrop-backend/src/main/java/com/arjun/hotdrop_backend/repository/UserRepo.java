@@ -14,11 +14,11 @@ import java.util.UUID;
 public interface UserRepo extends JpaRepository<User, UUID> {
     Optional<User> findByEmail(String email);
 
-    Optional<User> findByUsername(String username);
+    Optional<User> findByHotdropId(String hotdropId);
 
     boolean existsByEmail(String email);
 
-    boolean existsByUsername(String username);
+    boolean existsByHotdropId(String hotdropId);
 
     @Transactional
     @Modifying
