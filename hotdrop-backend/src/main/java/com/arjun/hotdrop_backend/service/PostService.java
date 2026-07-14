@@ -2,6 +2,7 @@ package com.arjun.hotdrop_backend.service;
 
 import com.arjun.hotdrop_backend.dto.CreatePostDto;
 import com.arjun.hotdrop_backend.dto.LinkVerificationResponseDto;
+import com.arjun.hotdrop_backend.dto.PostListResponseDto;
 import com.arjun.hotdrop_backend.dto.PostResponseDto;
 import com.arjun.hotdrop_backend.entity.Post;
 import com.arjun.hotdrop_backend.entity.PostImage;
@@ -12,6 +13,10 @@ import com.arjun.hotdrop_backend.repository.UserRepo;
 import com.arjun.hotdrop_backend.utils.SlugifyUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -28,7 +33,7 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 @Slf4j
 public class PostService {
-    private  final UserRepo userRepo;
+    private final UserRepo userRepo;
     private final PostRepo postRepo;
     private final CloudinaryService cloudinaryService;
     private final List<String> userAgents;
@@ -120,30 +125,39 @@ public class PostService {
                 .message("Link is dead or completely unreachable.")
                 .build();
     }
+    private String sanitizeInput(String input) {
+        if (input == null) return null;
 
+        if (input.startsWith("\"") && input.endsWith("\"")) {
+            return input.substring(1, input.length() - 1).replace("\\\"", "\"");
+        }
+        return input.replace("\"", "");
+    }
     @Transactional
     public PostResponseDto createNewPost(CreatePostDto dto, MultipartFile[] files, String hotdropId) {
 
         if (files == null || files.length == 0 || files[0].isEmpty()) {
             throw new RuntimeException("At least 1 image must be uploaded.");
         }
-      User authenticatedUser = userRepo.findByHotdropId(String.valueOf(hotdropId))
+        User authenticatedUser = userRepo.findByHotdropId(String.valueOf(hotdropId))
                 .orElseThrow(() -> new RuntimeException("User not found "));
-
+        String cleanTitle = sanitizeInput(dto.getTitle());
+        String cleanDescription = sanitizeInput(dto.getDescription());
+        String cleanProjectUrl = sanitizeInput(dto.getProjectUrl());
         String uniqueShareUrl = SlugifyUtil.generateSlug(dto.getTitle());
-
 
         List<String> cleanedTags = new ArrayList<>();
         if (dto.getTags() != null && !dto.getTags().isBlank()) {
             cleanedTags = Arrays.stream(dto.getTags().split(","))
-                    .map(tag -> tag.trim().toLowerCase())
+                    .map(tag -> sanitizeInput(tag.trim().toLowerCase()))
+                    .filter(tag -> !tag.isEmpty())
                     .collect(Collectors.toList());
         }
 
         Post post = Post.builder()
-                .title(dto.getTitle())
-                .description(dto.getDescription())
-                .projectUrl(dto.getProjectUrl())
+                .title(cleanTitle)
+                .description(cleanDescription)
+                .projectUrl(cleanProjectUrl)
                 .shareUrl(uniqueShareUrl)
                 .tags(cleanedTags)
                 .user(authenticatedUser)
@@ -182,7 +196,7 @@ public class PostService {
         PostResponseDto.UserSummaryDto userSummary = PostResponseDto.UserSummaryDto.builder()
                 .id(post.getUser().getId())
                 .hotdropId(post.getUser().getHotdropId())
-                
+
                 .profilePicture(post.getUser().getProfileImageUrl())
                 .build();
 
@@ -199,6 +213,7 @@ public class PostService {
                 .creator(userSummary)
                 .build();
     }
+
     @Transactional
     public void deleteExistingPost(UUID postId, String currentHotdropId) {
 
@@ -217,8 +232,36 @@ public class PostService {
             }
         }
 
-       
+
         postRepo.delete(post);
         log.info("Post ID: {} successfully evicted from core layers.", postId);
+    }
+
+    public PostListResponseDto getAllPostsCompiledFeed(int page, int size, String sortBy, String direction, String search) {
+        // 1. Dynamic sorting sequence structure set karo safely
+        Sort sort = direction.equalsIgnoreCase(Sort.Direction.ASC.name())
+                ? Sort.by(sortBy).ascending()
+                : Sort.by(sortBy).descending();
+
+        Pageable pageable = PageRequest.of(page, size, sort);
+
+        // 2. Repository engine se query match hit karo (keyword check ke sath)
+        String cleanedKeyword = (search == null || search.isBlank()) ? null : search.trim();
+        Page<Post> postPage = postRepo.searchFeedEngine(cleanedKeyword, pageable);
+
+        // 3. Entity metrics ko stream processing se response DTO collection me badlo
+        List<PostResponseDto> postResponseDtos = postPage.getContent().stream()
+                .map(this::mapToResponseDto) // Jo hamara pehle ka custom mapping method hai
+                .toList();
+
+        // 4. Clean corporate standard wrap up payload build karo
+        return PostListResponseDto.builder()
+                .posts(postResponseDtos)
+                .pageNumber(postPage.getNumber())
+                .pageSize(postPage.getSize())
+                .totalElements(postPage.getTotalElements())
+                .totalPages(postPage.getTotalPages())
+                .isLastPage(postPage.isLast())
+                .build();
     }
 }

@@ -42,6 +42,7 @@ public class PostController {
     }
 
 
+
     @PostMapping(value = "/create", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<ApiResponse<PostResponseDto>> createPost(
             @Valid @ModelAttribute CreatePostDto createPostDto,
@@ -71,5 +72,20 @@ public class PostController {
                 null);
     }
 
+    @GetMapping("/feed")
+    public ResponseEntity<ApiResponse<PostListResponseDto>> getAllPosts(
+            @RequestParam(value = "page", defaultValue = "0", required = false) int page,
+            @RequestParam(value = "size", defaultValue = "10", required = false) int size,
+            @RequestParam(value = "sortBy", defaultValue = "created_at", required = false) String sortBy,
+            @RequestParam(value = "direction", defaultValue = "DESC", required = false) String direction,
+            @RequestParam(value = "search", required = false) String search) {
 
+        PostListResponseDto feed = postService.getAllPostsCompiledFeed(page, size, sortBy, direction, search);
+
+        return ResponseHandler.generateResponse(
+                HttpStatus.OK,
+                "Feed data populated dynamically! 🚀",
+                feed
+        );
+    }
 }
