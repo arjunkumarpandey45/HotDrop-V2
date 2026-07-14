@@ -1,11 +1,14 @@
 package com.arjun.hotdrop_backend.service;
 
-import com.arjun.hotdrop_backend.dto.*;
+import com.arjun.hotdrop_backend.dto.CreatePostDto;
+import com.arjun.hotdrop_backend.dto.LinkVerificationResponseDto;
+import com.arjun.hotdrop_backend.dto.PostListResponseDto;
+import com.arjun.hotdrop_backend.dto.PostResponseDto;
 import com.arjun.hotdrop_backend.entity.Post;
 import com.arjun.hotdrop_backend.entity.PostImage;
 import com.arjun.hotdrop_backend.entity.User;
+import com.arjun.hotdrop_backend.mapper.PostMapper;
 import com.arjun.hotdrop_backend.repository.PostRepo;
-
 import com.arjun.hotdrop_backend.repository.UserRepo;
 import com.arjun.hotdrop_backend.utils.SlugifyUtil;
 import lombok.RequiredArgsConstructor;
@@ -16,6 +19,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.net.URI;
@@ -35,7 +39,7 @@ public class PostService {
     private final CloudinaryService cloudinaryService;
     private final List<String> userAgents;
     private final Random random;
-
+private final PostMapper postMapper;
 
     private final HttpClient httpClient = HttpClient.newBuilder()
             .followRedirects(HttpClient.Redirect.NORMAL)
@@ -122,6 +126,7 @@ public class PostService {
                 .message("Link is dead or completely unreachable.")
                 .build();
     }
+
     private String sanitizeInput(String input) {
         if (input == null) return null;
 
@@ -130,6 +135,7 @@ public class PostService {
         }
         return input.replace("\"", "");
     }
+
     @Transactional
     public PostResponseDto createNewPost(CreatePostDto dto, MultipartFile[] files, String hotdropId) {
 
@@ -247,13 +253,13 @@ public class PostService {
         Page<Post> postPage = postRepo.searchFeedEngine(cleanedKeyword, pageable);
 
 
-        List<PostResponseDto> postResponseDtos = postPage.getContent().stream()
+        List<PostResponseDto> postResponseDto = postPage.getContent().stream()
                 .map(this::mapToResponseDto)
                 .toList();
 
 
         return PostListResponseDto.builder()
-                .posts(postResponseDtos)
+                .posts(postResponseDto)
                 .pageNumber(postPage.getNumber())
                 .pageSize(postPage.getSize())
                 .totalElements(postPage.getTotalElements())
@@ -262,5 +268,14 @@ public class PostService {
                 .build();
     }
 
+    public PostResponseDto getPostByPostId(UUID postId){
 
+
+        Post post = postRepo.findById(postId).orElse(null);
+        if (post == null) {
+            return null;
+        };
+
+        return postMapper.toResponseDto(post);
+    }
 }

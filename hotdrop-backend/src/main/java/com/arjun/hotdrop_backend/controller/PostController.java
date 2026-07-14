@@ -2,6 +2,7 @@ package com.arjun.hotdrop_backend.controller;
 
 import com.arjun.hotdrop_backend.dto.*;
 
+import com.arjun.hotdrop_backend.entity.Post;
 import com.arjun.hotdrop_backend.scheduler.LinkTrackingScheduler;
 import com.arjun.hotdrop_backend.service.PostService;
 import com.arjun.hotdrop_backend.utils.ResponseHandler;
@@ -40,7 +41,6 @@ public class PostController {
         linkTrackingScheduler.startLiveTracking();
         return ResponseEntity.ok("Tracking engine triggered successfully! Check your console logs. 🚀");
     }
-
 
 
     @PostMapping(value = "/create", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
@@ -88,4 +88,33 @@ public class PostController {
                 feed
         );
     }
+
+    @GetMapping("/{postId}")
+    public ResponseEntity<ApiResponse<PostResponseDto>> getPostViaPostId(@PathVariable String postId) {
+        UUID validUuid;
+        try {
+
+            validUuid = UUID.fromString(postId);
+        } catch (IllegalArgumentException e) {
+
+            return ResponseHandler.generateResponse(
+                    HttpStatus.BAD_REQUEST,
+                    "Provided Post ID format is invalid.",
+                    null
+            );
+        }
+
+        PostResponseDto post = postService.getPostByPostId(validUuid);
+
+        if (post == null) {
+            return ResponseHandler.generateResponse(
+                    HttpStatus.NOT_FOUND,
+                    "Post does not exist.",
+                    null
+            );
+        }
+
+        return ResponseHandler.generateResponse(HttpStatus.OK, "Post fetched successfully", post);
+    }
+
 }

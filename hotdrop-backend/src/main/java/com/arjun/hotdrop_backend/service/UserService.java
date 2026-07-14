@@ -5,6 +5,7 @@ import com.arjun.hotdrop_backend.dto.UserResponseOnSearchDto;
 import com.arjun.hotdrop_backend.entity.Post;
 import com.arjun.hotdrop_backend.entity.PostImage;
 import com.arjun.hotdrop_backend.entity.User;
+import com.arjun.hotdrop_backend.mapper.PostMapper;
 import com.arjun.hotdrop_backend.repository.PostRepo;
 import com.arjun.hotdrop_backend.repository.UserRepo;
 import lombok.RequiredArgsConstructor;
@@ -20,7 +21,7 @@ import java.util.List;
 public class UserService {
     private final PostRepo postRepo;
     private final UserRepo userRepo;
-
+private final PostMapper postMapper;
     public UserResponseOnSearchDto getUserByHotDropId(String hotdropId) {
 
         User currentUser = userRepo.findByHotdropId(hotdropId)
@@ -38,7 +39,7 @@ public class UserService {
 
                 if (post.getUser().getId().equals(currentUser.getId())) {
 
-                    PostResponseDto postDto = mapToPostResponseDto(post);
+                    PostResponseDto postDto = postMapper.toResponseDto(post);
 
                     userPosts.add(postDto);
                 }
@@ -58,25 +59,5 @@ public class UserService {
                 .leetcodeUrl(currentUser.getLeetcodeUrl()).posts(userPosts).build();
 
     }
-    public PostResponseDto mapToPostResponseDto(Post post){
-        List<String> imageUrls = new ArrayList<>();
 
-        for (PostImage image : post.getImages()) {
-            imageUrls.add(image.getUrl());
-        }
-        return PostResponseDto.builder()
-                .id(post.getId())
-                .title(post.getTitle())
-                .description(post.getDescription())
-                .projectUrl(post.getProjectUrl())
-                .shareUrl(post.getShareUrl())
-                .likeCount(post.getLikeCount())
-                .commentCount(post.getCommentCount())
-                .shareCount(post.getShareCount())
-                .createdAt(post.getCreatedAt())
-                .tags(post.getTags())
-                .imageUrls(imageUrls)
-                .isLinkDead(post.isLinkDead())
-                .build();
-    }
 }

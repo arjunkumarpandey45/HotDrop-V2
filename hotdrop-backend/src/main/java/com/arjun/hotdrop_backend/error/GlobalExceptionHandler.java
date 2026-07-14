@@ -12,13 +12,14 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
+import java.nio.file.AccessDeniedException;
 import java.time.LocalDateTime;
 import java.util.stream.Collectors;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
-    // 1. Single and Clean RuntimeException Handler (Merged & Fixed)
+
     @ExceptionHandler(RuntimeException.class)
     public ResponseEntity<ApiErrorResponseDto> handleRuntimeException(
             RuntimeException ex, HttpServletRequest request) {
@@ -26,15 +27,15 @@ public class GlobalExceptionHandler {
         ApiErrorResponseDto errorResponse = ApiErrorResponseDto.builder()
                 .status(HttpStatus.BAD_REQUEST.value())
                 .error("Bad Request / Business Logic Error")
-                .message(ex.getMessage()) // "OTP has expired", "Invalid OTP" etc.
-                .timestamp(LocalDateTime.now()) // Clean direct assign
+                .message(ex.getMessage())
+                .timestamp(LocalDateTime.now())
                 .path(request.getRequestURI())
                 .build();
 
         return new ResponseEntity<>(errorResponse, HttpStatus.BAD_REQUEST);
     }
 
-    // 2. BadCredentials Exception Handler
+
     @ExceptionHandler(BadCredentialsException.class)
     public ResponseEntity<ApiErrorResponseDto> handleBadCredentials(
             BadCredentialsException ex, HttpServletRequest request) {
@@ -50,7 +51,7 @@ public class GlobalExceptionHandler {
         return new ResponseEntity<>(errorResponse, HttpStatus.UNAUTHORIZED);
     }
 
-    // 3. Validation Exception Handler (Fixed string parsing bug)
+
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ApiErrorResponseDto> handleValidationExceptions(
             MethodArgumentNotValidException ex, HttpServletRequest request) {
@@ -72,7 +73,24 @@ public class GlobalExceptionHandler {
         return new ResponseEntity<>(errorResponse, HttpStatus.BAD_REQUEST);
     }
 
-    // 4. Fallback Global Exception Handler (For 500 errors)
+    @ExceptionHandler(AccessDeniedException.class)
+    public ResponseEntity<ApiErrorResponseDto> handleAccessDeniedException(
+            AccessDeniedException ex,
+            HttpServletRequest request) {
+
+        ApiErrorResponseDto errorResponse = ApiErrorResponseDto.builder()
+                .status(HttpStatus.FORBIDDEN.value())
+                .error(HttpStatus.FORBIDDEN.getReasonPhrase())
+                .message("Please login to access this resource.")
+                .timestamp(LocalDateTime.now())
+                .path(request.getRequestURI())
+                .build();
+
+        return new ResponseEntity<>(
+                errorResponse,
+                HttpStatus.FORBIDDEN
+        );
+    }
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ApiErrorResponseDto> handleGlobalException(
             Exception ex, HttpServletRequest request) {
