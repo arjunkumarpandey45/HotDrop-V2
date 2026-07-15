@@ -288,7 +288,7 @@ public class PostService {
         User user = userRepo.findByHotdropId(hotdropId)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
-       
+
         Comment comment = Comment.builder()
                 .text(text.trim())
                 .user(user)
@@ -314,4 +314,25 @@ public class PostService {
                 .user(userSummary)
                 .build();
     }
+   @Transactional
+    public void deleteComment(UUID commentId,String hotdropId){
+
+       Comment comment = commentRepo.findById(commentId)
+               .orElseThrow(() -> new RuntimeException("Comment not found"));
+        commentRepo.deleteCommentById(commentId);
+       User currentUser = userRepo.findByHotdropId(hotdropId)
+               .orElseThrow(() -> new RuntimeException("User not found"));
+       Post post = comment.getPost();
+       boolean isCommentOwner = comment.getUser().getId().equals(currentUser.getId());
+       boolean isPostOwner = post.getUser().getId().equals(currentUser.getId());
+
+       if (!isCommentOwner && !isPostOwner) {
+           throw new RuntimeException("You are not authorized to delete this comment");
+       }
+       commentRepo.delete(comment);
+
+      
+       post.setCommentCount(Math.max(0, post.getCommentCount() - 1));
+       postRepo.save(post);
+   }
 }

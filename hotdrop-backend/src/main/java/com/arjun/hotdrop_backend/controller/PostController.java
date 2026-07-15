@@ -145,11 +145,21 @@ public class PostController {
             @AuthenticationPrincipal UserDetails userDetails) {
         String hotdropId = userDetails.getUsername();
         String text = requestBody.get("text");
-        CommentResponseDto commentDto =   postService.addCommentToPost(postId,hotdropId,text);
+        CommentResponseDto commentDto = postService.addCommentToPost(postId, hotdropId, text);
         return ResponseHandler.generateResponse(
                 HttpStatus.CREATED,
                 "Comment added successfully! 🔥",
                 commentDto
         );
     }
+
+    @DeleteMapping("/delete-comment/{commentId}")
+    public ResponseEntity<ApiResponse<Void>> deleteComment(@PathVariable UUID commentId
+            , @AuthenticationPrincipal UserDetails userDetails) {
+        String hotdropId=userDetails.getUsername();
+        postService.deleteComment(commentId,hotdropId);
+        return ResponseHandler.generateResponse(HttpStatus.NO_CONTENT
+        ,"Comment Deleted Successfully from "+hotdropId+"'s post",null);
+    }
+
 }
