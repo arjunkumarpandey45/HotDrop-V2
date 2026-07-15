@@ -3,9 +3,10 @@ package com.arjun.hotdrop_backend.service;
 import com.arjun.hotdrop_backend.dto.PostResponseDto;
 import com.arjun.hotdrop_backend.dto.UserResponseOnSearchDto;
 import com.arjun.hotdrop_backend.entity.Post;
-import com.arjun.hotdrop_backend.entity.PostImage;
 import com.arjun.hotdrop_backend.entity.User;
+import com.arjun.hotdrop_backend.mapper.PostMapperWithID;
 import com.arjun.hotdrop_backend.mapper.PostMapper;
+import com.arjun.hotdrop_backend.mapper.UserMapper;
 import com.arjun.hotdrop_backend.repository.PostRepo;
 import com.arjun.hotdrop_backend.repository.UserRepo;
 import lombok.RequiredArgsConstructor;
@@ -21,6 +22,7 @@ import java.util.List;
 public class UserService {
     private final PostRepo postRepo;
     private final UserRepo userRepo;
+private  final UserMapper userMapper;
 private final PostMapper postMapper;
     public UserResponseOnSearchDto getUserByHotDropId(String hotdropId) {
 

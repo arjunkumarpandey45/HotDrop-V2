@@ -22,6 +22,7 @@ public class PostResponseDto {
     private String projectUrl;
     private String shareUrl;
     private boolean isLinkDead;
+    private boolean isLiked;
     private int likeCount;
     private int commentCount;
     private int shareCount;

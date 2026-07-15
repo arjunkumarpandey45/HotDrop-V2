@@ -10,11 +10,12 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.Authentication;
+
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+
 
 import java.util.UUID;
 
@@ -71,18 +72,22 @@ private JwtUtils jwtUtils;
     }
 
     @GetMapping("/feed")
-    public ResponseEntity<ApiResponse<PostListResponseDto>> getAllPosts(
-            @RequestParam(value = "page", defaultValue = "0", required = false) int page,
-            @RequestParam(value = "size", defaultValue = "10", required = false) int size,
-            @RequestParam(value = "sortBy", defaultValue = "created_at", required = false) String sortBy,
-            @RequestParam(value = "direction", defaultValue = "DESC", required = false) String direction,
-            @RequestParam(value = "search", required = false) String search) {
+    public ResponseEntity<ApiResponse<PostListResponseDto>> getFeed(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "created_at") String sortBy,
+            @RequestParam(defaultValue = "DESC") String direction,
+            @RequestParam(required = false) String search,
+            @AuthenticationPrincipal UserDetails userDetails) {
 
-        PostListResponseDto feed = postService.getAllPostsCompiledFeed(page, size, sortBy, direction, search);
+
+        String currentHotdropId = (userDetails != null) ? userDetails.getUsername() : null;
+
+        PostListResponseDto feed = postService.getAllPostsCompiledFeed(page, size, sortBy, direction, search, currentHotdropId);
 
         return ResponseHandler.generateResponse(
                 HttpStatus.OK,
-                "Feed data populated dynamically! 🚀",
+                "Feed compiled successfully",
                 feed
         );
     }
@@ -118,20 +123,17 @@ private JwtUtils jwtUtils;
 ;
 
     @PostMapping("/like/{postId}")
-    public ResponseEntity<ApiResponse<String>> likePost(
+    public ResponseEntity<ApiResponse<PostResponseDto>> likePost(
             @PathVariable UUID postId,
             @AuthenticationPrincipal UserDetails userDetails) {
 
-
-        String loggedInHotdropId = userDetails.getUsername();
-
-
-        String result = postService.toggleLikePost(postId, loggedInHotdropId);
+        String hotdropId = userDetails.getUsername();
+        PostResponseDto updatedPost = postService.toggleLike(postId, hotdropId);
 
         return ResponseHandler.generateResponse(
                 HttpStatus.OK,
-                "Action processed successfully",
-                result
+                "Action successful",
+                updatedPost
         );
     }
 }

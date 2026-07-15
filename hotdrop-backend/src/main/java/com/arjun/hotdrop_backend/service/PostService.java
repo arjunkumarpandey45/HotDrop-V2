@@ -8,6 +8,7 @@ import com.arjun.hotdrop_backend.entity.Like;
 import com.arjun.hotdrop_backend.entity.Post;
 import com.arjun.hotdrop_backend.entity.PostImage;
 import com.arjun.hotdrop_backend.entity.User;
+import com.arjun.hotdrop_backend.mapper.PostMapperWithID;
 import com.arjun.hotdrop_backend.mapper.PostMapper;
 import com.arjun.hotdrop_backend.repository.LikeRepo;
 import com.arjun.hotdrop_backend.repository.PostRepo;
@@ -21,7 +22,6 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.net.URI;
@@ -42,6 +42,7 @@ public class PostService {
     private final CloudinaryService cloudinaryService;
     private final List<String> userAgents;
     private final Random random;
+private final PostMapperWithID postMapperWithID;
 private final PostMapper postMapper;
 
     private final HttpClient httpClient = HttpClient.newBuilder()
@@ -150,7 +151,7 @@ private final PostMapper postMapper;
         String cleanTitle = sanitizeInput(dto.getTitle());
         String cleanDescription = sanitizeInput(dto.getDescription());
         String cleanProjectUrl = sanitizeInput(dto.getProjectUrl());
-        String uniqueShareUrl = SlugifyUtil.generateSlug(dto.getTitle());
+        String uniqueShareUrl = SlugifyUtil.generateSlug(dto.getTitle()) + "-" + System.currentTimeMillis();
 
         List<String> cleanedTags = new ArrayList<>();
         if (dto.getTags() != null && !dto.getTags().isBlank()) {
@@ -191,33 +192,7 @@ private final PostMapper postMapper;
         log.info("Project dropped successfully! Saved Post ID: {}", savedPost.getId());
 
 
-        return mapToResponseDto(savedPost);
-    }
-
-    private PostResponseDto mapToResponseDto(Post post) {
-        List<String> urls = post.getImages().stream()
-                .map(PostImage::getUrl)
-                .collect(Collectors.toList());
-
-        PostResponseDto.UserSummaryDto userSummary = PostResponseDto.UserSummaryDto.builder()
-                .id(post.getUser().getId())
-                .hotdropId(post.getUser().getHotdropId())
-
-                .profilePicture(post.getUser().getProfileImageUrl())
-                .build();
-
-        return PostResponseDto.builder()
-                .id(post.getId())
-                .title(post.getTitle())
-                .description(post.getDescription())
-                .projectUrl(post.getProjectUrl())
-                .shareUrl(post.getShareUrl())
-                .isLinkDead(post.isLinkDead())
-                .createdAt(post.getCreatedAt())
-                .tags(post.getTags())
-                .imageUrls(urls)
-                .creator(userSummary)
-                .build();
+        return postMapper.toResponseDto(savedPost);
     }
 
     @Transactional
@@ -243,7 +218,8 @@ private final PostMapper postMapper;
         log.info("Post ID: {} successfully evicted from core layers.", postId);
     }
 
-    public PostListResponseDto getAllPostsCompiledFeed(int page, int size, String sortBy, String direction, String search) {
+    public PostListResponseDto getAllPostsCompiledFeed(int page, int size, String sortBy, String direction, String search, String currentHotdropId) {
+
 
         Sort sort = direction.equalsIgnoreCase(Sort.Direction.ASC.name())
                 ? Sort.by(sortBy).ascending()
@@ -257,7 +233,7 @@ private final PostMapper postMapper;
 
 
         List<PostResponseDto> postResponseDto = postPage.getContent().stream()
-                .map(this::mapToResponseDto)
+                .map(post -> postMapperWithID.toResponseDto(post, currentHotdropId))
                 .toList();
 
 
@@ -283,42 +259,24 @@ private final PostMapper postMapper;
     }
 
     @Transactional
-    public String toggleLikePost(UUID postId, String hotdropId) {
-
-        Post post = postRepo.findById(postId)
-                .orElseThrow(() -> new RuntimeException("Post not found with ID: " + postId));
-
-
-        User user = userRepo.findByHotdropId(hotdropId)
-                .orElseThrow(() -> new RuntimeException("User not found with hotdropId: " + hotdropId));
+    public PostResponseDto toggleLike(UUID postId, String hotdropId) {
+        Post post = postRepo.findById(postId).orElseThrow();
+        User user = userRepo.findByHotdropId(hotdropId).orElseThrow();
 
         Optional<Like> existingLike = likeRepo.findByUserAndPost(user, post);
 
         if (existingLike.isPresent()) {
-
             likeRepo.delete(existingLike.get());
-
             post.setLikeCount(Math.max(0, post.getLikeCount() - 1));
-            postRepo.save(post);
-
-            log.info("Post unliked by user: {}", hotdropId);
-            return "Unliked successfully";
         } else {
-
-            Like newLike = Like.builder()
-                    .user(user)
-                    .post(post)
-                    .build();
-
-            likeRepo.save(newLike);
-
+            likeRepo.save(Like.builder().user(user).post(post).build());
             post.setLikeCount(post.getLikeCount() + 1);
-            postRepo.save(post);
-
-            log.info("Post liked by user: {}", hotdropId);
-            return "Liked successfully";
         }
-    }
 
+        postRepo.save(post);
+
+
+        return postMapperWithID.toResponseDto(post, hotdropId);
+    }
 
 }
