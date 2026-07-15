@@ -4,10 +4,12 @@ import com.arjun.hotdrop_backend.dto.CreatePostDto;
 import com.arjun.hotdrop_backend.dto.LinkVerificationResponseDto;
 import com.arjun.hotdrop_backend.dto.PostListResponseDto;
 import com.arjun.hotdrop_backend.dto.PostResponseDto;
+import com.arjun.hotdrop_backend.entity.Like;
 import com.arjun.hotdrop_backend.entity.Post;
 import com.arjun.hotdrop_backend.entity.PostImage;
 import com.arjun.hotdrop_backend.entity.User;
 import com.arjun.hotdrop_backend.mapper.PostMapper;
+import com.arjun.hotdrop_backend.repository.LikeRepo;
 import com.arjun.hotdrop_backend.repository.PostRepo;
 import com.arjun.hotdrop_backend.repository.UserRepo;
 import com.arjun.hotdrop_backend.utils.SlugifyUtil;
@@ -34,6 +36,7 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 @Slf4j
 public class PostService {
+    private final LikeRepo likeRepo;
     private final UserRepo userRepo;
     private final PostRepo postRepo;
     private final CloudinaryService cloudinaryService;
@@ -278,4 +281,44 @@ private final PostMapper postMapper;
 
         return postMapper.toResponseDto(post);
     }
+
+    @Transactional
+    public String toggleLikePost(UUID postId, String hotdropId) {
+
+        Post post = postRepo.findById(postId)
+                .orElseThrow(() -> new RuntimeException("Post not found with ID: " + postId));
+
+
+        User user = userRepo.findByHotdropId(hotdropId)
+                .orElseThrow(() -> new RuntimeException("User not found with hotdropId: " + hotdropId));
+
+        Optional<Like> existingLike = likeRepo.findByUserAndPost(user, post);
+
+        if (existingLike.isPresent()) {
+
+            likeRepo.delete(existingLike.get());
+
+            post.setLikeCount(Math.max(0, post.getLikeCount() - 1));
+            postRepo.save(post);
+
+            log.info("Post unliked by user: {}", hotdropId);
+            return "Unliked successfully";
+        } else {
+
+            Like newLike = Like.builder()
+                    .user(user)
+                    .post(post)
+                    .build();
+
+            likeRepo.save(newLike);
+
+            post.setLikeCount(post.getLikeCount() + 1);
+            postRepo.save(post);
+
+            log.info("Post liked by user: {}", hotdropId);
+            return "Liked successfully";
+        }
+    }
+
+
 }

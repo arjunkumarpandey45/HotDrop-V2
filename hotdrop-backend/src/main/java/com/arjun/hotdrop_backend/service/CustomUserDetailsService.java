@@ -1,8 +1,8 @@
 package com.arjun.hotdrop_backend.service;
 
+import com.arjun.hotdrop_backend.entity.User; 
 import com.arjun.hotdrop_backend.repository.UserRepo;
 import lombok.RequiredArgsConstructor;
-import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -17,7 +17,8 @@ public class CustomUserDetailsService implements UserDetailsService {
     @Override
     public UserDetails loadUserByUsername(String hotdropIdOrEmail) {
 
-        var user = userRepo.findByHotdropId(hotdropIdOrEmail)
+
+        User user = userRepo.findByHotdropId(hotdropIdOrEmail)
                 .or(() -> userRepo.findByEmail(hotdropIdOrEmail))
                 .orElseThrow(() ->
                         new UsernameNotFoundException(
@@ -25,7 +26,7 @@ public class CustomUserDetailsService implements UserDetailsService {
                         )
                 );
 
-        return User
+        return org.springframework.security.core.userdetails.User
                 .withUsername(user.getHotdropId())
                 .password(user.getPassword())
                 .authorities(

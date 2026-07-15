@@ -1,19 +1,17 @@
 package com.arjun.hotdrop_backend.controller;
 
 import com.arjun.hotdrop_backend.dto.*;
-
-import com.arjun.hotdrop_backend.entity.Post;
 import com.arjun.hotdrop_backend.scheduler.LinkTrackingScheduler;
 import com.arjun.hotdrop_backend.service.PostService;
+import com.arjun.hotdrop_backend.utils.JwtUtils;
 import com.arjun.hotdrop_backend.utils.ResponseHandler;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-
-
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -24,7 +22,7 @@ import java.util.UUID;
 @RequestMapping("/posts")
 @RequiredArgsConstructor
 public class PostController {
-
+private JwtUtils jwtUtils;
     private final PostService postService;
     private final LinkTrackingScheduler linkTrackingScheduler;
 
@@ -117,4 +115,23 @@ public class PostController {
         return ResponseHandler.generateResponse(HttpStatus.OK, "Post fetched successfully", post);
     }
 
+;
+
+    @PostMapping("/like/{postId}")
+    public ResponseEntity<ApiResponse<String>> likePost(
+            @PathVariable UUID postId,
+            @AuthenticationPrincipal UserDetails userDetails) {
+
+
+        String loggedInHotdropId = userDetails.getUsername();
+
+
+        String result = postService.toggleLikePost(postId, loggedInHotdropId);
+
+        return ResponseHandler.generateResponse(
+                HttpStatus.OK,
+                "Action processed successfully",
+                result
+        );
+    }
 }

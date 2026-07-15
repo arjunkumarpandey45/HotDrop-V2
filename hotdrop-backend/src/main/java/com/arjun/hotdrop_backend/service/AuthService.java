@@ -6,6 +6,7 @@ import com.arjun.hotdrop_backend.entity.Role;
 import com.arjun.hotdrop_backend.entity.User;
 import com.arjun.hotdrop_backend.enums.AuthProvider;
 import com.arjun.hotdrop_backend.enums.RoleType;
+import com.arjun.hotdrop_backend.mapper.UserMapper;
 import com.arjun.hotdrop_backend.repository.OtpVerificationRepo;
 import com.arjun.hotdrop_backend.repository.RefreshTokenRepo;
 import com.arjun.hotdrop_backend.repository.RoleRepo;
@@ -36,6 +37,8 @@ public class AuthService {
     private final AuthenticationManager authenticationManager;
     private final OtpVerificationRepo otpVerificationRepo;
 private final RefreshTokenRepo refreshTokenRepo;
+    private final UserMapper userMapper;
+
     public UserResponseDto register(RegisterRequestDto registerRequestDto) {
         Optional<User> existingUser =
                 userRepo.findByEmail(registerRequestDto.getEmail());
@@ -74,19 +77,7 @@ private final RefreshTokenRepo refreshTokenRepo;
         String token = jwtUtils.generateEmailVerificationToken(user.getEmail());
         String verificationLink = "http://localhost:8080/auth/verify-email?token=" + token;
         emailService.sendVerificationEmail(user.getEmail(), user.getFirstName(), verificationLink);
-        return UserResponseDto.builder()
-                .id(user.getId())
-                .firstName(user.getFirstName())
-                .lastName(user.getLastName())
-                .hotdropId(user.getHotdropId())
-                .email(user.getEmail())
-                .roles(
-                        user.getRoles()
-                                .stream()
-                                .map(role -> role.getRoleName().name())
-                                .collect(Collectors.toSet())
-                )
-                .build();
+        return userMapper.toResponseDto(user);
     }
 
 
