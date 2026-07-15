@@ -1,15 +1,10 @@
 package com.arjun.hotdrop_backend.service;
 
-import com.arjun.hotdrop_backend.dto.CreatePostDto;
-import com.arjun.hotdrop_backend.dto.LinkVerificationResponseDto;
-import com.arjun.hotdrop_backend.dto.PostListResponseDto;
-import com.arjun.hotdrop_backend.dto.PostResponseDto;
-import com.arjun.hotdrop_backend.entity.Like;
-import com.arjun.hotdrop_backend.entity.Post;
-import com.arjun.hotdrop_backend.entity.PostImage;
-import com.arjun.hotdrop_backend.entity.User;
-import com.arjun.hotdrop_backend.mapper.PostMapperWithID;
+import com.arjun.hotdrop_backend.dto.*;
+import com.arjun.hotdrop_backend.entity.*;
 import com.arjun.hotdrop_backend.mapper.PostMapper;
+import com.arjun.hotdrop_backend.mapper.PostMapperWithID;
+import com.arjun.hotdrop_backend.repository.CommentRepo;
 import com.arjun.hotdrop_backend.repository.LikeRepo;
 import com.arjun.hotdrop_backend.repository.PostRepo;
 import com.arjun.hotdrop_backend.repository.UserRepo;
@@ -42,8 +37,9 @@ public class PostService {
     private final CloudinaryService cloudinaryService;
     private final List<String> userAgents;
     private final Random random;
-private final PostMapperWithID postMapperWithID;
-private final PostMapper postMapper;
+    private final CommentRepo commentRepo;
+    private final PostMapperWithID postMapperWithID;
+    private final PostMapper postMapper;
 
     private final HttpClient httpClient = HttpClient.newBuilder()
             .followRedirects(HttpClient.Redirect.NORMAL)
@@ -247,13 +243,14 @@ private final PostMapper postMapper;
                 .build();
     }
 
-    public PostResponseDto getPostByPostId(UUID postId){
+    public PostResponseDto getPostByPostId(UUID postId) {
 
 
         Post post = postRepo.findById(postId).orElse(null);
         if (post == null) {
             return null;
-        };
+        }
+        ;
 
         return postMapper.toResponseDto(post);
     }
@@ -279,4 +276,42 @@ private final PostMapper postMapper;
         return postMapperWithID.toResponseDto(post, hotdropId);
     }
 
+    @Transactional
+    public CommentResponseDto addCommentToPost(UUID postId, String hotdropId, String text) {
+        if (text == null || text.isBlank()) {
+            throw new RuntimeException("Comment text cannot be empty");
+        }
+
+        Post post = postRepo.findById(postId)
+                .orElseThrow(() -> new RuntimeException("Post not found"));
+
+        User user = userRepo.findByHotdropId(hotdropId)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+       
+        Comment comment = Comment.builder()
+                .text(text.trim())
+                .user(user)
+                .post(post)
+                .build();
+        Comment savedComment = commentRepo.save(comment);
+
+
+        post.setCommentCount(post.getCommentCount() + 1);
+        postRepo.save(post);
+
+
+        var userSummary = PostResponseDto.UserSummaryDto.builder()
+                .id(user.getId())
+                .hotdropId(user.getHotdropId())
+                .profilePicture(user.getProfileImageUrl())
+                .build();
+
+        return CommentResponseDto.builder()
+                .id(savedComment.getId())
+                .text(savedComment.getText())
+                .createdAt(savedComment.getCreatedAt())
+                .user(userSummary)
+                .build();
+    }
 }

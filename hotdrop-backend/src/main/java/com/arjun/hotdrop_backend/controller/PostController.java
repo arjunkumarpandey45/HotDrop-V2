@@ -17,13 +17,14 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 
+import java.util.Map;
 import java.util.UUID;
 
 @RestController
 @RequestMapping("/posts")
 @RequiredArgsConstructor
 public class PostController {
-private JwtUtils jwtUtils;
+    private JwtUtils jwtUtils;
     private final PostService postService;
     private final LinkTrackingScheduler linkTrackingScheduler;
 
@@ -120,7 +121,7 @@ private JwtUtils jwtUtils;
         return ResponseHandler.generateResponse(HttpStatus.OK, "Post fetched successfully", post);
     }
 
-;
+    ;
 
     @PostMapping("/like/{postId}")
     public ResponseEntity<ApiResponse<PostResponseDto>> likePost(
@@ -134,6 +135,21 @@ private JwtUtils jwtUtils;
                 HttpStatus.OK,
                 "Action successful",
                 updatedPost
+        );
+    }
+
+    @PostMapping("/comment/{postId}")
+    public ResponseEntity<ApiResponse<CommentResponseDto>> comment(
+            @PathVariable UUID postId,
+            @RequestBody Map<String, String> requestBody,
+            @AuthenticationPrincipal UserDetails userDetails) {
+        String hotdropId = userDetails.getUsername();
+        String text = requestBody.get("text");
+        CommentResponseDto commentDto =   postService.addCommentToPost(postId,hotdropId,text);
+        return ResponseHandler.generateResponse(
+                HttpStatus.CREATED,
+                "Comment added successfully! 🔥",
+                commentDto
         );
     }
 }
