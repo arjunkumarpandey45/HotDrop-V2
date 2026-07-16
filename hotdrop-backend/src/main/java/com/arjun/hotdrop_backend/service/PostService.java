@@ -331,8 +331,38 @@ public class PostService {
        }
        commentRepo.delete(comment);
 
-      
+
        post.setCommentCount(Math.max(0, post.getCommentCount() - 1));
        postRepo.save(post);
    }
+
+    @Transactional(readOnly = true)
+    public PostListResponseDto getPostsByUserIdPaged(UUID userId, int page, int size, String currentHotdropId) {
+
+        if (!userRepo.existsById(userId)) {
+            throw new RuntimeException("Target user not found");
+        }
+
+
+        Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
+
+
+        Page<Post> postPage = postRepo.findByUserId(userId, pageable);
+
+
+        List<PostResponseDto> postResponseDtos = postPage.getContent().stream()
+                .map(post -> postMapperWithID.toResponseDto(post, currentHotdropId))
+                .toList();
+
+
+        return PostListResponseDto.builder()
+                .posts(postResponseDtos)
+                .pageNumber(postPage.getNumber())
+                .pageSize(postPage.getSize())
+                .totalElements(postPage.getTotalElements())
+                .totalPages(postPage.getTotalPages())
+                .isLastPage(postPage.isLast())
+                .build();
+    }
+
 }

@@ -161,5 +161,22 @@ public class PostController {
         return ResponseHandler.generateResponse(HttpStatus.NO_CONTENT
         ,"Comment Deleted Successfully from "+hotdropId+"'s post",null);
     }
+    @GetMapping("/user/{userId}")
+    public ResponseEntity<ApiResponse<PostListResponseDto>> getUserPosts(
+            @PathVariable UUID userId,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @AuthenticationPrincipal UserDetails userDetails) {
 
+
+        String currentHotdropId = (userDetails != null) ? userDetails.getUsername() : null;
+
+        PostListResponseDto paginatedPosts = postService.getPostsByUserIdPaged(userId, page, size, currentHotdropId);
+
+        return ResponseHandler.generateResponse(
+                HttpStatus.OK,
+                "User posts fetched successfully",
+                paginatedPosts
+        );
+    }
 }
