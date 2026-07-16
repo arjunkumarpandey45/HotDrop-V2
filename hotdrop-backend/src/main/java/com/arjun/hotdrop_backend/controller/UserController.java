@@ -20,12 +20,17 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class UserController {
    private final UserService userService;
-   @GetMapping("/{hotdropId}")
-    public ResponseEntity<ApiResponse<UserResponseOnSearchDto>> userByHotDropId(@PathVariable String hotdropId){
-       UserResponseOnSearchDto user=userService.getUserByHotDropId(hotdropId);
-       return ResponseHandler.generateResponse(
-               HttpStatus.OK,"User fetched successfully",user
-       );
+   @GetMapping("/search/{hotdropId}")
+   public ResponseEntity<ApiResponse<UserResponseOnSearchDto>> searchUserProfile(
+           @PathVariable String hotdropId,
+           @AuthenticationPrincipal UserDetails userDetails) {
+      String currentLoggedInHotdropId = (userDetails != null) ? userDetails.getUsername() : null;
+      UserResponseOnSearchDto searchDto = userService.getUserByHotDropId(hotdropId, currentLoggedInHotdropId);
+      return ResponseHandler.generateResponse(
+              HttpStatus.OK,
+              "User profile fetched successfully",
+              searchDto
+      );
    }
    @PostMapping("/follow")
    public ResponseEntity<ApiResponse<FollowResponseDto>> toggleFollow(

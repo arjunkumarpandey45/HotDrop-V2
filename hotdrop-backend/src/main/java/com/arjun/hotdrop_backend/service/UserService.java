@@ -17,8 +17,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
-import java.util.List;
+
 import java.util.Optional;
 import java.util.UUID;
 
@@ -31,42 +30,41 @@ public class UserService {
     private final FollowRepo followRepo;
 private  final UserMapper userMapper;
 private final PostMapper postMapper;
-    public UserResponseOnSearchDto getUserByHotDropId(String hotdropId) {
+    public UserResponseOnSearchDto getUserByHotDropId(String hotdropId, String currentLoggedInHotdropId) {
+
 
         User currentUser = userRepo.findByHotdropId(hotdropId)
                 .orElseThrow(() -> {
                     log.error("Search failed: HotdropId '{}' does not exist in database", hotdropId);
                     return new RuntimeException("User profile not found with ID: " + hotdropId);
                 });
-        List<PostResponseDto> userPosts = new ArrayList<>();
 
-        if (currentUser.getRoles() != null) {
 
-            List<Post> allPosts = postRepo.findByUserId(currentUser.getId());
+        int postCount = postRepo.countByUser(currentUser);
+        int followerCount = followRepo.countByFollowing(currentUser);
+        int followingCount = followRepo.countByFollower(currentUser);
 
-            for (Post post : allPosts) {
 
-                if (post.getUser().getId().equals(currentUser.getId())) {
+        boolean isOwner = currentLoggedInHotdropId != null && currentLoggedInHotdropId.equals(hotdropId);
 
-                    PostResponseDto postDto = postMapper.toResponseDto(post);
 
-                    userPosts.add(postDto);
-                }
-            }
-        }
         return UserResponseOnSearchDto.builder()
+                .id(currentUser.getId())
                 .firstName(currentUser.getFirstName())
                 .lastName(currentUser.getLastName())
                 .hotdropId(currentUser.getHotdropId())
-                .id(currentUser.getId())
                 .email(currentUser.getEmail())
                 .bio(currentUser.getBio())
                 .portfolioUrl(currentUser.getPortfolioUrl())
                 .profileImageUrl(currentUser.getProfileImageUrl())
                 .linkedinUrl(currentUser.getLinkedinUrl())
                 .githubUrl(currentUser.getGithubUrl())
-                .leetcodeUrl(currentUser.getLeetcodeUrl()).posts(userPosts).build();
-
+                .leetcodeUrl(currentUser.getLeetcodeUrl())
+                .postCount(postCount)
+                .followerCount(followerCount)
+                .followingCount(followingCount)
+                .isOwner(isOwner)
+                .build();
     }
     @Transactional
     public FollowResponseDto toggleFollowUser(UUID userIdToFollow, String currentHotdropId) {

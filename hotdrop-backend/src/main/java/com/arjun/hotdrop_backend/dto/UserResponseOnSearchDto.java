@@ -38,5 +38,10 @@ public class UserResponseOnSearchDto {
     private String leetcodeUrl;
 
     private String portfolioUrl;
-    private List<PostResponseDto> posts;
+
+    private int postCount;
+    private int followerCount;
+    private int followingCount;
+    private boolean isOwner;
+
 }

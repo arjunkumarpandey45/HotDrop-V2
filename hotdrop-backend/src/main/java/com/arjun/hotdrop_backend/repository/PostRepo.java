@@ -1,6 +1,7 @@
 package com.arjun.hotdrop_backend.repository;
 
 import com.arjun.hotdrop_backend.entity.Post;
+import com.arjun.hotdrop_backend.entity.User;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -32,6 +33,8 @@ public interface PostRepo extends JpaRepository<Post, UUID> {
             nativeQuery = true)
     Page<Post> searchFeedEngine(@Param("keyword") String keyword, Pageable pageable);
     List<Post> findByUserId(UUID userId);
+    int countByUser(User user);
+    List<Post> findByUserIdOrderByCreatedAtDesc(UUID userId);
 
 }
 
