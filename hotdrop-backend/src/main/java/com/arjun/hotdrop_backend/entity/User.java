@@ -48,7 +48,8 @@ public class User {
 
     @Column(length = 255)
     private String profileImageUrl;
-
+    @Column(length = 255)
+private  String profileImagePublicId;
     @Column(length = 255)
     private String githubUrl;
 

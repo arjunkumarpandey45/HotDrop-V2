@@ -4,10 +4,7 @@ import com.arjun.hotdrop_backend.dto.*;
 import com.arjun.hotdrop_backend.entity.*;
 import com.arjun.hotdrop_backend.mapper.PostMapper;
 import com.arjun.hotdrop_backend.mapper.PostMapperWithID;
-import com.arjun.hotdrop_backend.repository.CommentRepo;
-import com.arjun.hotdrop_backend.repository.LikeRepo;
-import com.arjun.hotdrop_backend.repository.PostRepo;
-import com.arjun.hotdrop_backend.repository.UserRepo;
+import com.arjun.hotdrop_backend.repository.*;
 import com.arjun.hotdrop_backend.utils.SlugifyUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -24,6 +21,7 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.time.Duration;
+import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -40,7 +38,7 @@ public class PostService {
     private final CommentRepo commentRepo;
     private final PostMapperWithID postMapperWithID;
     private final PostMapper postMapper;
-
+private final UserImageHistoryRepo userImageHistoryRepo;
     private final HttpClient httpClient = HttpClient.newBuilder()
             .followRedirects(HttpClient.Redirect.NORMAL)
             .connectTimeout(Duration.ofSeconds(10))
@@ -169,7 +167,7 @@ public class PostService {
 
         List<PostImage> postImages = new ArrayList<>();
         for (MultipartFile file : files) {
-            Map<String, String> cloudMeta = cloudinaryService.uploadImage(file);
+            Map<String, String> cloudMeta = cloudinaryService.uploadImageForPost(file);
 
             PostImage imageEntity = PostImage.builder()
                     .url(cloudMeta.get("url"))
@@ -197,23 +195,43 @@ public class PostService {
         Post post = postRepo.findById(postId)
                 .orElseThrow(() -> new RuntimeException("Post not found!"));
 
+        User user = userRepo.findByHotdropId(currentHotdropId)
+                .orElseThrow(() -> new RuntimeException("Authenticated user session data not found"));
 
         if (!post.getUser().getHotdropId().equals(currentHotdropId)) {
-            throw new RuntimeException("You can only delete your post!!");
+            throw new RuntimeException("Access Denied: You can only delete your own post!!");
         }
 
+        if (post.getImages() != null && !post.getImages().isEmpty()) {
+            List<UserImageHistory> archives = new ArrayList<>();
 
-        if (post.getImages() != null) {
             for (PostImage img : post.getImages()) {
-                cloudinaryService.deleteImage(img.getPublicId());
+                if (img.getUrl() != null && !img.getUrl().isBlank()) {
+
+
+                    String historyPublicId = (img.getPublicId() != null) ? img.getPublicId() : "";
+
+                    UserImageHistory historyRecord = UserImageHistory.builder()
+                            .user(user)
+                            .imageUrl(img.getUrl())
+                            .publicId(historyPublicId)
+                            .changedAt(LocalDateTime.now())
+                            .build();
+
+                    archives.add(historyRecord);
+                }
+            }
+
+            if (!archives.isEmpty()) {
+                userImageHistoryRepo.saveAll(archives);
+                log.info("Archived {} post image asset reference(s) to history table", archives.size());
             }
         }
 
-
+        // Cascade delete execution
         postRepo.delete(post);
         log.info("Post ID: {} successfully evicted from core layers.", postId);
     }
-
     public PostListResponseDto getAllPostsCompiledFeed(int page, int size, String sortBy, String direction, String search, String currentHotdropId) {
 
 

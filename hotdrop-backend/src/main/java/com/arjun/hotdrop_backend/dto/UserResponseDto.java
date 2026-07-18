@@ -17,6 +17,7 @@ public class UserResponseDto {
     private String email;
     private String bio;
     private String profileImageUrl;
+    private  String profileImagePublicId;
     private String githubUrl;
     private String linkedinUrl;
     private String leetcodeUrl;

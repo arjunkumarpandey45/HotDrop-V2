@@ -27,7 +27,7 @@ public class UserResponseOnSearchDto {
     private String bio;
 
     private String profileImageUrl;
-
+    private  String profileImagePublicId;
 
     private String githubUrl;
 

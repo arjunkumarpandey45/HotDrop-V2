@@ -1,19 +1,21 @@
 package com.arjun.hotdrop_backend.controller;
 
-import com.arjun.hotdrop_backend.dto.ApiResponse;
-import com.arjun.hotdrop_backend.dto.FollowResponseDto;
-import com.arjun.hotdrop_backend.dto.UserResponseOnSearchDto;
+import com.arjun.hotdrop_backend.dto.*;
 import com.arjun.hotdrop_backend.service.UserService;
 import com.arjun.hotdrop_backend.utils.ResponseHandler;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.Map;
 import java.util.UUID;
+
+import static org.springframework.http.MediaType.MULTIPART_FORM_DATA_VALUE;
 
 @RestController
 @RequestMapping("/users")
@@ -52,4 +54,40 @@ public class UserController {
               responseDto
       );
    }
+
+
+   @PutMapping(value = "/update/{userIdFromParams}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+   public ResponseEntity<ApiResponse<UserResponseDto>> updateProfile(
+           @PathVariable UUID userIdFromParams,
+           @ModelAttribute ProfileUpdateRequestDto requestDto, // Captures text data AND files seamlessly!
+           @AuthenticationPrincipal UserDetails userDetails) {
+      System.out.println("====== SYSTEM DEBUG START ======");
+      System.out.println("====== SYSTEM DEBUG START ======");
+      System.out.println("DTO Instance: " + (requestDto != null ? "INITIALIZED" : "NULL"));
+      if (requestDto != null) {
+         System.out.println("HotdropId from Form: " + requestDto.getHotdropId());
+         System.out.println("LeetcodeUrl from Form: " + requestDto.getLeetcodeUrl());
+         System.out.println("File Object Present: " + (requestDto.getProfilePicture() != null));
+         if (requestDto.getProfilePicture() != null) {
+            System.out.println("File Size: " + requestDto.getProfilePicture().getSize());
+            System.out.println("File Param Name: " + requestDto.getProfilePicture().getName());
+         }
+      }
+      System.out.println("====== SYSTEM DEBUG END ======");
+      String currentHotdropId = userDetails.getUsername();
+
+      // Pass the extraction model directly to the service layer engine
+      UserResponseDto updatedProfile = userService.updateProfileDetails(
+              userIdFromParams,
+              currentHotdropId,
+              requestDto
+      );
+      System.out.println("====== SYSTEM DEBUG END ======");
+      return ResponseHandler.generateResponse(
+              HttpStatus.OK,
+              "Profile updated successfully! ✨",
+              updatedProfile
+      );
+   }
+
 }

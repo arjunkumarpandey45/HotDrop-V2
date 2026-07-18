@@ -61,7 +61,7 @@ public class PostController {
         );
     }
 
-    @DeleteMapping("/{postId}/delete-post")
+    @DeleteMapping("/delete-post/{postId}")
     public ResponseEntity<ApiResponse<Void>> deletePost(@PathVariable UUID postId
             , @AuthenticationPrincipal UserDetails userDetails) {
         String currentHotdropId = userDetails.getUsername();

@@ -13,8 +13,8 @@ CREATE TABLE users
 
 
     profile_image_url VARCHAR(255),
-
-    github_url VARCHAR(255),
+   profile_image_public_id VARCHAR(255) ,
+        github_url VARCHAR(255),
     linkedin_url VARCHAR(255),
     leetcode_url VARCHAR(255),
     portfolio_url VARCHAR(255),
