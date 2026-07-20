@@ -59,7 +59,7 @@ public class UserController {
    @PutMapping(value = "/update/{userIdFromParams}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
    public ResponseEntity<ApiResponse<UserResponseDto>> updateProfile(
            @PathVariable UUID userIdFromParams,
-           @ModelAttribute ProfileUpdateRequestDto requestDto, // Captures text data AND files seamlessly!
+           @ModelAttribute ProfileUpdateRequestDto requestDto,
            @AuthenticationPrincipal UserDetails userDetails) {
       System.out.println("====== SYSTEM DEBUG START ======");
       System.out.println("====== SYSTEM DEBUG START ======");
@@ -76,7 +76,7 @@ public class UserController {
       System.out.println("====== SYSTEM DEBUG END ======");
       String currentHotdropId = userDetails.getUsername();
 
-      // Pass the extraction model directly to the service layer engine
+
       UserResponseDto updatedProfile = userService.updateProfileDetails(
               userIdFromParams,
               currentHotdropId,

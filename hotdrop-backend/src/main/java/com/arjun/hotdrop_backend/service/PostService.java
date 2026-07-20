@@ -382,5 +382,13 @@ private final UserImageHistoryRepo userImageHistoryRepo;
                 .isLastPage(postPage.isLast())
                 .build();
     }
+    // Post fetch by Slug logic
+    @Transactional(readOnly = true)
+    public PostResponseDto getPostByShareUrl(String shareUrl,String hotdropId) {
+        Post post = postRepo.findByShareUrl(shareUrl)
+                .orElseThrow(() -> new RuntimeException("Post not found with shareUrl: " + shareUrl));
 
+        return postMapperWithID
+                .toResponseDto(post,hotdropId);
+    }
 }

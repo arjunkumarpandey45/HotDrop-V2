@@ -179,7 +179,7 @@ public class UserService {
                 Map<String, String> uploadResult = cloudinary.uploadImageForProfileImage(profilePicture);
 
                      String newUploadedUrl = uploadResult.get("url");
-                String newPublicId = uploadResult.get("publicId"); // CamelCase mapping match!
+                String newPublicId = uploadResult.get("publicId"); 
 
                 if (newUploadedUrl == null || newPublicId == null) {
                     throw new RuntimeException("Keys mismatch: Retrieved null values from CloudinaryService response map.");
@@ -204,7 +204,8 @@ public class UserService {
         if (requestDto.getLeetcodeUrl() != null) currentUser.setLeetcodeUrl(requestDto.getLeetcodeUrl().trim());
         if (requestDto.getPortfolioUrl() != null) currentUser.setPortfolioUrl(requestDto.getPortfolioUrl().trim());
 
-        // 6. Force persistence transactions directly into PostgreSQL layers
+
+
         User updatedUser = userRepo.saveAndFlush(currentUser);
         log.info("Successfully flushed user data transition blocks for hotdropId: {}", updatedUser.getHotdropId());
 

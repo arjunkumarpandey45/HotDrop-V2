@@ -27,60 +27,42 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http)
             throws Exception {
-
-        http
-               
-                .csrf(AbstractHttpConfigurer::disable)
-
+        http.csrf(AbstractHttpConfigurer::disable)
                 .sessionManagement(sessionConfig ->
                         sessionConfig.sessionCreationPolicy(
-                                SessionCreationPolicy.STATELESS
-                        )
-                )
-
-
+                                SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-
-                        // Public endpoints
                         .requestMatchers(
                                 "/public/**",
                                 "/auth/**",
                                 "/actuator/health",
                                 "/"
                         ).permitAll()
-
-
+                        .requestMatchers(
+                                "/v3/api-docs",
+                                "/v3/api-docs/**",
+                                "/swagger-ui/**",
+                                "/swagger-ui.html"
+                        ).permitAll()
                         .requestMatchers(
                                 HttpMethod.GET,
                                 "/posts/feed"
                         ).permitAll()
-
-
                         .requestMatchers("/admin/**")
                         .hasRole("ADMIN")
-
-                        // Everything else requires authentication
                         .anyRequest()
                         .authenticated()
                 )
-
-
                 .exceptionHandling(exception -> exception
-
-
                         .authenticationEntryPoint(
                                 (request, response, authException) -> {
-
                                     response.setStatus(
                                             HttpStatus.UNAUTHORIZED.value()
                                     );
-
                                     response.setContentType(
                                             "application/json"
                                     );
-
                                     response.setCharacterEncoding("UTF-8");
-
                                     response.getWriter().write("""
                                             {
                                                 "status": 401,
@@ -93,21 +75,15 @@ public class SecurityConfig {
                                     ));
                                 }
                         )
-
-
                         .accessDeniedHandler(
                                 (request, response, accessDeniedException) -> {
-
                                     response.setStatus(
                                             HttpStatus.FORBIDDEN.value()
                                     );
-
                                     response.setContentType(
                                             "application/json"
                                     );
-
                                     response.setCharacterEncoding("UTF-8");
-
                                     response.getWriter().write("""
                                             {
                                                 "status": 403,
@@ -121,24 +97,18 @@ public class SecurityConfig {
                                 }
                         )
                 )
-
-
                 .addFilterBefore(
                         jwtAuthenticationFilter,
                         UsernamePasswordAuthenticationFilter.class
                 );
-
         return http.build();
     }
-
     @Bean
     public AuthenticationManager authenticationManager(
             AuthenticationConfiguration config)
             throws Exception {
-
         return config.getAuthenticationManager();
     }
-
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();

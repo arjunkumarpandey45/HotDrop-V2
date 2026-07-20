@@ -78,7 +78,6 @@ public class LinkTrackingScheduler {
                 }
             }
 
-            // Executive isolated transaction mapping
             log.info("💾 Flushing structural link updates down into PostgreSQL layer...");
             transactionTemplate.executeWithoutResult(status -> {
                 for (Post post : allPosts) {

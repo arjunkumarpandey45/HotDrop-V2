@@ -21,7 +21,7 @@ public interface PostRepo extends JpaRepository<Post, UUID> {
     @Modifying
     @Query("UPDATE Post p SET p.likeCount = CASE WHEN p.likeCount > 0 THEN p.likeCount - 1 ELSE 0 END WHERE p.id = :postId")
     void decrementLikeCount(@Param("postId") UUID postId);
-    Optional<Post> findByShareUrl(String shareUrl);
+
     @Query("SELECT p FROM Post p WHERE p.projectUrl IS NOT NULL AND p.projectUrl <> ''")
     List<Post> findAllWithActiveProjectLinks();
     @Query(value = "SELECT p.* FROM posts p WHERE :keyword IS NULL OR " +
@@ -35,6 +35,9 @@ public interface PostRepo extends JpaRepository<Post, UUID> {
     List<Post> findByUserId(UUID userId);
     int countByUser(User user);
     List<Post> findByUserIdOrderByCreatedAtDesc(UUID userId);
+    Optional<Post> findByShareUrl(String shareUrl);
+
+    boolean existsByShareUrl(String shareUrl);
 
 }
 

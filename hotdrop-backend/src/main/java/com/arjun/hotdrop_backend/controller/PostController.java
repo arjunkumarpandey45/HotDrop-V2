@@ -1,6 +1,7 @@
 package com.arjun.hotdrop_backend.controller;
 
 import com.arjun.hotdrop_backend.dto.*;
+import com.arjun.hotdrop_backend.entity.User;
 import com.arjun.hotdrop_backend.scheduler.LinkTrackingScheduler;
 import com.arjun.hotdrop_backend.service.PostService;
 import com.arjun.hotdrop_backend.utils.JwtUtils;
@@ -178,5 +179,12 @@ public class PostController {
                 "User posts fetched successfully",
                 paginatedPosts
         );
+    }
+    @GetMapping("/share/{shareUrl}")
+    public ResponseEntity<PostResponseDto> getPostByShareUrl(@PathVariable String shareUrl,@AuthenticationPrincipal UserDetails userDetails) {
+
+        String hotdropId=userDetails!=null?userDetails.getUsername():null;
+        PostResponseDto response = postService.getPostByShareUrl(shareUrl,hotdropId);
+        return ResponseEntity.ok(response);
     }
 }
