@@ -33,6 +33,8 @@ public class PostResponseDto {
     
     private UserSummaryDto creator;
 
+
+
     @Data
     @Builder
     @NoArgsConstructor

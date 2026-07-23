@@ -17,6 +17,9 @@ public interface LikeRepo extends JpaRepository<Like, UUID> {
     boolean existsByUserAndPost(User user, Post post);
 
 
+    // OR directly using IDs
+    boolean existsByUserIdAndPostId(UUID userId, UUID postId);
+
 
    ;
 }

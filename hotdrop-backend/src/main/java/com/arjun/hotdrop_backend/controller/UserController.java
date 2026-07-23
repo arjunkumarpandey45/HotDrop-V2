@@ -1,12 +1,14 @@
 package com.arjun.hotdrop_backend.controller;
 
 import com.arjun.hotdrop_backend.dto.*;
+import com.arjun.hotdrop_backend.entity.User;
 import com.arjun.hotdrop_backend.service.UserService;
 import com.arjun.hotdrop_backend.utils.ResponseHandler;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
@@ -88,6 +90,18 @@ public class UserController {
               "Profile updated successfully! ✨",
               updatedProfile
       );
+   }
+   @GetMapping("/me")
+   public ResponseEntity<ApiResponse<MeResponseDto>> getMe(Authentication authentication) {
+      if (authentication == null || !authentication.isAuthenticated()) {
+         return ResponseHandler.generateResponse(HttpStatus.UNAUTHORIZED, "User session not found or token missing", null);
+      }
+
+      // authentication.getName() returns the email/username set in JWT filter
+      String hotdropId = authentication.getName();
+      MeResponseDto response = userService.getMeByHotdropId(hotdropId);
+
+      return ResponseHandler.generateResponse(HttpStatus.OK, "User found successfully", response);
    }
 
 }

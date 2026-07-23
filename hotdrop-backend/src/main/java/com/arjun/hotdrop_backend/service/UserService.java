@@ -1,18 +1,11 @@
 package com.arjun.hotdrop_backend.service;
 
-import com.arjun.hotdrop_backend.dto.FollowResponseDto;
-import com.arjun.hotdrop_backend.dto.ProfileUpdateRequestDto;
-import com.arjun.hotdrop_backend.dto.UserResponseDto;
-import com.arjun.hotdrop_backend.dto.UserResponseOnSearchDto;
-import com.arjun.hotdrop_backend.entity.Follow;
-import com.arjun.hotdrop_backend.entity.User;
-import com.arjun.hotdrop_backend.entity.UserImageHistory;
+import com.arjun.hotdrop_backend.dto.*;
+import com.arjun.hotdrop_backend.entity.*;
+import com.arjun.hotdrop_backend.enums.RoleType;
 import com.arjun.hotdrop_backend.mapper.PostMapper;
 import com.arjun.hotdrop_backend.mapper.UserMapper;
-import com.arjun.hotdrop_backend.repository.FollowRepo;
-import com.arjun.hotdrop_backend.repository.PostRepo;
-import com.arjun.hotdrop_backend.repository.UserImageHistoryRepo;
-import com.arjun.hotdrop_backend.repository.UserRepo;
+import com.arjun.hotdrop_backend.repository.*;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -21,9 +14,8 @@ import org.springframework.web.multipart.MultipartFile;
 
 
 import java.time.LocalDateTime;
-import java.util.Map;
-import java.util.Optional;
-import java.util.UUID;
+import java.util.*;
+import java.util.stream.Collectors;
 
 
 @Service
@@ -36,6 +28,7 @@ public class UserService {
     private final FollowRepo followRepo;
     private final UserMapper userMapper;
     private final PostMapper postMapper;
+    private final LikeRepo likeRepo;
     private  final UserImageHistoryRepo userImageHistoryRepo;
 
     public UserResponseOnSearchDto getUserByHotDropId(String hotdropId, String currentLoggedInHotdropId) {
@@ -211,8 +204,93 @@ public class UserService {
 
         return userMapper.toResponseDto(updatedUser);
     }
+    @Transactional
+
+    public MeResponseDto getMeByHotdropId(String hotdropId) {
+        // 1. Fetch User by email
+        User user = userRepo.findByHotdropId(hotdropId)
+                .orElseThrow(() -> new RuntimeException("User not found with email: " + hotdropId));
+
+        // 2. Reuse the existing getMe logic via userId
+        return getMe(user.getId());
+    }
+    @Transactional
+    public MeResponseDto getMe(UUID userId) {
+
+        User user = userRepo.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found with ID: " + userId));
+// 2. Fetch Posts
+        List<Post> userPosts = postRepo.findByUserIdOrderByCreatedAtDesc(userId);;
+        int followerCount = followRepo.countByFollowing(user);
+        int followingCount = followRepo.countByFollower(user);
+        Set<String> roleNames = user.getRoles().stream()
+                .map(role -> role.getRoleName().name())
+
+                .collect(Collectors.toSet());
 
 
+        UserResponseDto userDto = UserResponseDto.builder()
+                .id(user.getId())
+                .firstName(user.getFirstName())
+                .lastName(user.getLastName())
+                .hotdropId(user.getHotdropId())
+                .email(user.getEmail())
+                .bio(user.getBio())
+                .profileImageUrl(user.getProfileImageUrl())
+                .profileImagePublicId(user.getProfileImagePublicId())
+                .githubUrl(user.getGithubUrl())
+                .linkedinUrl(user.getLinkedinUrl())
+                .leetcodeUrl(user.getLeetcodeUrl())
+                .portfolioUrl(user.getPortfolioUrl())
+                .emailVerified(user.isEmailVerified())
+                .postCount(userPosts.size())
+                .followerCount(followerCount)
+                .followingCount(followingCount)
+                .createdAt(user.getCreatedAt())
+                .roles(roleNames)
+                .build();
+
+
+
+
+        List<PostResponseDto> postDtos = userPosts.stream().map(post -> {
+
+
+            List<String> imageUrls = post.getImages().stream()
+                    .map(PostImage::getUrl)
+                    .collect(Collectors.toList());
+            boolean isLiked = likeRepo.existsByUserIdAndPostId(user.getId(), post.getId());
+
+            PostResponseDto.UserSummaryDto creator = PostResponseDto.UserSummaryDto.builder()
+                    .id(user.getId())
+                    .hotdropId(user.getHotdropId())
+                    .profilePicture(user.getProfileImageUrl())
+                    .build();
+
+            return PostResponseDto.builder()
+                    .id(post.getId())
+                    .title(post.getTitle())
+                    .description(post.getDescription())
+                    .projectUrl(post.getProjectUrl())
+                    .shareUrl(post.getShareUrl())
+                    .isLinkDead(post.isLinkDead())
+                    .isLiked(isLiked)
+                    .likeCount(post.getLikeCount())
+                    .commentCount(post.getCommentCount())
+                    .shareCount(post.getShareCount())
+                    .createdAt(post.getCreatedAt())
+                    .tags(post.getTags())
+                    .imageUrls(imageUrls)
+                    .creator(creator)
+                    .build();
+        }).toList();
+
+        // 6. Return combined MeResponseDto
+        return MeResponseDto.builder()
+                .user(userDto)
+                .posts(postDtos)
+                .build();
+    }
     private String extractPublicIdFromUrl(String url) {
         try {
             if (url == null || !url.contains("upload/")) return null;

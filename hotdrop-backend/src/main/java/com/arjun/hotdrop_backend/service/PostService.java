@@ -388,7 +388,7 @@ private final UserImageHistoryRepo userImageHistoryRepo;
         Post post = postRepo.findByShareUrl(shareUrl)
                 .orElseThrow(() -> new RuntimeException("Post not found with shareUrl: " + shareUrl));
 
-        return postMapperWithID
+          return postMapperWithID
                 .toResponseDto(post,hotdropId);
     }
 }

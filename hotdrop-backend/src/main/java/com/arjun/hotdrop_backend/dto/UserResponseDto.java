@@ -25,4 +25,7 @@ public class UserResponseDto {
     private boolean emailVerified;
     private LocalDateTime createdAt;
     private Set<String> roles;
+    private int postCount;
+    private int followingCount;
+    private int followerCount;
 }
