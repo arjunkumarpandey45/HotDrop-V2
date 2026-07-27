@@ -196,7 +196,7 @@ export default function Signup() {
                   value={formData.hotdropId}
                   onChange={handleChange}
                   required
-                  placeholder="arjun_pandey"
+                  placeholder="hotdropId"
                   className="w-full rounded-2xl border border-slate-200 bg-slate-50 py-2 pl-11 pr-4 outline-none transition focus:border-sky-500 focus:bg-white"
                 />
               </div>
