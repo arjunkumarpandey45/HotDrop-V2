@@ -55,8 +55,7 @@ const Login = () => {
         );
 
         setTimeout(() => {
-          navigate("/");
-          window.location.reload();
+          navigate("/", { replace: true });
         }, 1200);
       } else {
         showErrorToast(result.message || "Invalid credentials.");
