@@ -15,11 +15,11 @@ import {
   Sparkles,
 } from "lucide-react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { Slide, ToastContainer } from "react-toastify";
+
 
 import API from "../api/Api";
 import dp from "../assets/dp.jpg";
-import { useAuthStore } from "../store/useAuthStore";
+import { useAuthStore ,useUIStore} from "../store/useAuthStore";
 import { showSuccessToastForLogout } from "../toast/Toast";
 
 const Navbar = () => {
@@ -114,13 +114,15 @@ const Navbar = () => {
       setIsMobileSearchOpen(false);
     }
   };
+const { openCreatePost } = useUIStore();
 
   const handleCreateClick = () => {
     if (!isLoggedIn) {
       navigate("/signup");
+      
       return;
     }
-
+openCreatePost();
     navigate("/");
   };
 
@@ -152,14 +154,7 @@ const Navbar = () => {
         />
       )}
 
-      <ToastContainer
-        position="top-center"
-        autoClose={3000}
-        hideProgressBar
-        closeButton={false}
-        theme="light"
-        transition={Slide}
-      />
+      
 
       {/* Dock Structure Container */}
       <div className="relative z-50 mx-auto flex max-w-7xl items-center justify-between gap-2 sm:gap-3">

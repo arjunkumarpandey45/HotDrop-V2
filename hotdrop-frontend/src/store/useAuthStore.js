@@ -1,6 +1,10 @@
 import { create } from "zustand";
 import api from "../api/Api";
-
+export const useUIStore = create((set) => ({
+  isCreatePostOpen: false,
+  openCreatePost: () => set({ isCreatePostOpen: true }),
+  closeCreatePost: () => set({ isCreatePostOpen: false }),
+}));
 export const useAuthStore = create((set) => ({
   user: null,
   isLoggedIn: false,
