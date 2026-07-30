@@ -16,7 +16,7 @@ import { showErrorToast, showSuccessToast } from "../toast/Toast";
 
 const Login = () => {
   const navigate = useNavigate();
-  // 🎯 FIX 1: Destructure `checkAuth` from useAuthStore
+
   const { login, checkAuth } = useAuthStore();
 
   const [formData, setFormData] = useState({
@@ -48,7 +48,7 @@ const Login = () => {
       );
 
       if (result.success) {
-        // 🎯 FIX 2: Check auth safely before redirecting
+  
         if (typeof checkAuth === "function") {
           await checkAuth(true);
         }

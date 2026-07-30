@@ -173,7 +173,7 @@ const CreatePost = ({ isOpen, onClose }) => {
         images: [],
     });
 
-    // Lock body scroll when modal opens
+  
     useEffect(() => {
         document.body.style.overflow = isOpen ? "hidden" : "auto";
         return () => {
@@ -183,7 +183,7 @@ const CreatePost = ({ isOpen, onClose }) => {
 
     if (!isOpen) return null;
 
-    // Spring Boot Link Verification Endpoint Handler
+   
     const checkUrl = async (url) => {
         if (!url || url.trim() === "") return;
 
@@ -210,7 +210,7 @@ const CreatePost = ({ isOpen, onClose }) => {
             setFormData((prev) => ({ ...prev, isLinkDead: true }));
             setIsLinkVerified(false);
             showPostErrorToast("Please enter a valid URL");
-            return; // Backend call skipped!
+            return; 
         }
 
 
@@ -263,7 +263,7 @@ const CreatePost = ({ isOpen, onClose }) => {
         setFormData((prev) => ({ ...prev, images: updated }));
     };
 
-    // Form Validation Logic aligned with Spring Boot backend validations
+    
     const isFormValid =
         formData.title.trim() !== "" &&
         formData.description.trim() !== "" &&
@@ -294,7 +294,7 @@ const CreatePost = ({ isOpen, onClose }) => {
             });
 
             if (response.status === 201 || response.status === 200) {
-                // Pass newly created post object if returned by backend, or just call it
+               
                 const createdPost = response.data?.data || response.data;
                 useAuthStore.getState().updatePostCountLocally(createdPost);
 

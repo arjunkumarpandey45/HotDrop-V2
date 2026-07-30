@@ -9,11 +9,11 @@ function FollowersModal({ isOpen, onClose, userId, onFollowStatusChange }) {
   const [loading, setLoading] = useState(false);
   const [togglingId, setTogglingId] = useState(null);
 
-  // Logged in user details from Zustand Store
+  
   const { user: currentUser } = useAuthStore();
   const currentUserId = currentUser?.id || currentUser?._id || currentUser?.userId;
 
-  // Guard flag to prevent re-fetching infinite loops
+  
   const fetchedRef = useRef(false);
 
   useEffect(() => {
@@ -50,7 +50,6 @@ function FollowersModal({ isOpen, onClose, userId, onFollowStatusChange }) {
 
     const previousUsers = [...users];
 
-    // 🎯 Optimistic State Update
     setUsers((prev) =>
       prev.map((u) => {
         const uId = u.id || u._id || u.userId || u.targetUserId;
@@ -101,7 +100,7 @@ function FollowersModal({ isOpen, onClose, userId, onFollowStatusChange }) {
       }
     } catch (err) {
       console.error("Toggle follow failed inside Followers modal:", err);
-      setUsers(previousUsers); // Rollback on error
+      setUsers(previousUsers);
     } finally {
       setTogglingId(null);
     }
@@ -151,10 +150,10 @@ function FollowersModal({ isOpen, onClose, userId, onFollowStatusChange }) {
                 ? `${u.firstName} ${u.lastName || ""}`.trim()
                 : u.username || u.hotdropId || "Creator";
 
-              // Check if logged-in user is viewing themselves
+             
               const isSelf = String(uId) === String(currentUserId);
 
-              // 🎯 Check if logged-in user already follows this follower
+      
               const isFollowingBack = Boolean(
                 u.isFollowing ?? u.following ?? u.isFollowedByMe ?? false
               );

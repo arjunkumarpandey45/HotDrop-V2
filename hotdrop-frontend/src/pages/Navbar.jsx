@@ -40,10 +40,10 @@ const Navbar = () => {
 const { checkAuth } = useAuthStore();
 
   useEffect(() => {
-    // 🎯 Ensure page load par fresh user details fetch ho
+    
     checkAuth(true);
   }, []);
-  // Helper to extract user profile image URL safely across different backend fields
+
   const userAvatar =
     user?.profileImageUrl ||
     user?.profilePicture ||

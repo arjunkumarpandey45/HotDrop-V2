@@ -27,28 +27,27 @@ function AppLayout() {
   const location = useLocation();
   const checkAuth = useAuthStore((state) => state.checkAuth);
   
-  // UI store for CreatePost Modal
+
   const { isCreatePostOpen, closeCreatePost } = useUIStore();
 
-  // 🎯 Navbar SIRF tabhi dikhega jab path EXACTLY '/' hoga
+  
   const showNavbar = location.pathname === '/';
 
-  // 💡 Page refresh par Auth state load hona zaroori hai har page ke liye
+ 
   useEffect(() => {
     checkAuth();
   }, []);
 
   return (
     <div className="relative min-h-screen">
-      {/* Navbar sirf Home page ('/') par dikhega */}
+     
       {showNavbar && <Navbar />}
-      
-      {/* Agar Navbar hai to top padding do, varna clear full height layout */}
+       
       <main className={showNavbar ? "pt-16" : ""}>
         <Outlet />
       </main>
 
-      {/* Global Create Post Modal */}
+     
       <CreatePost isOpen={isCreatePostOpen} onClose={closeCreatePost} />
     </div>
   );

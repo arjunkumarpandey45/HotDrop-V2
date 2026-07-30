@@ -8,7 +8,7 @@ function FollowingModal({ isOpen, onClose, userId, onUnfollowSuccess }) {
   const [loading, setLoading] = useState(false);
   const [togglingId, setTogglingId] = useState(null);
   
-  // Guard flag to fetch data ONLY ONCE per modal open
+ 
   const fetchedRef = useRef(false);
 
   useEffect(() => {
@@ -45,7 +45,6 @@ function FollowingModal({ isOpen, onClose, userId, onUnfollowSuccess }) {
 
     const previousUsers = [...users];
 
-    // Optimistic UI Removal
     setUsers((prev) =>
       prev.filter((u) => {
         const uId = u.id || u.userId || u._id || u.targetUserId;
