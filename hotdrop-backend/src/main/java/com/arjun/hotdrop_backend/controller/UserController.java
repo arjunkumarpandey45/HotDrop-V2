@@ -1,7 +1,7 @@
 package com.arjun.hotdrop_backend.controller;
 
 import com.arjun.hotdrop_backend.dto.*;
-import com.hotdrop.dto.FollowerUserDto;
+
 import com.arjun.hotdrop_backend.service.UserService;
 import com.arjun.hotdrop_backend.utils.ResponseHandler;
 import lombok.RequiredArgsConstructor;

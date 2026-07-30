@@ -145,8 +145,10 @@ public class UserService {
             UUID userIdFromParams,
             String currentHotdropId,
             ProfileUpdateRequestDto requestDto) {
-
-
+        String hotdropId = requestDto.getHotdropId();
+        if (!hotdropId.matches("^[a-zA-Z0-9]+$")) {
+            throw new IllegalArgumentException("Hotdrop ID can only contain letters and numbers");
+        }
         User currentUser = userRepo.findByHotdropId(currentHotdropId)
                 .orElseThrow(() -> new RuntimeException("Authenticated user session data not found"));
 
@@ -160,7 +162,7 @@ public class UserService {
             if (!newHotdropId.equals(currentUser.getHotdropId())) {
                 boolean isTaken = userRepo.existsByHotdropId(newHotdropId);
                 if (isTaken) {
-                    throw new RuntimeException("Constraint Violation: HotdropId is already taken");
+                    throw new RuntimeException("HotdropId is already taken");
                 }
                 currentUser.setHotdropId(newHotdropId);
             }

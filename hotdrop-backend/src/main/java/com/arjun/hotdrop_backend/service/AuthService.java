@@ -58,12 +58,15 @@ private final RefreshTokenRepo refreshTokenRepo;
 
             throw new IllegalArgumentException("Email already exists");
         }
-
+        String hotdropId = registerRequestDto.getHotdropId();
         if (userRepo.existsByHotdropId(registerRequestDto.getHotdropId())) {
             throw new IllegalArgumentException("Hotdrop Id already exists");
         }
         if (userRepo.existsByEmail(registerRequestDto.getEmail())) {
             throw new IllegalArgumentException("Email already exists");
+        }
+        if (!hotdropId.matches("^[a-zA-Z0-9]+$")) {
+            throw new IllegalArgumentException("Hotdrop ID can only contain letters and numbers");
         }
         Role userRole = roleRepo.findByRoleName(RoleType.USER)
                 .orElseThrow(() -> new RuntimeException("Default role not found"));
