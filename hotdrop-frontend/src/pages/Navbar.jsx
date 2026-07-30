@@ -16,10 +16,9 @@ import {
 } from "lucide-react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 
-
 import API from "../api/Api";
 import dp from "../assets/dp.jpg";
-import { useAuthStore ,useUIStore} from "../store/useAuthStore";
+import { useAuthStore, useUIStore } from "../store/useAuthStore";
 import { showSuccessToastForLogout } from "../toast/Toast";
 
 const Navbar = () => {
@@ -38,6 +37,18 @@ const Navbar = () => {
   const { user, isLoggedIn, logout } = useAuthStore();
   const navigate = useNavigate();
   const location = useLocation();
+const { checkAuth } = useAuthStore();
+
+  useEffect(() => {
+    // 🎯 Ensure page load par fresh user details fetch ho
+    checkAuth(true);
+  }, []);
+  // Helper to extract user profile image URL safely across different backend fields
+  const userAvatar =
+    user?.profileImageUrl ||
+    user?.profilePicture ||
+    user?.avatar ||
+    dp;
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 20);
@@ -114,15 +125,15 @@ const Navbar = () => {
       setIsMobileSearchOpen(false);
     }
   };
-const { openCreatePost } = useUIStore();
+
+  const { openCreatePost } = useUIStore();
 
   const handleCreateClick = () => {
     if (!isLoggedIn) {
       navigate("/signup");
-      
       return;
     }
-openCreatePost();
+    openCreatePost();
     navigate("/");
   };
 
@@ -131,7 +142,7 @@ openCreatePost();
       logout();
       showSuccessToastForLogout();
       setIsProfileOpen(false);
-      navigate("/");
+      navigate("/login");
     } catch {
       console.error("Logout failed");
     }
@@ -154,12 +165,9 @@ openCreatePost();
         />
       )}
 
-      
-
       {/* Dock Structure Container */}
       <div className="relative z-50 mx-auto flex max-w-7xl items-center justify-between gap-2 sm:gap-3">
-        
-        {/* MOBILE FULL-WIDTH SEARCH BAR (Puri Screen Par Fail Jaayega) */}
+        {/* MOBILE FULL-WIDTH SEARCH BAR */}
         {isMobileSearchOpen ? (
           <div className="flex w-full items-center gap-2 rounded-2xl border border-slate-200/90 bg-white/95 p-2 shadow-2xl backdrop-blur-2xl md:hidden animate-in fade-in zoom-in-95 duration-150">
             <button
@@ -171,25 +179,29 @@ openCreatePost();
             </button>
 
             <div className="relative flex-1" ref={mobileSearchRef}>
-                  <input
+              <input
                 autoFocus
                 type="text"
                 placeholder="Search HotDrop ID..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 onKeyDown={handleSearch}
-                className="w-full rounded-xl border border-slate-200 bg-slate-50 px-2 py-2 Pl-9 pr-4 text-sm font-medium text-slate-800 placeholder-slate-400 outline-none focus:border-blue-500 focus:bg-white focus:ring-2 focus:ring-blue-100 transition"
+                className="w-full rounded-xl border border-slate-200 bg-slate-50 px-2 py-2 pl-3 pr-4 text-sm font-medium text-slate-800 placeholder-slate-400 outline-none focus:border-blue-500 focus:bg-white focus:ring-2 focus:ring-blue-100 transition"
               />
 
               {showSuggestions && suggestions.length > 0 && (
                 <div className="absolute left-0 right-0 top-full z-50 mt-2.5 overflow-hidden rounded-2xl border border-slate-100 bg-white p-1.5 shadow-2xl">
                   {suggestions.map((s) => (
                     <button
-                      key={s._id}
+                      key={s._id || s.id}
                       onClick={() => handleSuggestionClick(s.hotdropId)}
                       className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left transition hover:bg-blue-50/70"
                     >
-                      <img src={s.profilePicture || dp} alt={s.hotdropId} className="h-8 w-8 rounded-full object-cover ring-1 ring-slate-200" />
+                      <img
+                        src={s.profileImageUrl || s.profilePicture || s.avatar || dp}
+                        alt={s.hotdropId}
+                        className="h-8 w-8 rounded-full object-cover ring-1 ring-slate-200"
+                      />
                       <div className="flex flex-col min-w-0">
                         <span className="truncate text-sm font-semibold text-slate-900">@{s.hotdropId}</span>
                         <span className="truncate text-[10px] uppercase text-slate-400 font-medium">{s.username}</span>
@@ -202,7 +214,7 @@ openCreatePost();
           </div>
         ) : (
           <>
-            {/* BLOCK 1: Left Brand Pill with HOTDROP Text */}
+            {/* BLOCK 1: Left Brand Pill */}
             <div className="flex items-center gap-2 rounded-2xl border border-slate-200/80 bg-white/90 p-1.5 px-3 shadow-lg shadow-slate-200/50 backdrop-blur-xl">
               <button
                 onClick={() => setIsSidebarOpen(true)}
@@ -222,7 +234,6 @@ openCreatePost();
             <div className="hidden flex-1 max-w-lg md:flex justify-center" ref={desktopSearchRef}>
               <div className="relative w-full">
                 <div className="relative flex items-center rounded-2xl border border-slate-200/80 bg-white/90 p-1.5 shadow-lg shadow-slate-200/50 backdrop-blur-xl transition-within:border-blue-500 transition-within:ring-4 transition-within:ring-blue-100">
-                 
                   <input
                     type="text"
                     placeholder="Search creators by HotDrop ID..."
@@ -242,11 +253,15 @@ openCreatePost();
                     <div className="space-y-1">
                       {suggestions.map((s) => (
                         <button
-                          key={s._id}
+                          key={s._id || s.id}
                           onClick={() => handleSuggestionClick(s.hotdropId)}
                           className="group flex w-full items-center gap-3 rounded-xl px-3 py-2 text-left transition hover:bg-blue-50"
                         >
-                          <img src={s.profilePicture || dp} alt={s.hotdropId} className="h-8 w-8 rounded-full object-cover ring-1 ring-slate-200" />
+                          <img
+                            src={s.profileImageUrl || s.profilePicture || s.avatar || dp}
+                            alt={s.hotdropId}
+                            className="h-8 w-8 rounded-full object-cover ring-1 ring-slate-200"
+                          />
                           <div className="flex flex-col min-w-0 flex-1">
                             <span className="truncate text-sm font-semibold text-slate-900 group-hover:text-blue-600">@{s.hotdropId}</span>
                             <span className="truncate text-[10px] uppercase font-medium text-slate-400">{s.username}</span>
@@ -261,7 +276,6 @@ openCreatePost();
 
             {/* BLOCK 3: Right Actions Dock */}
             <div className="flex items-center gap-2 rounded-2xl border border-slate-200/80 bg-white/90 p-1.5 shadow-lg shadow-slate-200/50 backdrop-blur-xl">
-              {/* Mobile Search Toggle Button */}
               <button
                 onClick={() => setIsMobileSearchOpen(true)}
                 className="rounded-xl p-2 text-slate-600 transition hover:bg-slate-100 md:hidden"
@@ -270,7 +284,6 @@ openCreatePost();
                 <Search className="h-5 w-5" />
               </button>
 
-              {/* Drop Project CTA */}
               <button
                 onClick={handleCreateClick}
                 className="group relative flex items-center gap-2 overflow-hidden rounded-xl bg-gradient-to-r from-blue-600 via-blue-500 to-indigo-600 px-3 py-2 text-xs font-bold text-white shadow-md shadow-blue-500/20 transition-all hover:scale-[1.02] sm:px-4 sm:py-2.5 sm:text-sm"
@@ -279,7 +292,6 @@ openCreatePost();
                 <span className="hidden sm:inline">Drop Project</span>
               </button>
 
-              {/* Profile or Sign Up */}
               {!isLoggedIn ? (
                 <Link
                   to="/signup"
@@ -294,12 +306,17 @@ openCreatePost();
                     onClick={() => setIsProfileOpen((prev) => !prev)}
                     className="flex items-center gap-1 rounded-xl p-1 hover:bg-slate-100 transition"
                   >
-                    <div className="flex h-8 w-8 items-center justify-center overflow-hidden rounded-lg bg-blue-600 text-xs font-bold text-white">
-                      {user?.profilePicture ? (
-                        <img src={user.profilePicture} alt="Profile" className="h-full w-full object-cover" />
-                      ) : (
-                        user?.username?.charAt(0) || "U"
-                      )}
+                    {/* 🎯 Profile Picture Fix */}
+                    <div className="flex h-8 w-8 items-center justify-center overflow-hidden rounded-lg bg-slate-100 border border-slate-200 shrink-0">
+                      <img
+                        src={userAvatar}
+                        alt="Profile"
+                        className="h-full w-full object-cover"
+                        onError={(e) => {
+                          e.target.onerror = null;
+                          e.target.src = dp;
+                        }}
+                      />
                     </div>
                     <ChevronDown className={`h-3.5 w-3.5 text-slate-400 transition-transform ${isProfileOpen ? "rotate-180" : ""}`} />
                   </button>
@@ -307,9 +324,16 @@ openCreatePost();
                   {/* Profile Dropdown Card */}
                   {isProfileOpen && (
                     <div className="absolute right-0 z-50 mt-3 w-52 overflow-hidden rounded-2xl border border-slate-100 bg-white p-1.5 shadow-2xl">
-                      <div className="mb-1 border-b border-slate-100 px-3 py-2">
-                        <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Signed in as</p>
-                        <p className="truncate text-sm font-bold text-slate-900">@{user?.hotdropId || "dev"}</p>
+                      <div className="mb-1 border-b border-slate-100 px-3 py-2 flex items-center gap-2.5">
+                        <img
+                          src={userAvatar}
+                          alt="Avatar"
+                          className="w-8 h-8 rounded-full object-cover border border-slate-200"
+                        />
+                        <div className="min-w-0 flex flex-col">
+                          <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Signed in as</p>
+                          <p className="truncate text-sm font-bold text-slate-900">@{user?.hotdropId || "dev"}</p>
+                        </div>
                       </div>
 
                       <Link

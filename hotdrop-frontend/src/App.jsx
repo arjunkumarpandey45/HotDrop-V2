@@ -6,28 +6,15 @@ import Verify from './auth/Verify';
 import VerifyLink from './auth/VerifyLink';
 import Login from './auth/Login';
 import Navbar from './pages/Navbar';
-import CreatePost from './pages/createPost/CreatePost';// Added CreatePost component
-import { useAuthStore,useUIStore } from './store/useAuthStore';
+import CreatePost from './pages/createPost/CreatePost';
+import EditUserProfile from './profile/EditUserProfile';
+import { useAuthStore, useUIStore } from './store/useAuthStore';
 import { Slide, ToastContainer } from 'react-toastify';
-
-
-function ProfilePage() {
-  return (
-    <div className="min-h-screen bg-slate-50 pt-24">
-      <div className="mx-auto max-w-6xl px-4 py-10">
-        <div className="rounded-3xl border border-slate-200 bg-white p-8 shadow-sm">
-          <h1 className="text-2xl font-bold text-slate-900">Profile</h1>
-          <p className="mt-2 text-sm text-slate-600">Your profile page will be added here.</p>
-        </div>
-      </div>
-    </div>
-  );
-}
 
 function HomePage() {
   return (
     <div className="min-h-screen bg-slate-50 pt-24 px-4 max-w-7xl mx-auto">
-      {/* Feed or Home Content goes here */}
+      {/* Feed / Home Content */}
       <div className="rounded-3xl border border-slate-200 bg-white p-8 shadow-sm">
         <h1 className="text-2xl font-black text-slate-900">Explore Feed</h1>
         <p className="mt-2 text-sm text-slate-600">Live project drops will appear here.</p>
@@ -43,25 +30,21 @@ function AppLayout() {
   // UI store for CreatePost Modal
   const { isCreatePostOpen, closeCreatePost } = useUIStore();
 
+  // 🎯 Navbar SIRF tabhi dikhega jab path EXACTLY '/' hoga
+  const showNavbar = location.pathname === '/';
+
+  // 💡 Page refresh par Auth state load hona zaroori hai har page ke liye
   useEffect(() => {
-    const authPages = ['/login', '/signup', '/verify', '/auth/verify-email'];
-
-    if (authPages.includes(location.pathname)) {
-      return;
-    }
-
     checkAuth();
-  }, [checkAuth, location.pathname]);
-
-  const isAuthPage = ['/login', '/signup', '/verify', '/auth/verify-email'].includes(location.pathname);
+  }, []);
 
   return (
     <div className="relative min-h-screen">
-      {/* Show Navbar on non-auth routes */}
-      {!isAuthPage && <Navbar />}
+      {/* Navbar sirf Home page ('/') par dikhega */}
+      {showNavbar && <Navbar />}
       
-      {/* Route Content */}
-      <main>
+      {/* Agar Navbar hai to top padding do, varna clear full height layout */}
+      <main className={showNavbar ? "pt-16" : ""}>
         <Outlet />
       </main>
 
@@ -72,7 +55,6 @@ function AppLayout() {
 }
 
 function App() {
-  
   const router = createBrowserRouter([
     {
       element: <AppLayout />,
@@ -91,7 +73,7 @@ function App() {
         },
         {
           path: '/profile/me',
-          element: <ProfilePage />,
+          element: <EditUserProfile />,
         },
         {
           path: '/auth/verify-email',
@@ -105,9 +87,10 @@ function App() {
     },
   ]);
 
-  return <>
-  <RouterProvider router={router} />
-  <ToastContainer
+  return (
+    <>
+      <RouterProvider router={router} />
+      <ToastContainer
         position="top-center"
         autoClose={1000}
         style={{ zIndex: 999999 }} 
@@ -115,7 +98,9 @@ function App() {
         closeButton={false}
         theme="light"
         transition={Slide}
-      /></>;
+      />
+    </>
+  );
 }
 
 export default App;

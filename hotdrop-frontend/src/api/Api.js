@@ -26,29 +26,38 @@ API.interceptors.response.use(
   async (error) => {
     const originalRequest = error.config;
 
-    // Agar access token expire ho gaya
+    // 💡 GUARD 1: Agar endpoint khud auth refresh ya login/signup ho, to retry loop me mat ghuso
     if (
-      error.response?.status === 401 &&
-      !originalRequest._retry &&
-      !originalRequest.url.includes("/auth/refresh")
+      !originalRequest ||
+      originalRequest.url?.includes("/auth/refresh") ||
+      originalRequest.url?.includes("/auth/login") ||
+      originalRequest.url?.includes("/auth/signup")
     ) {
+      return Promise.reject(error);
+    }
+
+    // 💡 GUARD 2: Agar Access token expire hua ho (401 status code)
+    if (error.response?.status === 401 && !originalRequest._retry) {
       originalRequest._retry = true;
 
       try {
         console.log("🔄 Access Token Expired. Refreshing...");
 
-        // Refresh token cookie automatically jayegi
+        // Cookie path parameters ke sath refresh endpoint call
         await API.post("/auth/refresh");
 
-        console.log("✅ Token Refreshed");
+        console.log("✅ Token Refreshed Successfully");
 
-        // Original request dubara chalegi
+        // Original request retry karo
         return API(originalRequest);
       } catch (refreshError) {
-        console.log("❌ Refresh Token Expired");
+        console.warn("❌ Refresh Token Expired or Invalid");
 
-        // Login page par bhej do
-        window.location.href = "/login";
+        // 💡 FIX: Force window.location.href REPLACEMENT ki jagah safe state clear karo
+        // Isse browser infinite reload loop se bach jata hai
+        if (!window.location.pathname.startsWith("/login")) {
+          window.location.replace("/login");
+        }
 
         return Promise.reject(refreshError);
       }
