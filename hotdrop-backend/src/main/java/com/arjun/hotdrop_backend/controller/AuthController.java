@@ -29,11 +29,12 @@ public class AuthController {
     }
 
     @GetMapping("/verify-email")
-    public ResponseEntity<String> verifyEmail(@RequestParam("token") String token) {
-        authService.verifyEmail(token);
-        return ResponseEntity.ok("Email verified successfully!");
-    }
+    public ResponseEntity<String> verifyEmail(@RequestParam String token) {
 
+        String message = authService.verifyEmail(token);
+
+        return ResponseEntity.ok(message);
+    }
     @PostMapping("/login")
     public ResponseEntity<LoginResponseDto> login(@Valid @RequestBody LoginRequestDto loginRequestDto) {
         String jwtToken = authService.login(loginRequestDto);

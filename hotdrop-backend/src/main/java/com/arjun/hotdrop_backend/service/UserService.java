@@ -2,7 +2,7 @@ package com.arjun.hotdrop_backend.service;
 
 import com.arjun.hotdrop_backend.dto.*;
 import com.arjun.hotdrop_backend.entity.*;
-import com.arjun.hotdrop_backend.enums.RoleType;
+
 import com.arjun.hotdrop_backend.mapper.PostMapper;
 import com.arjun.hotdrop_backend.mapper.UserMapper;
 import com.arjun.hotdrop_backend.repository.*;
@@ -109,7 +109,37 @@ public class UserService {
                 .targetUserId(targetUser.getId())
                 .build();
     }
+    public List<FollowerUserDto> getUserFollowers(UUID profileUserId, String currentHotdropId) {
+        User targetProfileUser = userRepo.findById(profileUserId)
+                .orElseThrow(() -> new RuntimeException("Profile user not found"));
 
+        User currentUser = null;
+        if (currentHotdropId != null && !currentHotdropId.isBlank()) {
+            currentUser = userRepo.findByHotdropId(currentHotdropId).orElse(null);
+        }
+
+        List<Follow> followersList = followRepo.findByFollowing(targetProfileUser);
+        final User loggedInUser = currentUser;
+
+        return followersList.stream().map(follow -> {
+            User followerUser = follow.getFollower();
+
+            // Check if logged-in user follows this follower
+            boolean isFollowingBack = false;
+            if (loggedInUser != null) {
+                isFollowingBack = followRepo.existsByFollowerAndFollowing(loggedInUser, followerUser);
+            }
+
+            return FollowerUserDto.builder()
+                    .id(followerUser.getId())
+                    .hotdropId(followerUser.getHotdropId())
+                    .firstName(followerUser.getFirstName())
+                    .lastName(followerUser.getLastName())
+                    .profileImageUrl(followerUser.getProfileImageUrl())
+                    .isFollowing(isFollowingBack)
+                    .build();
+        }).collect(Collectors.toList());
+    }
     @Transactional
     public UserResponseDto updateProfileDetails(
             UUID userIdFromParams,
@@ -305,8 +335,29 @@ public class UserService {
         }
     }
 
+    // 1. Get Followers (Jo log user ko follow kar rahe hain)
+    public List<UserResponseDto> getFollowersList(UUID userId) {
+        User targetUser = userRepo.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found"));
 
+        return followRepo.findAllByFollowing(targetUser).stream()
+                // 💡 Basic Mapper mapping (No redundant count queries hit)
+                .map(follow -> userMapper.toBasicResponseDto(follow.getFollower()))
+                .collect(Collectors.toList());
+    }
 
+    // 2. Get Following (Jin logon ko user follow kar raha hai)
+    public List<UserResponseDto> getFollowingList(UUID userId) {
+        User currentUser = userRepo.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        List<Follow> follows = followRepo.findAllByFollower(currentUser);
+
+        return follows.stream()
+                // 💡 FIX: Basic mapper use karo taaki following list items ke liye extra count queries hit na hon
+                .map(follow -> userMapper.toBasicResponseDto(follow.getFollowing()))
+                .collect(Collectors.toList());
+    }
 
 }
 

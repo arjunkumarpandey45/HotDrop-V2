@@ -2,6 +2,7 @@ package com.arjun.hotdrop_backend.config;
 
 import com.arjun.hotdrop_backend.filter.JwtAuthenticationFilter;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -26,7 +27,8 @@ import java.util.List;
 @EnableWebSecurity
 @RequiredArgsConstructor
 public class SecurityConfig {
-
+@Value("${FRONTEND_URL}")
+private String frontendURL;
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
 
     @Bean
@@ -117,7 +119,7 @@ public class SecurityConfig {
     }
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(List.of("http://localhost:5173")); // Vite React Dev Server
+        configuration.setAllowedOrigins(List.of(frontendURL)); // Vite React Dev Server
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(List.of("*"));
         configuration.setAllowCredentials(true);

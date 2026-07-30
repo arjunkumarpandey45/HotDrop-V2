@@ -14,6 +14,7 @@ import com.arjun.hotdrop_backend.repository.UserRepo;
 import com.arjun.hotdrop_backend.utils.JwtUtils;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -29,6 +30,8 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 public class AuthService {
+    @Value("${FRONTEND_URL}")
+    private String frontendURL;
     private final UserRepo userRepo;
     private final RoleRepo roleRepo;
     private final PasswordEncoder passwordEncoder;
@@ -75,28 +78,32 @@ private final RefreshTokenRepo refreshTokenRepo;
 
 
         String token = jwtUtils.generateEmailVerificationToken(user.getEmail());
-        String verificationLink = "http://localhost:8080/auth/verify-email?token=" + token;
+        String verificationLink = frontendURL+"/auth/verify-email?token=" + token;
         emailService.sendVerificationEmail(user.getEmail(), user.getFirstName(), verificationLink);
         return userMapper.toResponseDto(user);
     }
 
 
     @Transactional
-    public void verifyEmail(String token) {
+    public String verifyEmail(String token) {
+
         if (!jwtUtils.validateEmailToken(token)) {
             throw new IllegalArgumentException("Invalid or expired verification token.");
         }
 
         String email = jwtUtils.getEmailFromToken(token);
+
         User user = userRepo.findByEmail(email)
                 .orElseThrow(() -> new IllegalArgumentException("User not found."));
 
         if (user.isEmailVerified()) {
-            throw new IllegalStateException("Email is already verified.");
+            return "Email is already verified.";
         }
 
         user.setEmailVerified(true);
         userRepo.save(user);
+
+        return "Email verified successfully!";
     }
 
     public String login(LoginRequestDto loginRequestDto) {

@@ -1,7 +1,7 @@
 package com.arjun.hotdrop_backend.controller;
 
 import com.arjun.hotdrop_backend.dto.*;
-import com.arjun.hotdrop_backend.entity.User;
+import com.hotdrop.dto.FollowerUserDto;
 import com.arjun.hotdrop_backend.service.UserService;
 import com.arjun.hotdrop_backend.utils.ResponseHandler;
 import lombok.RequiredArgsConstructor;
@@ -14,6 +14,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -57,7 +58,19 @@ public class UserController {
       );
    }
 
+   @GetMapping("/{userId}/followers")
+   public ResponseEntity<List<FollowerUserDto>> getFollowers(
+           @PathVariable UUID userId,
+           @AuthenticationPrincipal UserDetails userDetails) {
 
+
+      String currentHotdropId = (userDetails != null) ? userDetails.getUsername() : null;
+
+
+      List<FollowerUserDto> followers = userService.getUserFollowers(userId, currentHotdropId);
+
+      return ResponseEntity.ok(followers);
+   }
    @PutMapping(value = "/update/{userIdFromParams}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
    public ResponseEntity<ApiResponse<UserResponseDto>> updateProfile(
            @PathVariable UUID userIdFromParams,
@@ -104,4 +117,9 @@ public class UserController {
       return ResponseHandler.generateResponse(HttpStatus.OK, "User found successfully", response);
    }
 
+
+   @GetMapping("/{userId}/following")
+   public ResponseEntity<List<UserResponseDto>> getFollowing(@PathVariable UUID userId) {
+      return ResponseEntity.ok(userService.getFollowingList(userId));
+   }
 }
