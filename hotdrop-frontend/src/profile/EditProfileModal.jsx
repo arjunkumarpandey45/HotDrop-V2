@@ -11,6 +11,7 @@ import {
   Sparkles,
 } from "lucide-react";
 import { useState, useEffect } from "react";
+import { Slide, ToastContainer } from "react-toastify";
 
 
 const Github = ({ size = 14, className = "" }) => (
@@ -175,6 +176,14 @@ function EditProfileModal({ isOpen, onClose, user, handleUpdate, loading }) {
       className="fixed inset-0 bg-slate-900/60 backdrop-blur-md z-[100] flex items-center justify-center p-3 sm:p-4 animate-in fade-in duration-200"
       onClick={onClose}
     >
+      <ToastContainer
+        position="top-center"
+        autoClose={1500}
+        hideProgressBar
+          style={{ zIndex: 999999 }} 
+        transition={Slide}
+        closeButton={false}
+      />
       <div
         className="bg-white w-full max-w-lg rounded-3xl shadow-2xl flex flex-col max-h-[90vh] overflow-hidden border border-slate-100 animate-in zoom-in-95 duration-200"
         onClick={(e) => e.stopPropagation()}

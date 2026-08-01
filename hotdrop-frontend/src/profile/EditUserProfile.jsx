@@ -12,7 +12,9 @@ import FollowingModal from "./FollowingModal";
 import ShareProfileModal from "./ShareProfileModal";
 import dp from "../assets/dp.jpg";
 
-const Github = ({ size = 18, className = "" }) => (
+
+
+const Github = ({ size = 20, className = "" }) => (
   <svg
     width={size}
     height={size}
@@ -29,7 +31,7 @@ const Github = ({ size = 18, className = "" }) => (
   </svg>
 );
 
-const Linkedin = ({ size = 18, className = "" }) => (
+const Linkedin = ({ size = 20, className = "" }) => (
   <svg
     width={size}
     height={size}
@@ -47,7 +49,7 @@ const Linkedin = ({ size = 18, className = "" }) => (
   </svg>
 );
 
-const Leetcode = ({ size = 18, className = "" }) => (
+const Leetcode = ({ size = 20, className = "" }) => (
   <svg
     width={size}
     height={size}
@@ -75,17 +77,17 @@ function EditUserProfile() {
 
   if (isCheckingAuth) {
     return (
-      <div className="flex justify-center items-center h-48">
-        <Loader2 className="animate-spin text-blue-600" size={24} />
+      <div className="flex justify-center items-center h-60">
+        <Loader2 className="animate-spin text-blue-600" size={28} />
       </div>
     );
   }
 
   if (!user && !isLoggedIn) {
     return (
-      <div className="flex flex-col items-center justify-center h-48 gap-3">
-        <p className="text-slate-500 text-xs font-medium">Please login to view profile</p>
-        <a href="/login" className="px-3 py-1.5 bg-blue-600 text-white rounded-lg text-xs font-semibold">
+      <div className="flex flex-col items-center justify-center h-60 gap-4">
+        <p className="text-slate-500 text-sm font-medium">Please login to view profile</p>
+        <a href="/login" className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-semibold">
           Login
         </a>
       </div>
@@ -131,7 +133,6 @@ function EditUserProfile() {
         setUser(updatedUserObj);
       }
 
-      // 🎯 Toast trigger
       showProfileUpdatedToast("Profile details updated!");
       setShowEditModal(false);
     } catch (err) {
@@ -152,16 +153,16 @@ function EditUserProfile() {
     : user?.username || "HotDrop Creator";
 
   return (
-    <div className="w-full flex justify-center p-2 sm:p-5 bg-white sm:bg-[#F9FAFB]">
-      
+    <div className="w-full flex justify-center p-3 sm:p-8 bg-white sm:bg-[#F9FAFB]">
+     
       {/* 📱 MOBILE DESIGN */}
-      <div className="block sm:hidden w-full max-w-md bg-white border border-gray-200 rounded-2xl p-4 shadow-sm relative">
+      <div className="block sm:hidden w-full max-w-lg bg-white border border-gray-200 rounded-2xl p-5 shadow-sm relative">
         
         {/* HEADER ROW */}
-        <div className="flex justify-between items-center pb-3 mb-3 border-b border-gray-100 gap-2">
-          <div className="flex items-center gap-1.5 select-none shrink-0">
-            <div className="w-2 h-2 bg-orange-500 rounded-full animate-pulse"></div>
-            <span className="text-xs font-black tracking-tight flex items-center">
+        <div className="flex justify-between items-center pb-3.5 mb-4 border-b border-gray-100 gap-2">
+          <div className="flex items-center gap-2 select-none shrink-0">
+            <div className="w-2.5 h-2.5 bg-orange-500 rounded-full animate-pulse"></div>
+            <span className="text-sm font-black tracking-tight flex items-center">
               <span className="text-orange-500">HOT</span>
               <span className="text-blue-600">DROP</span>
             </span>
@@ -171,38 +172,38 @@ function EditUserProfile() {
             @{user?.hotdropId || "hotdrop"}
           </span>
 
-          <div className="flex items-center gap-1 shrink-0">
+          <div className="flex items-center gap-1.5 shrink-0">
             <button
               onClick={() => setShowEmailModal(true)}
-              className="w-8 h-8 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center"
+              className="w-9 h-9 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center"
               title="Contact"
             >
-              <Mail size={17} />
+              <Mail size={18} />
             </button>
             <button
               onClick={() => setShowShareModal(true)}
-              className="p-1.5 rounded-full text-white bg-emerald-500 hover:bg-emerald-600 transition"
+              className="p-2 rounded-full text-white bg-emerald-500 hover:bg-emerald-600 transition"
               title="Share"
             >
-              <Share2 size={12} />
+              <Share2 size={14} />
             </button>
             <button
               onClick={() => setShowEditModal(true)}
-              className="p-1.5 rounded-full text-white bg-blue-600 hover:bg-blue-700 transition"
+              className="p-2 rounded-full text-white bg-blue-600 hover:bg-blue-700 transition"
               title="Edit Profile"
             >
-              <Edit size={12} />
+              <Edit size={14} />
             </button>
           </div>
         </div>
 
         {/* Stats Row */}
-        <div className="flex items-center justify-between gap-3">
+        <div className="flex items-center justify-between gap-4">
           <div
             className="shrink-0 cursor-pointer group"
             onClick={() => setShowFullImage(true)}
           >
-            <div className="w-14 h-14 rounded-full border border-gray-200 overflow-hidden bg-gray-50">
+            <div className="w-16 h-16 rounded-full border border-gray-200 overflow-hidden bg-gray-50">
               <img
                 src={profileAvatar}
                 alt="Profile Avatar"
@@ -231,10 +232,10 @@ function EditUserProfile() {
                 disabled={!stat.action}
                 className="flex flex-col items-center"
               >
-                <span className="text-sm font-bold text-gray-900 leading-none">
+                <span className="text-base font-bold text-gray-900 leading-none">
                   {stat.count}
                 </span>
-                <span className="text-[10px] text-gray-500 font-normal mt-0.5">
+                <span className="text-xs text-gray-500 font-medium mt-1">
                   {stat.label}
                 </span>
               </button>
@@ -243,18 +244,18 @@ function EditUserProfile() {
         </div>
 
         {/* Details */}
-        <div className="mt-2.5 flex flex-col">
-          <h1 className="text-xs font-bold text-gray-900 leading-tight">
+        <div className="mt-3.5 flex flex-col">
+          <h1 className="text-sm font-bold text-gray-900 leading-tight">
             {fullName}
           </h1>
 
-          <p className="text-[11px] text-gray-700 leading-snug font-normal whitespace-pre-line pt-1">
+          <p className="text-xs text-gray-700 leading-relaxed font-normal whitespace-pre-line pt-1">
             {user?.bio || "Digital Creator & Developer 🚀"}
           </p>
         </div>
 
         {/* Social Pills */}
-        <div className="flex flex-wrap gap-1.5 mt-3 pt-2 border-t border-gray-100">
+        <div className="flex flex-wrap gap-2 mt-4 pt-2.5 border-t border-gray-100">
           {[
             { key: "github", val: user?.githubUrl || user?.github, Icon: Github, label: "GitHub" },
             { key: "linkedin", val: user?.linkedinUrl || user?.linkedin, Icon: Linkedin, label: "LinkedIn" },
@@ -267,9 +268,9 @@ function EditUserProfile() {
                 href={val.startsWith("http") ? val : `https://${val}`}
                 target="_blank"
                 rel="noreferrer"
-                className="flex items-center gap-1 px-2 py-0.5 bg-gray-100 text-gray-700 rounded-md text-[10px] font-medium"
+                className="flex items-center gap-1.5 px-2.5 py-1 bg-gray-100 text-gray-700 rounded-md text-xs font-medium"
               >
-                <Icon size={11} />
+                <Icon size={13} />
                 <span>{label}</span>
               </a>
             ) : null
@@ -278,75 +279,75 @@ function EditUserProfile() {
       </div>
 
       {/* 💻 DESKTOP DESIGN */}
-      <div className="hidden sm:flex w-full max-w-4xl py-3 bg-white rounded-[1.75rem] shadow-[0_15px_35px_-10px_rgba(0,0,0,0.05)] border border-slate-100 overflow-hidden relative flex-col">
+      <div className="hidden sm:flex w-full max-w-5xl py-4 bg-white rounded-[2rem] shadow-[0_15px_35px_-10px_rgba(0,0,0,0.05)] border border-slate-100 overflow-hidden relative flex-col">
         
         {/* HEADER ROW */}
-        <div className="flex justify-between items-center px-6 py-2 border-b border-slate-50 bg-slate-50/30 shrink-0">
-          <div className="flex items-center gap-2 select-none shrink-0">
-            <div className="w-2.5 h-2.5 bg-orange-500 rounded-full animate-pulse"></div>
-            <span className="text-xs font-extrabold tracking-widest uppercase flex items-center gap-0.5">
+        <div className="flex justify-between items-center px-8 py-3 border-b border-slate-50 bg-slate-50/30 shrink-0">
+          <div className="flex items-center gap-2.5 select-none shrink-0">
+            <div className="w-3 h-3 bg-orange-500 rounded-full animate-pulse"></div>
+            <span className="text-sm font-extrabold tracking-widest uppercase flex items-center gap-0.5">
               <span className="text-orange-600">HOT</span>
               <span className="text-blue-600">DROP</span>
             </span>
           </div>
 
-          <span className="text-xs font-bold lowercase text-slate-600 px-2">
+          <span className="text-sm font-bold lowercase text-slate-600 px-3">
             @{user?.hotdropId || "hotdrop"}
           </span>
 
-          <div className="flex items-center gap-2 shrink-0">
+          <div className="flex items-center gap-2.5 shrink-0">
             <button
               onClick={() => setShowEmailModal(true)}
-              className="w-8 h-8 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center"
+              className="w-9 h-9 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center"
               title="Contact"
             >
-              <Mail size={17} />
+              <Mail size={18} />
             </button>
             <button
               onClick={() => setShowShareModal(true)}
-              className="flex items-center justify-center p-2 rounded-full text-white bg-emerald-500 hover:bg-emerald-600 shadow-sm transition-all hover:scale-105"
+              className="flex items-center justify-center p-2.5 rounded-full text-white bg-emerald-500 hover:bg-emerald-600 shadow-sm transition-all hover:scale-105"
               title="Share"
             >
-              <Share2 size={12} />
+              <Share2 size={14} />
             </button>
             <button
               onClick={() => setShowEditModal(true)}
-              className="flex items-center justify-center p-2 rounded-full text-white bg-blue-600 hover:bg-blue-700 shadow-sm transition-all hover:scale-105"
+              className="flex items-center justify-center p-2.5 rounded-full text-white bg-blue-600 hover:bg-blue-700 shadow-sm transition-all hover:scale-105"
               title="Edit Profile"
             >
-              <Edit size={12} />
+              <Edit size={14} />
             </button>
           </div>
         </div>
 
         {/* Content Body */}
-        <div className="p-6 flex flex-row items-start gap-6">
+        <div className="p-8 flex flex-row items-start gap-8">
           <div
             className="relative shrink-0 cursor-pointer group"
             onClick={() => setShowFullImage(true)}
           >
             <div className="absolute -inset-1 bg-gradient-to-tr from-orange-500 to-blue-500 rounded-full blur-[1px] opacity-20 group-hover:opacity-40 transition"></div>
-            <div className="relative w-24 h-24 rounded-full p-0.5 bg-white shadow-md overflow-hidden ring-1 ring-slate-100">
+            <div className="relative w-28 h-28 rounded-full p-0.5 bg-white shadow-md overflow-hidden ring-1 ring-slate-100">
               <img
                 src={profileAvatar}
                 alt="Profile Avatar"
                 className="w-full h-full object-cover rounded-full group-hover:scale-105 transition"
               />
             </div>
-            <div className="absolute bottom-0 right-0 bg-white p-1 rounded-full shadow-sm border border-slate-100">
-              <Award size={12} className="text-orange-500" />
+            <div className="absolute bottom-0 right-0 bg-white p-1.5 rounded-full shadow-sm border border-slate-100">
+              <Award size={14} className="text-orange-500" />
             </div>
           </div>
 
           <div className="flex-1 text-left">
-            <div className="flex flex-col mb-1.5">
-              <h1 className="text-xl font-bold text-slate-900 tracking-tight leading-snug">
+            <div className="flex flex-col mb-2">
+              <h1 className="text-2xl font-bold text-slate-900 tracking-tight leading-snug">
                 {fullName}
               </h1>
             </div>
 
             {/* Stats Row */}
-            <div className="flex gap-6 my-2">
+            <div className="flex gap-8 my-3">
               {[
                 { label: "posts", count: user?.postCount ?? 0, action: null },
                 {
@@ -364,14 +365,14 @@ function EditUserProfile() {
                   key={i}
                   onClick={stat.action}
                   disabled={!stat.action}
-                  className={`flex items-baseline gap-1 ${
+                  className={`flex items-baseline gap-1.5 ${
                     stat.action ? "cursor-pointer hover:opacity-75" : "cursor-default"
                   }`}
                 >
-                  <span className="text-sm font-bold text-slate-900">
+                  <span className="text-base font-bold text-slate-900">
                     {stat.count}
                   </span>
-                  <span className="text-[11px] font-medium lowercase text-slate-500">
+                  <span className="text-xs font-medium lowercase text-slate-500">
                     {stat.label}
                   </span>
                 </button>
@@ -379,12 +380,12 @@ function EditUserProfile() {
             </div>
 
             {/* Bio */}
-            <p className="text-slate-600 text-xs leading-relaxed font-normal mb-3 line-clamp-2">
+            <p className="text-slate-600 text-sm leading-relaxed font-normal mb-4 line-clamp-2">
               {user?.bio || "Minimalist Creator | Tech Enthusiast 🚀"}
             </p>
 
             {/* Social Icons */}
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2.5">
               {[
                 { key: "github", val: user?.githubUrl || user?.github, Icon: Github, label: "GitHub" },
                 { key: "linkedin", val: user?.linkedinUrl || user?.linkedin, Icon: Linkedin, label: "LinkedIn" },
@@ -397,10 +398,10 @@ function EditUserProfile() {
                     href={val.startsWith("http") ? val : `https://${val}`}
                     target="_blank"
                     rel="noreferrer"
-                    className="p-1.5 rounded-full bg-slate-50 border border-slate-100 text-slate-500 hover:text-blue-600 hover:bg-blue-50 hover:border-blue-200 transition"
+                    className="p-2 rounded-full bg-slate-50 border border-slate-100 text-slate-500 hover:text-blue-600 hover:bg-blue-50 hover:border-blue-200 transition"
                     title={label}
                   >
-                    <Icon size={14} />
+                    <Icon size={16} />
                   </a>
                 ) : null
               )}
@@ -420,7 +421,7 @@ function EditUserProfile() {
             onClick={() => setShowFullImage(false)}
             className="absolute top-6 right-6 text-white/70 hover:text-white p-2"
           >
-            <X size={22} />
+            <X size={24} />
           </button>
           <img
             src={profileAvatar}

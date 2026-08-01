@@ -1,4 +1,5 @@
 import './App.css';
+import 'react-toastify/dist/ReactToastify.css';
 import { createBrowserRouter, Outlet, RouterProvider, useLocation } from 'react-router-dom';
 import { useEffect } from 'react';
 import Signup from './auth/Signup';
@@ -92,7 +93,7 @@ function App() {
       <ToastContainer
         position="top-center"
         autoClose={1000}
-        style={{ zIndex: 999999 }} 
+      
         hideProgressBar
         closeButton={false}
         theme="light"

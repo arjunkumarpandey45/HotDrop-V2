@@ -20,6 +20,7 @@ import API from "../api/Api";
 import dp from "../assets/dp.jpg";
 import { useAuthStore, useUIStore } from "../store/useAuthStore";
 import { showSuccessToastForLogout } from "../toast/Toast";
+import { Slide, ToastContainer } from "react-toastify";
 
 const Navbar = () => {
   const [isProfileOpen, setIsProfileOpen] = useState(false);
@@ -140,9 +141,14 @@ const { checkAuth } = useAuthStore();
   const handleLogout = async () => {
     try {
       logout();
+      
+      
+      
+     setTimeout(() => {
       showSuccessToastForLogout();
-      setIsProfileOpen(false);
-      navigate("/login");
+     }, 500);
+     setIsProfileOpen(false);
+     navigate("/login")
     } catch {
       console.error("Logout failed");
     }
@@ -152,7 +158,15 @@ const { checkAuth } = useAuthStore();
 
   return (
     <header className={`fixed left-0 right-0 top-0 z-50 px-3 sm:px-4 transition-all duration-300 ${scrolled ? "pt-2" : "pt-3 sm:pt-4"}`}>
-      {/* Dimmed Overlay */}
+ <ToastContainer
+  position="top-center"
+  autoClose={1500}
+  hideProgressBar
+  transition={Slide}
+  closeButton={false}
+  style={{ zIndex: 9999999, position: "fixed" }}
+  className="!z-[9999999]"
+/>
       {(isProfileOpen || isSidebarOpen || isLoginPromptOpen || showSuggestions) && (
         <div
           className="fixed inset-0 z-40 bg-slate-900/20 backdrop-blur-sm transition-opacity duration-300"

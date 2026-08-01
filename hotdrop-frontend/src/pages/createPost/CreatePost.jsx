@@ -17,6 +17,7 @@ import {
 import API from "../../api/Api";
 import { useAuthStore } from "../../store/useAuthStore";
 import { showPostErrorToast, showPostSuccessToast } from "../../toast/Toast";
+import { Slide, ToastContainer } from "react-toastify";
 
 // --- SUB-COMPONENT: POST PREVIEW MODAL ---
 const PostPreview = ({ data, isOpen, onConfirm, onClose, loading }) => {
@@ -24,6 +25,15 @@ const PostPreview = ({ data, isOpen, onConfirm, onClose, loading }) => {
 
     return (
         <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-md animate-in fade-in duration-200">
+          <ToastContainer
+  position="top-center"
+  autoClose={1500}
+  hideProgressBar
+  transition={Slide}
+  closeButton={false}
+  style={{ zIndex: 9999999, position: "fixed" }}
+  className="!z-[9999999]"
+/>
             <div className="w-full max-w-xl rounded-3xl border border-slate-100 bg-white shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
 
                 {/* Modal Header */}
@@ -164,16 +174,30 @@ const CreatePost = ({ isOpen, onClose }) => {
     const [verifyingLink, setVerifyingLink] = useState(false);
     const [isLinkVerified, setIsLinkVerified] = useState(false);
 
-    const [formData, setFormData] = useState({
+    const initialFormState = {
         title: "",
         description: "",
         projectUrl: "",
         isLinkDead: true,
         tags: "",
         images: [],
-    });
+    };
 
-  
+    const [formData, setFormData] = useState(initialFormState);
+
+    // 🎯 Helper function to completely clear form states
+    const resetForm = () => {
+        setFormData(initialFormState);
+        setIsLinkVerified(false);
+        setVerifyingLink(false);
+        setShowPreview(false);
+    };
+
+    const handleCloseModal = () => {
+        resetForm();
+        onClose();
+    };
+
     useEffect(() => {
         document.body.style.overflow = isOpen ? "hidden" : "auto";
         return () => {
@@ -183,7 +207,6 @@ const CreatePost = ({ isOpen, onClose }) => {
 
     if (!isOpen) return null;
 
-   
     const checkUrl = async (url) => {
         if (!url || url.trim() === "") return;
 
@@ -193,26 +216,23 @@ const CreatePost = ({ isOpen, onClose }) => {
             formattedUrl = `https://${formattedUrl}`;
         }
 
-        // 2. Strict URL Regex Check (Covers www, TLDs, IP, ports, paths)
         const urlPattern = new RegExp(
-            "^(https?:\\/\\/)" + // Protocol (mandatory after auto-prefix)
-            "((([a-z\\d]([a-z\\d-]*[a-z\\d])*)\\.)+[a-z]{2,}|" + // Domain (including www.domain.com)
-            "((\\d{1,3}\\.){3}\\d{1,3}))" + // OR IP Address
-            "(\\:\\d+)?" + // Optional Port
-            "(\\/[-a-z\\d%_.~+]*)*" + // Optional Path
-            "(\\?[;&a-z\\d%_.~+=-]*)?" + // Optional Query String
-            "(\\#[-a-z\\d_]*)?$", // Optional Fragment
+            "^(https?:\\/\\/)" +
+            "((([a-z\\d]([a-z\\d-]*[a-z\\d])*)\\.)+[a-z]{2,}|" +
+            "((\\d{1,3}\\.){3}\\d{1,3}))" +
+            "(\\:\\d+)?" +
+            "(\\/[-a-z\\d%_.~+]*)*" +
+            "(\\?[;&a-z\\d%_.~+=-]*)?" +
+            "(\\#[-a-z\\d_]*)?$",
             "i"
         );
-
 
         if (!urlPattern.test(formattedUrl)) {
             setFormData((prev) => ({ ...prev, isLinkDead: true }));
             setIsLinkVerified(false);
             showPostErrorToast("Please enter a valid URL");
-            return; 
+            return;
         }
-
 
         setFormData((prev) => ({ ...prev, projectUrl: formattedUrl }));
         setVerifyingLink(true);
@@ -223,7 +243,6 @@ const CreatePost = ({ isOpen, onClose }) => {
                 { url: formattedUrl },
                 { withCredentials: true }
             );
-
 
             const isLive = res.data?.live === true;
             const isDead = !isLive;
@@ -263,7 +282,6 @@ const CreatePost = ({ isOpen, onClose }) => {
         setFormData((prev) => ({ ...prev, images: updated }));
     };
 
-    
     const isFormValid =
         formData.title.trim() !== "" &&
         formData.description.trim() !== "" &&
@@ -271,7 +289,6 @@ const CreatePost = ({ isOpen, onClose }) => {
         !formData.isLinkDead &&
         !verifyingLink &&
         formData.images.length >= 1;
-
 
     const handleFinalSubmit = async () => {
         setLoading(true);
@@ -282,11 +299,9 @@ const CreatePost = ({ isOpen, onClose }) => {
             data.append("projectUrl", formData.projectUrl.trim());
             data.append("tags", formData.tags.trim());
 
-
             formData.images.forEach((file) => {
                 data.append("files", file);
             });
-
 
             const response = await API.post("/posts/create", data, {
                 headers: { "Content-Type": "multipart/form-data" },
@@ -294,12 +309,14 @@ const CreatePost = ({ isOpen, onClose }) => {
             });
 
             if (response.status === 201 || response.status === 200) {
-               
                 const createdPost = response.data?.data || response.data;
                 useAuthStore.getState().updatePostCountLocally(createdPost);
 
+                // 🎯 1. Toast Trigger
                 showPostSuccessToast(formData.title);
-                setShowPreview(false);
+
+                // 🎯 2. Form Reset & Close Modal
+                resetForm();
                 onClose();
             }
         } catch (error) {
@@ -313,10 +330,18 @@ const CreatePost = ({ isOpen, onClose }) => {
 
     return (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-3 sm:p-4">
-            {/* Backdrop */}
+              <ToastContainer
+  position="top-center"
+  autoClose={1500}
+  hideProgressBar
+  transition={Slide}
+  closeButton={false}
+  style={{ zIndex: 9999999, position: "fixed" }}
+  className="!z-[9999999]"
+/>
             <div
                 className="absolute inset-0 bg-slate-950/50 backdrop-blur-md animate-in fade-in duration-200"
-                onClick={onClose}
+                onClick={handleCloseModal}
             />
 
             {/* Main Dialog Card */}
@@ -335,7 +360,7 @@ const CreatePost = ({ isOpen, onClose }) => {
                         </p>
                     </div>
                     <button
-                        onClick={onClose}
+                        onClick={handleCloseModal}
                         className="p-1.5 bg-white/10 hover:bg-white/20 rounded-full transition"
                     >
                         <X className="h-4 w-4 text-white" />
@@ -490,7 +515,7 @@ const CreatePost = ({ isOpen, onClose }) => {
                 {/* Modal Footer */}
                 <div className="px-6 py-4 bg-slate-50 border-t border-slate-100 flex gap-3">
                     <button
-                        onClick={onClose}
+                        onClick={handleCloseModal}
                         className="flex-1 py-2.5 rounded-xl border border-slate-200 text-xs font-bold text-slate-600 hover:bg-slate-100 transition"
                     >
                         Cancel

@@ -1,1 +1,21 @@
 @import "tailwindcss";
+
+/* 🎯 High Priority Override for React Toastify Portal */
+@layer utilities {
+  div.Toastify__toast-container {
+    z-index: 9999999 !important;
+    position: fixed !important;
+  }
+
+  div.Toastify__toast {
+   
+    box-shadow: none !important;
+    padding: 0 !important;
+    min-height: auto !important;
+  }
+
+  div.Toastify__toast-body {
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+}

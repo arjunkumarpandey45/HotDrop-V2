@@ -9,7 +9,7 @@ import {
 } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { ToastContainer, Slide } from "react-toastify";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 
 import { useAuthStore } from "../store/useAuthStore";
 import { showErrorToast, showSuccessToast } from "../toast/Toast";
@@ -48,19 +48,19 @@ const Login = () => {
       );
 
       if (result.success) {
-  
         if (typeof checkAuth === "function") {
           await checkAuth(true);
         }
 
-        showSuccessToast(
-          "Welcome Back 👋",
+        
+        setTimeout(() => {
+          showSuccessToast(
+          "Welcome Back",
           result.username || result.hotdropId || "User"
         );
-
-        setTimeout(() => {
-          navigate("/", { replace: true });
-        }, 1200);
+        }, 100);
+        
+navigate("/", { replace: true });
       } else {
         showErrorToast(result.message || "Invalid credentials.");
       }
@@ -76,7 +76,7 @@ const Login = () => {
     <div className="relative min-h-screen overflow-hidden bg-slate-50">
       <ToastContainer
         position="top-center"
-        autoClose={2500}
+        autoClose={1500}
         hideProgressBar
         transition={Slide}
         closeButton={false}
@@ -106,7 +106,26 @@ const Login = () => {
           </div>
 
           {/* Form Card */}
-          <div className="rounded-[24px] border border-white/40 bg-white/80 p-5 shadow-[0_20px_50px_rgba(0,0,0,0.08)] backdrop-blur-xl">
+          <div className="relative overflow-hidden rounded-[24px] border border-white/40 bg-white/80 p-5 shadow-[0_20px_50px_rgba(0,0,0,0.08)] backdrop-blur-xl">
+            {/* Smooth Loading Overlay */}
+            <AnimatePresence>
+              {loading && (
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-white/80 backdrop-blur-md"
+                >
+                  <div className="relative flex items-center justify-center">
+                    <div className="h-12 w-12 rounded-full border-4 border-blue-200 border-t-blue-600 animate-spin"></div>
+                  </div>
+                  <p className="mt-3 text-xs font-semibold text-slate-700 animate-pulse">
+                    Authenticating...
+                  </p>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
             <form onSubmit={handleSubmit} className="space-y-3">
               {/* Identifier Field */}
               <div>
