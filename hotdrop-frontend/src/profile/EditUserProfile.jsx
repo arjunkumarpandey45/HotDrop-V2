@@ -10,6 +10,7 @@ import EditProfileModal from "./EditProfileModal";
 import FollowersModal from "./FollowersModal";
 import FollowingModal from "./FollowingModal";
 import ShareProfileModal from "./ShareProfileModal";
+import UserPost from "./post/UserPost";
 import dp from "../assets/dp.jpg";
 
 
@@ -153,7 +154,7 @@ function EditUserProfile() {
     : user?.username || "HotDrop Creator";
 
   return (
-    <div className="w-full flex justify-center p-3 sm:p-8 bg-white sm:bg-[#F9FAFB]">
+    <div className="w-full flex flex-col items-center p-2 sm:px-2 sm:py-4 bg-white sm:bg-[#F9FAFB]">
      
       {/* 📱 MOBILE DESIGN */}
       <div className="block sm:hidden w-full max-w-lg bg-white border border-gray-200 rounded-2xl p-5 shadow-sm relative">
@@ -279,7 +280,7 @@ function EditUserProfile() {
       </div>
 
       {/* 💻 DESKTOP DESIGN */}
-      <div className="hidden sm:flex w-full max-w-5xl py-4 bg-white rounded-[2rem] shadow-[0_15px_35px_-10px_rgba(0,0,0,0.05)] border border-slate-100 overflow-hidden relative flex-col">
+      <div className="hidden sm:flex w-full max-w-full py-4 bg-white rounded-[2rem] shadow-[0_15px_35px_-10px_rgba(0,0,0,0.05)] border border-slate-100 overflow-hidden relative flex-col">
         
         {/* HEADER ROW */}
         <div className="flex justify-between items-center px-8 py-3 border-b border-slate-50 bg-slate-50/30 shrink-0">
@@ -409,6 +410,12 @@ function EditUserProfile() {
 
           </div>
         </div>
+      </div>
+
+      {/* 📦 USER POSTS SECTION */}
+      <div className="w-full max-w-full mt-6 sm:mt-8">
+        
+        <UserPost />
       </div>
 
       {/* Full Image Modal */}

@@ -23,15 +23,19 @@ export const useAuthStore = create((set, get) => ({
 
   // --- 🔄 LOCAL COUNTER UPDATE ---
   updatePostCountLocally: (newPost = null) => {
-    set((state) => ({
-      user: state.user
-        ? {
-            ...state.user,
-            postCount: (state.user.postCount || 0) + 1,
-          }
-        : null,
-      userPosts: newPost ? [newPost, ...state.userPosts] : state.userPosts,
-    }));
+    set((state) => {
+      const updatedPosts = newPost ? [newPost, ...(state.userPosts || [])] : (state.userPosts || []);
+      return {
+        user: state.user
+          ? {
+              ...state.user,
+              postCount: (state.user.postCount || 0) + 1,
+              posts: updatedPosts,
+            }
+          : null,
+        userPosts: updatedPosts,
+      };
+    });
   },
 
   // --- 🔑 LOGIN ACTION ---
@@ -53,11 +57,13 @@ export const useAuthStore = create((set, get) => ({
 
       const payload = res.data?.data || res.data;
       const userData = payload?.user || payload;
-      const postsData = payload?.posts || [];
+      const postsData = payload?.posts || userData?.posts || [];
 
-      // 🎯 Set state directly and stay logged in (No automatic checkAuth trigger)
+      const fullUserObj = userData ? { ...userData, posts: postsData } : null;
+
+      // 🎯 Set state directly and stay logged in
       set({
-        user: userData,
+        user: fullUserObj,
         userPosts: postsData,
         isLoggedIn: true,
         isCheckingAuth: false,
@@ -101,11 +107,12 @@ export const useAuthStore = create((set, get) => ({
 
       const payload = res.data?.data || res.data;
       const userData = payload?.user || payload;
-      const postsData = payload?.posts || [];
+      const postsData = payload?.posts || userData?.posts || [];
 
       if (userData && (userData.id || userData._id || userData.hotdropId)) {
+        const fullUserObj = { ...userData, posts: postsData };
         set({
-          user: userData,
+          user: fullUserObj,
           userPosts: postsData,
           isLoggedIn: true,
           isCheckingAuth: false,

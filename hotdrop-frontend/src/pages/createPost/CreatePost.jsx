@@ -17,7 +17,6 @@ import {
 import API from "../../api/Api";
 import { useAuthStore } from "../../store/useAuthStore";
 import { showPostErrorToast, showPostSuccessToast } from "../../toast/Toast";
-import { Slide, ToastContainer } from "react-toastify";
 
 // --- SUB-COMPONENT: POST PREVIEW MODAL ---
 const PostPreview = ({ data, isOpen, onConfirm, onClose, loading }) => {
@@ -25,15 +24,6 @@ const PostPreview = ({ data, isOpen, onConfirm, onClose, loading }) => {
 
     return (
         <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-md animate-in fade-in duration-200">
-          <ToastContainer
-  position="top-center"
-  autoClose={1500}
-  hideProgressBar
-  transition={Slide}
-  closeButton={false}
-  style={{ zIndex: 9999999, position: "fixed" }}
-  className="!z-[9999999]"
-/>
             <div className="w-full max-w-xl rounded-3xl border border-slate-100 bg-white shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
 
                 {/* Modal Header */}
@@ -330,15 +320,6 @@ const CreatePost = ({ isOpen, onClose }) => {
 
     return (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-3 sm:p-4">
-              <ToastContainer
-  position="top-center"
-  autoClose={1500}
-  hideProgressBar
-  transition={Slide}
-  closeButton={false}
-  style={{ zIndex: 9999999, position: "fixed" }}
-  className="!z-[9999999]"
-/>
             <div
                 className="absolute inset-0 bg-slate-950/50 backdrop-blur-md animate-in fade-in duration-200"
                 onClick={handleCloseModal}

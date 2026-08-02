@@ -8,9 +8,7 @@ import {
   EyeOff,
 } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
-import { ToastContainer, Slide } from "react-toastify";
 import { motion, AnimatePresence } from "framer-motion";
-
 import { useAuthStore } from "../store/useAuthStore";
 import { showErrorToast, showSuccessToast } from "../toast/Toast";
 
@@ -74,13 +72,6 @@ navigate("/", { replace: true });
 
   return (
     <div className="relative min-h-screen overflow-hidden bg-slate-50">
-      <ToastContainer
-        position="top-center"
-        autoClose={1500}
-        hideProgressBar
-        transition={Slide}
-        closeButton={false}
-      />
 
       {/* Background Orbs */}
       <div className="absolute -left-32 -top-32 h-96 w-96 rounded-full bg-blue-200 blur-[120px] opacity-50"></div>

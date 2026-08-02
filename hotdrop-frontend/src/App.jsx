@@ -92,12 +92,12 @@ function App() {
       <RouterProvider router={router} />
       <ToastContainer
         position="top-center"
-        autoClose={1000}
-      
+        autoClose={3000}
         hideProgressBar
         closeButton={false}
         theme="light"
         transition={Slide}
+        style={{ zIndex: 9999999 }}
       />
     </>
   );

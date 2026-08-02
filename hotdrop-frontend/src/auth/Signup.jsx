@@ -12,7 +12,6 @@ import {
   AlertCircle,
 } from "lucide-react";
 import API from "../api/Api";
-import { Slide, ToastContainer } from "react-toastify";
 
 export default function Signup() {
   const navigate = useNavigate();
@@ -88,14 +87,6 @@ export default function Signup() {
 
   return (
     <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-[#F8FAFC] px-4  font-sans">
- <ToastContainer
-        position="top-center"
-        autoClose={1500}
-        hideProgressBar
-          style={{ zIndex: 999999 }} 
-        transition={Slide}
-        closeButton={false}
-      />
       <div className="absolute left-0 top-0 h-80 w-80 rounded-full bg-sky-200/40 blur-[120px]" />
       <div className="absolute right-0 bottom-0 h-80 w-80 rounded-full bg-indigo-200/40 blur-[120px]" />
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(255,255,255,0.9),_transparent_45%)]" />

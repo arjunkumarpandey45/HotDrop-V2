@@ -134,7 +134,7 @@ function FollowingModal({ isOpen, onClose, userId, onUnfollowSuccess }) {
                       <h4 className="text-xs font-bold text-slate-800 truncate leading-tight">
                         {name}
                       </h4>
-                      <span className="text-[11px] text-blue-600 font-medium truncate mt-0.5">
+                      <span className="text-[11px] text-slate-600 font-medium truncate mt-0.5">
                         @{u.hotdropId || u.username || "hotdrop"}
                       </span>
                     </div>
