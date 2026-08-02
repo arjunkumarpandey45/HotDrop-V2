@@ -42,7 +42,7 @@ private String frontendURL;
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(
                                 "/public/**",
-                                "/auth/**",
+                                "/auth/**","/posts/share/**",
                                 "/actuator/health",
                                 "/"
                         ).permitAll()

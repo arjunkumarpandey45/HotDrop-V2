@@ -1,7 +1,6 @@
 package com.arjun.hotdrop_backend.controller;
 
 import com.arjun.hotdrop_backend.dto.*;
-import com.arjun.hotdrop_backend.entity.User;
 import com.arjun.hotdrop_backend.scheduler.LinkTrackingScheduler;
 import com.arjun.hotdrop_backend.service.PostService;
 import com.arjun.hotdrop_backend.utils.JwtUtils;
@@ -18,6 +17,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -186,5 +186,16 @@ public class PostController {
         String hotdropId=userDetails!=null?userDetails.getUsername():null;
         PostResponseDto response = postService.getPostByShareUrl(shareUrl,hotdropId);
         return ResponseEntity.ok(response);
+    }
+    @GetMapping("/comments/{postId}")
+    public ResponseEntity<ApiResponse<List<CommentResponseDto>>> getCommentsByPostId(@PathVariable UUID postId) {
+        List<CommentResponseDto> comments = postService.getCommentsByPostId(postId);
+
+        return ResponseHandler.generateResponse(
+                HttpStatus.OK,
+                "Comments fetched successfully",
+
+                comments
+        );
     }
 }

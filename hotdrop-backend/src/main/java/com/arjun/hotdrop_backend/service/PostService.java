@@ -391,4 +391,29 @@ private final UserImageHistoryRepo userImageHistoryRepo;
           return postMapperWithID
                 .toResponseDto(post,hotdropId);
     }
+    @Transactional(readOnly = true)
+    public List<CommentResponseDto> getCommentsByPostId(UUID postId) {
+        postRepo.findById(postId)
+                .orElseThrow(() -> new RuntimeException("Post not found with ID: " + postId));
+
+        List<Comment> comments = commentRepo.findByPostIdOrderByCreatedAtDesc(postId);
+
+        return comments.stream()
+                .map(comment -> {
+                    User commenter = comment.getUser();
+                    var userSummary = PostResponseDto.UserSummaryDto.builder()
+                            .id(commenter.getId())
+                            .hotdropId(commenter.getHotdropId())
+                            .profilePicture(commenter.getProfileImageUrl())
+                            .build();
+
+                    return CommentResponseDto.builder()
+                            .id(comment.getId())
+                            .text(comment.getText())
+                            .createdAt(comment.getCreatedAt())
+                            .user(userSummary)
+                            .build();
+                })
+                .collect(Collectors.toList());
+    }
 }

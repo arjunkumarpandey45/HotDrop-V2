@@ -2,6 +2,7 @@ package com.arjun.hotdrop_backend.repository;
 
 import com.arjun.hotdrop_backend.entity.Post;
 import com.arjun.hotdrop_backend.entity.User;
+import org.jspecify.annotations.NonNull;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -39,7 +40,9 @@ public interface PostRepo extends JpaRepository<Post, UUID> {
 
     boolean existsByShareUrl(String shareUrl);
 
+    boolean existsById(@NonNull UUID postId);
 }
+
 
 
 
