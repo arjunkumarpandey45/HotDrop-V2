@@ -38,13 +38,14 @@ API.interceptors.response.use(
   async (error) => {
     const originalRequest = error.config;
 
-    // Do NOT attempt token refresh on login, signup, refresh, or logout endpoints
+    // Do NOT attempt token refresh on login, signup, refresh, logout, or public share endpoints
     if (
       !originalRequest ||
       originalRequest.url?.includes("/auth/refresh") ||
       originalRequest.url?.includes("/auth/login") ||
       originalRequest.url?.includes("/auth/signup") ||
-      originalRequest.url?.includes("/auth/logout")
+      originalRequest.url?.includes("/auth/logout") ||
+      originalRequest.url?.includes("/posts/share")
     ) {
       return Promise.reject(error);
     }

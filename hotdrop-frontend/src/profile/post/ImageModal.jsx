@@ -329,28 +329,38 @@ function ImageModal({
             )}
 
             {images.length > 1 && (
-              <div className="absolute inset-x-4 top-1/2 -translate-y-1/2 flex justify-between z-10">
-                <button
-                  onClick={prev}
-                  className="bg-black/50 hover:bg-black/80 text-white p-2.5 rounded-xl backdrop-blur-md transition active:scale-90"
-                  title="Previous Image"
-                >
-                  <ChevronLeft size={20} />
-                </button>
-                <button
-                  onClick={next}
-                  className="bg-black/50 hover:bg-black/80 text-white p-2.5 rounded-xl backdrop-blur-md transition active:scale-90"
-                  title="Next Image"
-                >
-                  <ChevronRight size={20} />
-                </button>
-              </div>
-            )}
+              <>
+                <div className="absolute inset-x-3 top-1/2 -translate-y-1/2 flex justify-between z-10 pointer-events-none">
+                  <button
+                    onClick={prev}
+                    className="pointer-events-auto bg-black/60 hover:bg-black/90 text-white p-2 rounded-full border border-white/30 shadow-md backdrop-blur-sm transition active:scale-90 cursor-pointer"
+                    title="Previous Image"
+                  >
+                    <ChevronLeft size={18} />
+                  </button>
+                  <button
+                    onClick={next}
+                    className="pointer-events-auto bg-black/60 hover:bg-black/90 text-white p-2 rounded-full border border-white/30 shadow-md backdrop-blur-sm transition active:scale-90 cursor-pointer"
+                    title="Next Image"
+                  >
+                    <ChevronRight size={18} />
+                  </button>
+                </div>
 
-            {images.length > 1 && (
-              <div className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-black/60 backdrop-blur-md px-3 py-1 rounded-full text-[10px] font-bold text-white tracking-widest">
-                {modalIndex + 1} / {images.length}
-              </div>
+                {/* COMPACT WHITE DOTS WITH BLACK BORDER */}
+                <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex items-center gap-1.5 pointer-events-none z-10">
+                  {images.map((_, i) => (
+                    <div
+                      key={i}
+                      className={`rounded-full border border-black/80 transition-all duration-200 ${
+                        i === modalIndex
+                          ? "w-3 h-3 bg-white shadow-md scale-110"
+                          : "w-2 h-2 bg-white/70"
+                      }`}
+                    />
+                  ))}
+                </div>
+              </>
             )}
           </div>
 

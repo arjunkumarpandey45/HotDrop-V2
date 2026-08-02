@@ -22,7 +22,7 @@ import ShareModal from "./ShareModal";
 import ImageModal from "./ImageModal";
 import PreviewModal from "./PreviewModal";
 import API from "../../api/Api";
-import { toast } from "react-toastify";
+import { showCommentToast, showErrorToast } from "../../toast/Toast";
 import dp from "../../assets/dp.jpg";
 import { AnimatePresence } from "framer-motion";
 
@@ -50,19 +50,16 @@ function FromShare() {
     const fetchSinglePost = async () => {
       try {
         setLoading(true);
-        // Try getting post by shareUrl or postId
-        let res;
-        try {
-          res = await API.get(`/posts/share/${postId}`);
-        } catch {
-          res = await API.get(`/posts/${postId}`);
-        }
+        const shareUrl = postId;
 
-        const postData = res.data?.data || res.data;
+        // 🎯 Official Backend Endpoint: GET /posts/share/{shareUrl}
+        const res = await API.get(`/posts/share/${shareUrl}`);
+        const payload = res.data?.data || res.data;
+        const postData = payload?.post || payload;
         setPost(postData);
-      // eslint-disable-next-line no-unused-vars
       } catch (error) {
-        toast.error("Drop not found!");
+        console.error("Fetch single post error:", error);
+        setPost(null);
       } finally {
         setLoading(false);
       }
@@ -95,7 +92,6 @@ function FromShare() {
 
         toast.success(newLikedState ? "Drop liked! ❤️" : "Unliked");
       }
-    // eslint-disable-next-line no-unused-vars
     } catch (error) {
       toast.error("Action failed");
     }
@@ -107,24 +103,41 @@ function FromShare() {
     if (!commentText.trim()) return;
 
     const targetId = post?.id || post?._id;
+    const textToSubmit = commentText;
 
     try {
       const res = await API.post(`/posts/comment/${targetId}`, {
-        text: commentText,
+        text: textToSubmit,
       });
-      const newComment = res.data?.data || res.data;
+      const rawComment = res.data?.data?.comment || res.data?.data || res.data;
+      const newComment = {
+        id: rawComment.id || rawComment._id || String(Date.now()),
+        text: rawComment.text || rawComment.comment || textToSubmit,
+        createdAt: rawComment.createdAt || new Date().toISOString(),
+        user: (typeof rawComment.user === "object" && rawComment.user?.hotdropId ? rawComment.user : null) ||
+              (typeof rawComment.creator === "object" && rawComment.creator?.hotdropId ? rawComment.creator : null) ||
+              user,
+      };
 
-      setPost((prev) => ({
-        ...prev,
-        comments: [newComment, ...(prev.comments || [])],
-        commentCount: (prev.commentCount || 0) + 1,
-      }));
+      const updateFn = (prev) => {
+        if (!prev) return null;
+        const updatedComments = [newComment, ...(prev.comments || [])];
+        return {
+          ...prev,
+          comments: updatedComments,
+          commentCount: updatedComments.length,
+        };
+      };
+
+      setPost(updateFn);
+      setCommentPost(updateFn);
+      setImagePost(updateFn);
 
       setCommentText("");
-      toast.success("Comment added!");
-    // eslint-disable-next-line no-unused-vars
+      showCommentToast("Comment added!");
     } catch (error) {
-      toast.error("Error adding comment");
+      console.error("Comment submit error in FromShare:", error);
+      showErrorToast("Error adding comment");
     }
   };
 
@@ -160,275 +173,243 @@ function FromShare() {
   const commentCount = post.commentCount ?? post.comments?.length ?? 0;
 
   return (
-    <div className="min-h-screen bg-slate-50 py-8 px-4">
-      {/* BRANDING TOP RIGHT DESKTOP */}
-      <div className="hidden lg:block fixed top-6 right-8 z-50">
-        <span className="font-black text-xl text-orange-500 uppercase">Hot</span>
-        <span className="font-black text-xl text-blue-600 uppercase">Drop</span>
-      </div>
-
-      <div className="max-w-4xl mx-auto grid grid-cols-1 lg:grid-cols-4 gap-6">
-        {/* LEFT SIDE BACK BUTTON DESKTOP */}
-        <div className="hidden lg:block">
+    <div className="min-h-screen bg-slate-50 pt-2.5 pb-6 px-3 flex flex-col items-center justify-start sm:justify-center">
+      {/* UNIVERSAL COMPACT DETAILED CARD FOR BOTH MOBILE & DESKTOP */}
+      <div className="w-full max-w-sm mx-auto space-y-2.5">
+        {/* TOP BAR WITH BACK BUTTON & HOTDROP BRAND */}
+        <div className="flex justify-between items-center px-1">
           <button
             onClick={() => navigate(-1)}
-            className="flex items-center gap-2 text-xs font-bold uppercase text-slate-400 hover:text-blue-600 transition-all"
+            className="flex items-center gap-1 px-2.5 py-1 bg-white border border-slate-200/80 rounded-xl text-[11px] font-extrabold uppercase text-slate-600 hover:text-blue-600 hover:border-blue-200 transition-all shadow-sm cursor-pointer"
           >
-            <ArrowLeft size={16} /> Back
+            <ArrowLeft size={14} /> Back
           </button>
+          <div className="text-xs font-black tracking-widest uppercase select-none">
+            <span className="text-orange-500">Hot</span>
+            <span className="text-blue-600">Drop</span>
+          </div>
         </div>
 
-        {/* MAIN COLUMN */}
-        <div className="col-span-1 lg:col-span-2 space-y-6">
-          <div className="lg:hidden flex justify-between items-center mb-2">
-            <button
-              onClick={() => navigate(-1)}
-              className="p-2 bg-white rounded-full shadow-sm text-slate-600 hover:bg-slate-100"
+        <div className="bg-white rounded-3xl p-3.5 border border-slate-200/80 shadow-2xl overflow-hidden flex flex-col">
+          {/* PROFILE HEADER */}
+          <div className="pb-3 flex items-center justify-between border-b border-slate-100 mb-3">
+            <div
+              className="flex items-center gap-2.5 cursor-pointer group"
+              onClick={() => navigate(`/user/userprofile/${owner.hotdropId}`)}
             >
-              <ArrowLeft size={18} />
-            </button>
-            <div className="text-sm font-black tracking-widest uppercase">
-              <span className="text-orange-500">Hot</span>
-              <span className="text-blue-600">Drop</span>
+              <img
+                src={ownerAvatar}
+                className="w-8 h-8 rounded-full object-cover ring-2 ring-slate-100 group-hover:ring-blue-200 transition"
+                alt="avatar"
+              />
+              <div className="flex flex-col">
+                <span className="text-xs font-bold text-slate-900 group-hover:text-blue-600">
+                  @{owner.hotdropId || "user"}
+                </span>
+                <div className="flex items-center text-[9px] font-medium text-slate-400">
+                  <Clock size={10} className="mr-1" />
+                  {post.createdAt
+                    ? formatDistanceToNow(new Date(post.createdAt), { addSuffix: true })
+                    : "just now"}
+                </div>
+              </div>
             </div>
+
+           
           </div>
 
-          <div className="bg-white rounded-3xl p-5 border border-slate-200/80 shadow-xl overflow-hidden flex flex-col">
-            {/* PROFILE HEADER */}
-            <div className="pb-4 flex items-center justify-between border-b border-slate-100 mb-4">
-              <div
-                className="flex items-center gap-3 cursor-pointer group"
-                onClick={() => navigate(`/user/userprofile/${owner.hotdropId}`)}
-              >
-                <img
-                  src={ownerAvatar}
-                  className="w-10 h-10 rounded-full object-cover ring-2 ring-slate-100 group-hover:ring-blue-200 transition"
-                  alt="avatar"
-                />
-                <div className="flex flex-col">
-                  <span className="text-xs font-bold text-slate-900 group-hover:text-blue-600">
-                    @{owner.hotdropId || "user"}
-                  </span>
-                  <div className="flex items-center text-[10px] font-medium text-slate-400">
-                    <Clock size={10} className="mr-1" />
-                    {post.createdAt
-                      ? formatDistanceToNow(new Date(post.createdAt), { addSuffix: true })
-                      : "just now"}
-                  </div>
+          {/* IMAGE PREVIEW AREA */}
+          <div
+            className="relative bg-slate-50 border border-slate-200/70 group aspect-video w-full rounded-2xl flex items-center justify-center overflow-hidden cursor-pointer mb-3 shadow-inner"
+            onClick={() => {
+              setImagePost(post);
+              setModalIndex(currentImageIndex);
+            }}
+          >
+            {images.length > 0 ? (
+              <img
+                src={images[currentImageIndex]}
+                className="w-full h-full object-contain p-1 transition-transform duration-300"
+                alt="drop preview"
+              />
+            ) : (
+              <div className="text-slate-400 text-xs font-semibold flex flex-col items-center">
+                <Globe size={32} />
+                <span className="mt-1">No Screenshot</span>
+              </div>
+            )}
+
+            {images.length > 1 && (
+              <>
+                <div className="absolute inset-x-2 top-1/2 -translate-y-1/2 flex justify-between pointer-events-none z-20">
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setCurrentImageIndex((p) => (p - 1 + images.length) % images.length);
+                    }}
+                    className="pointer-events-auto bg-black/60 hover:bg-black/80 text-white p-1 rounded-full border border-white/30 shadow-md backdrop-blur-sm transition-transform hover:scale-105 cursor-pointer"
+                  >
+                    <ChevronLeft size={14} />
+                  </button>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setCurrentImageIndex((p) => (p + 1) % images.length);
+                    }}
+                    className="pointer-events-auto bg-black/60 hover:bg-black/80 text-white p-1 rounded-full border border-white/30 shadow-md backdrop-blur-sm transition-transform hover:scale-105 cursor-pointer"
+                  >
+                    <ChevronRight size={14} />
+                  </button>
                 </div>
+
+                {/* COMPACT WHITE DOTS WITH BLACK BORDER */}
+                <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex items-center gap-1.5 pointer-events-none z-20">
+                  {images.map((_, i) => (
+                    <div
+                      key={i}
+                      className={`rounded-full border border-black/80 transition-all duration-200 ${
+                        i === currentImageIndex
+                          ? "w-2.5 h-2.5 bg-white shadow-sm scale-110"
+                          : "w-1.5 h-1.5 bg-white/70"
+                      }`}
+                    />
+                  ))}
+                </div>
+              </>
+            )}
+          </div>
+
+          {/* CONTENT */}
+          <div className="flex flex-col">
+            <h3 className="text-base font-extrabold uppercase text-slate-900 mb-2 leading-snug">
+              {post.title}
+            </h3>
+
+            {post.tags && post.tags.length > 0 && (
+              <div className="flex flex-wrap gap-1.5 mb-3">
+                {post.tags.map((tag, i) => (
+                  <span
+                    key={i}
+                    className="inline-flex items-center gap-1 text-[10px] font-bold bg-slate-100 text-slate-600 px-2.5 py-1 rounded-md"
+                  >
+                    <Tag size={10} />
+                    {tag}
+                  </span>
+                ))}
+              </div>
+            )}
+
+            {/* LINK SECTION */}
+            <div
+              onClick={() => {
+                if (!isLinkDead && projectUrl) {
+                  setPreviewUrl(projectUrl);
+                } else {
+                  toast.error("This project link appears to be dead");
+                }
+              }}
+              className="group/link relative flex items-center justify-between p-[1px] rounded-xl mb-3 transition-all duration-300 hover:scale-[1.01] cursor-pointer"
+            >
+              <div
+                className={`absolute inset-0 rounded-xl opacity-20 group-hover/link:opacity-100 transition-opacity duration-500 bg-gradient-to-r ${
+                  isLinkDead
+                    ? "from-red-500 to-orange-500"
+                    : "from-blue-600 via-indigo-500 to-emerald-400"
+                }`}
+              />
+              <div className="relative w-full flex items-center justify-between bg-white border border-slate-200/80 rounded-[11px] px-3.5 py-2.5 shadow-sm">
+                <div className="flex items-center gap-2.5 truncate">
+                  <div
+                    className={`flex items-center justify-center w-7 h-7 rounded-lg transition-colors ${
+                      isLinkDead
+                        ? "bg-red-50 text-red-500"
+                        : "bg-blue-50 text-blue-600 group-hover/link:bg-blue-600 group-hover/link:text-white"
+                    }`}
+                  >
+                    <Globe size={14} strokeWidth={2.5} />
+                  </div>
+                  <span className="text-xs font-bold text-slate-700 truncate">
+                    {projectUrl ? projectUrl.replace(/^https?:\/\//i, "").replace(/^www\./i, "") : "No Link"}
+                  </span>
+                </div>
+
+                <div className="flex items-center gap-2 shrink-0">
+                  <span
+                    className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-md text-[9px] font-black uppercase ${
+                      isLinkDead
+                        ? "bg-red-50 text-red-600 border border-red-100"
+                        : "bg-emerald-50 text-emerald-600 border border-emerald-100"
+                    }`}
+                  >
+                    <span
+                      className={`w-1.5 h-1.5 rounded-full ${
+                        isLinkDead ? "bg-red-500" : "bg-emerald-500 animate-pulse"
+                      }`}
+                    />
+                    {isLinkDead ? "Dead" : "Live"}
+                  </span>
+                  <ExternalLink size={12} className="text-slate-400 group-hover/link:text-blue-600" />
+                </div>
+              </div>
+            </div>
+
+            {/* DESCRIPTION */}
+            <p className="text-xs text-slate-600 leading-relaxed font-normal mb-4">
+              {isExpanded ? post.description : `${post.description?.slice(0, maxLength)}`}
+
+              {post.description && post.description.length > maxLength && (
+                <button
+                  onClick={toggleExpand}
+                  className="ml-1 text-xs text-blue-600 hover:underline font-bold"
+                >
+                  {isExpanded ? " Show Less" : " ...Read More"}
+                </button>
+              )}
+            </p>
+
+            {/* ACTION BAR */}
+            <div className="flex justify-between items-center border-t border-slate-100 pt-3">
+              <div className="flex gap-6">
+                <button
+                  onClick={() => handleLike(post)}
+                  className="flex items-center gap-2 group cursor-pointer"
+                >
+                  <Heart
+                    size={20}
+                    className={`transition-transform duration-200 group-hover:scale-110 ${
+                      isLiked ? "fill-red-500 text-red-500" : "text-slate-400"
+                    }`}
+                  />
+                  <span
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (!user) return setShowAuthModal(true);
+                      setLikePost(post);
+                    }}
+                    className="text-xs font-bold text-slate-800 hover:text-blue-600"
+                  >
+                    {likeCount}
+                  </span>
+                </button>
+
+                <button
+                  onClick={() => (!user ? setShowAuthModal(true) : setCommentPost(post))}
+                  className="flex items-center gap-2 group cursor-pointer"
+                >
+                  <MessageCircle
+                    size={20}
+                    className="text-slate-400 group-hover:text-blue-600 transition"
+                  />
+                  <span className="text-xs font-bold text-slate-800">{commentCount}</span>
+                </button>
               </div>
 
               <button
                 onClick={() => setSharePost(post)}
-                className="p-2 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-full transition"
+                className="p-2 text-slate-400 hover:bg-slate-100 rounded-xl transition"
               >
-                <Share2 size={18} />
+                <Share2 size={16} />
               </button>
-            </div>
-
-            {/* IMAGE PREVIEW AREA */}
-            <div
-              className="relative bg-slate-950 group h-64 rounded-2xl flex items-center justify-center overflow-hidden cursor-pointer mb-5"
-              onClick={() => {
-                if (!user) return setShowAuthModal(true);
-                setImagePost(post);
-                setModalIndex(currentImageIndex);
-              }}
-            >
-              {images.length > 0 ? (
-                <img
-                  src={images[currentImageIndex]}
-                  className={`w-full h-full object-cover transition-transform duration-500 group-hover:scale-105 ${
-                    !user ? "blur-sm opacity-60" : ""
-                  }`}
-                  alt="drop preview"
-                />
-              ) : (
-                <div className="text-slate-400 text-xs font-semibold flex flex-col items-center">
-                  <Globe size={32} />
-                  <span className="mt-1">No Screenshot</span>
-                </div>
-              )}
-
-              {!user && (
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <div className="bg-white/90 px-4 py-2 rounded-xl flex items-center gap-2 text-[10px] font-black uppercase text-slate-900 shadow-xl">
-                    <Lock size={12} className="text-blue-600" /> Exclusive Drop
-                  </div>
-                </div>
-              )}
-
-              {user && images.length > 1 && (
-                <>
-                  <div className="absolute inset-x-3 top-1/2 -translate-y-1/2 flex justify-between">
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setCurrentImageIndex((p) => (p - 1 + images.length) % images.length);
-                      }}
-                      className="bg-black/50 text-white p-2 rounded-xl backdrop-blur-md hover:bg-black/80"
-                    >
-                      <ChevronLeft size={18} />
-                    </button>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setCurrentImageIndex((p) => (p + 1) % images.length);
-                      }}
-                      className="bg-black/50 text-white p-2 rounded-xl backdrop-blur-md hover:bg-black/80"
-                    >
-                      <ChevronRight size={18} />
-                    </button>
-                  </div>
-                  <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1">
-                    {images.map((_, i) => (
-                      <div
-                        key={i}
-                        className={`h-1.5 rounded-full transition-all ${
-                          i === currentImageIndex ? "w-4 bg-white" : "w-1.5 bg-white/40"
-                        }`}
-                      />
-                    ))}
-                  </div>
-                </>
-              )}
-            </div>
-
-            {/* CONTENT */}
-            <div className="flex flex-col">
-              <h3 className="text-base font-extrabold uppercase text-slate-900 mb-2 leading-snug">
-                {post.title}
-              </h3>
-
-              {post.tags && post.tags.length > 0 && (
-                <div className="flex flex-wrap gap-1.5 mb-4">
-                  {post.tags.map((tag, i) => (
-                    <span
-                      key={i}
-                      className="inline-flex items-center gap-1 text-[10px] font-bold bg-slate-100 text-slate-600 px-2.5 py-1 rounded-md"
-                    >
-                      <Tag size={10} />
-                      {tag}
-                    </span>
-                  ))}
-                </div>
-              )}
-
-              {/* LINK SECTION */}
-              <div
-                onClick={() => {
-                  if (!user) {
-                    setShowAuthModal(true);
-                  } else if (!isLinkDead && projectUrl) {
-                    setPreviewUrl(projectUrl);
-                  } else {
-                    toast.error("This project link appears to be dead");
-                  }
-                }}
-                className="group/link relative flex items-center justify-between p-[1px] rounded-xl mb-4 transition-all duration-300 hover:scale-[1.01] cursor-pointer"
-              >
-                <div
-                  className={`absolute inset-0 rounded-xl opacity-20 group-hover/link:opacity-100 transition-opacity duration-500 bg-gradient-to-r ${
-                    isLinkDead
-                      ? "from-red-500 to-orange-500"
-                      : "from-blue-600 via-indigo-500 to-emerald-400"
-                  }`}
-                />
-                <div className="relative w-full flex items-center justify-between bg-white border border-slate-200/80 rounded-[11px] px-3.5 py-2.5 shadow-sm">
-                  <div className="flex items-center gap-2.5 truncate">
-                    <div
-                      className={`flex items-center justify-center w-7 h-7 rounded-lg transition-colors ${
-                        isLinkDead
-                          ? "bg-red-50 text-red-500"
-                          : "bg-blue-50 text-blue-600 group-hover/link:bg-blue-600 group-hover/link:text-white"
-                      }`}
-                    >
-                      <Globe size={14} strokeWidth={2.5} />
-                    </div>
-                    <span className="text-xs font-bold text-slate-700 truncate">
-                      {user && projectUrl
-                        ? projectUrl.replace(/^https?:\/\//i, "").replace(/^www\./i, "")
-                        : "protected-project-url"}
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-2 shrink-0">
-                    <span
-                      className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-md text-[9px] font-black uppercase ${
-                        isLinkDead
-                          ? "bg-red-50 text-red-600 border border-red-100"
-                          : "bg-emerald-50 text-emerald-600 border border-emerald-100"
-                      }`}
-                    >
-                      <span
-                        className={`w-1.5 h-1.5 rounded-full ${
-                          isLinkDead ? "bg-red-500" : "bg-emerald-500 animate-pulse"
-                        }`}
-                      />
-                      {isLinkDead ? "Dead" : "Live"}
-                    </span>
-                    <ExternalLink size={12} className="text-slate-400 group-hover/link:text-blue-600" />
-                  </div>
-                </div>
-              </div>
-
-              {/* DESCRIPTION */}
-              <p className="text-xs text-slate-600 leading-relaxed font-normal mb-5">
-                {isExpanded ? post.description : `${post.description?.slice(0, maxLength)}`}
-
-                {post.description && post.description.length > maxLength && (
-                  <button
-                    onClick={toggleExpand}
-                    className="ml-1 text-xs text-blue-600 hover:underline font-bold"
-                  >
-                    {isExpanded ? " Show Less" : " ...Read More"}
-                  </button>
-                )}
-              </p>
-
-              {/* ACTION BAR */}
-              <div className="flex justify-between items-center border-t border-slate-100 pt-4">
-                <div className="flex gap-6">
-                  <button
-                    onClick={() => handleLike(post)}
-                    className="flex items-center gap-2 group cursor-pointer"
-                  >
-                    <Heart
-                      size={20}
-                      className={`transition-transform duration-200 group-hover:scale-110 ${
-                        isLiked ? "fill-red-500 text-red-500" : "text-slate-400"
-                      }`}
-                    />
-                    <span
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        if (!user) return setShowAuthModal(true);
-                        setLikePost(post);
-                      }}
-                      className="text-xs font-bold text-slate-800 hover:text-blue-600"
-                    >
-                      {likeCount}
-                    </span>
-                  </button>
-
-                  <button
-                    onClick={() => (!user ? setShowAuthModal(true) : setCommentPost(post))}
-                    className="flex items-center gap-2 group cursor-pointer"
-                  >
-                    <MessageCircle
-                      size={20}
-                      className="text-slate-400 group-hover:text-blue-600 transition"
-                    />
-                    <span className="text-xs font-bold text-slate-800">{commentCount}</span>
-                  </button>
-                </div>
-
-                <button
-                  onClick={() => setSharePost(post)}
-                  className="p-2 text-slate-400 hover:bg-slate-100 rounded-xl transition"
-                >
-                  <Share2 size={16} />
-                </button>
-              </div>
             </div>
           </div>
         </div>
@@ -480,6 +461,7 @@ function FromShare() {
         )}
       </AnimatePresence>
 
+      {/* IMAGE MODAL */}
       {imagePost && (
         <ImageModal
           post={post}
@@ -500,7 +482,12 @@ function FromShare() {
           setCommentText={setCommentText}
           submitComment={submitComment}
           onClose={() => setCommentPost(null)}
-          setCommentPost={setPost}
+          setCommentPost={(upd) => {
+            const updatedValue = typeof upd === "function" ? upd(commentPost || post) : upd;
+            setCommentPost(updatedValue);
+            setPost(updatedValue);
+            if (imagePost) setImagePost(updatedValue);
+          }}
         />
       )}
 

@@ -82,8 +82,9 @@ const { checkAuth } = useAuthStore();
       }
 
       try {
-        const { data } = await API.get(`/user/search?q=${searchQuery}`);
-        setSuggestions(Array.isArray(data) ? data : []);
+        const { data } = await API.get(`/users/search/${searchQuery}`);
+        const userList = data?.data || data;
+        setSuggestions(Array.isArray(userList) ? userList : []);
         setShowSuggestions(true);
       } catch (err) {
         console.error("Search error", err);

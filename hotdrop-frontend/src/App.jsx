@@ -9,6 +9,7 @@ import Login from './auth/Login';
 import Navbar from './pages/Navbar';
 import CreatePost from './pages/createPost/CreatePost';
 import EditUserProfile from './profile/EditUserProfile';
+import FromShare from './profile/post/FromShare';
 import { useAuthStore, useUIStore } from './store/useAuthStore';
 import { Slide, ToastContainer } from 'react-toastify';
 
@@ -27,28 +28,23 @@ function HomePage() {
 function AppLayout() {
   const location = useLocation();
   const checkAuth = useAuthStore((state) => state.checkAuth);
-  
 
   const { isCreatePostOpen, closeCreatePost } = useUIStore();
 
-  
   const showNavbar = location.pathname === '/';
 
- 
   useEffect(() => {
     checkAuth();
   }, []);
 
   return (
     <div className="relative min-h-screen">
-     
       {showNavbar && <Navbar />}
-       
+
       <main className={showNavbar ? "pt-16" : ""}>
         <Outlet />
       </main>
 
-     
       <CreatePost isOpen={isCreatePostOpen} onClose={closeCreatePost} />
     </div>
   );
@@ -74,6 +70,18 @@ function App() {
         {
           path: '/profile/me',
           element: <EditUserProfile />,
+        },
+        {
+          path: '/user/userprofile/:hotdropId',
+          element: <EditUserProfile />,
+        },
+        {
+          path: '/posts/share/:postId',
+          element: <FromShare />,
+        },
+        {
+          path: '/posts/:postId',
+          element: <FromShare />,
         },
         {
           path: '/auth/verify-email',

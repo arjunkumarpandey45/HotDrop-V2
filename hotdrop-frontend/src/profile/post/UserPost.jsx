@@ -10,10 +10,10 @@ import {
   Trash2,
   ExternalLink,
   MoreVertical,
-  AlertCircle,
+
   Loader2,
   ShieldCheck,
-  Tag,
+
 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import ImageModal from "./ImageModal";
@@ -48,6 +48,23 @@ function UserPost({ postsOverride, hideOptions, ownerOverride }) {
   const [expandedMap, setExpandedMap] = useState({});
   const [doubleTapHeartMap, setDoubleTapHeartMap] = useState({});
   const [hoveredPost, setHoveredPost] = useState(null);
+  const [popoverPosition, setPopoverPosition] = useState("center");
+
+  const handleCardHover = (e, post) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    const screenWidth = window.innerWidth;
+    const cardCenterX = rect.left + rect.width / 2;
+
+    if (cardCenterX < screenWidth * 0.38) {
+      setPopoverPosition("right");
+    } else if (cardCenterX > screenWidth * 0.62) {
+      setPopoverPosition("left");
+    } else {
+      setPopoverPosition("top");
+    }
+
+    setHoveredPost(post);
+  };
 
   const lastTapTimeRef = useRef({});
   const clickTimeoutRef = useRef({});
@@ -267,23 +284,33 @@ function UserPost({ postsOverride, hideOptions, ownerOverride }) {
     e.preventDefault();
     if (!commentText.trim()) return;
 
-    const postId = commentPost?.id || commentPost?._id;
+    const targetPostId = commentPost?.id || commentPost?._id;
+    const textToSubmit = commentText;
 
     try {
-      const res = await API.post(`/posts/comment/${postId}`, {
-        text: commentText,
+      const res = await API.post(`/posts/comment/${targetPostId}`, {
+        text: textToSubmit,
       });
 
       showCommentToast("Comment added!");
-      const newComment = res.data?.data || res.data;
+      const rawComment = res.data?.data?.comment || res.data?.data || res.data;
+      const newComment = {
+        id: rawComment.id || rawComment._id || String(Date.now()),
+        text: rawComment.text || rawComment.comment || textToSubmit,
+        createdAt: rawComment.createdAt || new Date().toISOString(),
+        user: (typeof rawComment.user === "object" && rawComment.user?.hotdropId ? rawComment.user : null) ||
+              (typeof rawComment.creator === "object" && rawComment.creator?.hotdropId ? rawComment.creator : null) ||
+              user,
+      };
 
       const updatePostFn = (p) => {
         const pId = p.id || p._id;
-        if (pId === postId) {
+        if (String(pId) === String(targetPostId)) {
+          const updatedComments = [newComment, ...(p.comments || [])];
           return {
             ...p,
-            comments: [newComment, ...(p.comments || [])],
-            commentCount: (p.commentCount || 0) + 1,
+            comments: updatedComments,
+            commentCount: updatedComments.length,
           };
         }
         return p;
@@ -299,20 +326,30 @@ function UserPost({ postsOverride, hideOptions, ownerOverride }) {
           : null,
       }));
 
-      setCommentPost((prev) =>
-        prev
-          ? {
-              ...prev,
-              comments: [newComment, ...(prev.comments || [])],
-              commentCount: (prev.commentCount || 0) + 1,
-            }
-          : null
-      );
+      setCommentPost((prev) => {
+        if (!prev) return null;
+        const updatedComments = [newComment, ...(prev.comments || [])];
+        return {
+          ...prev,
+          comments: updatedComments,
+          commentCount: updatedComments.length,
+        };
+      });
+
+      setImagePost((prev) => {
+        if (!prev || String(prev.id || prev._id) !== String(targetPostId)) return prev;
+        const updatedComments = [newComment, ...(prev.comments || [])];
+        return {
+          ...prev,
+          comments: updatedComments,
+          commentCount: updatedComments.length,
+        };
+      });
 
       setCommentText("");
     } catch (error) {
       console.error("Comment submit error:", error);
-      toast.error("Failed to add comment");
+      showErrorToast("Failed to add comment");
     }
   };
 
@@ -357,7 +394,7 @@ function UserPost({ postsOverride, hideOptions, ownerOverride }) {
               <div
                 className="hidden md:block relative bg-slate-50 rounded-2xl overflow-hidden cursor-pointer aspect-video group shadow-sm hover:shadow-lg transition-all duration-200 border border-slate-200/60 select-none"
                 onClick={(e) => handleImageClick(e, post, imgIndex)}
-                onMouseEnter={() => setHoveredPost(post)}
+                onMouseEnter={(e) => handleCardHover(e, post)}
                 onMouseLeave={() => setHoveredPost(null)}
               >
                 {images.length > 0 ? (
@@ -482,37 +519,39 @@ function UserPost({ postsOverride, hideOptions, ownerOverride }) {
                     </div>
                   )}
 
-                  {/* IMAGE SLIDER */}
+                  {/* IMAGE SLIDER BUTTONS & COMPACT BLACK BORDERED WHITE DOTS */}
                   {user && images.length > 1 && (
-                    <div className="absolute inset-x-3 top-1/2 -translate-y-1/2 flex justify-between">
-                      <button
-                        onClick={(e) => prevImage(e, pId, images.length)}
-                        className="bg-black/40 text-white p-1.5 rounded-lg backdrop-blur-sm"
-                      >
-                        <ChevronLeft size={16} />
-                      </button>
+                    <>
+                      <div className="absolute inset-x-2 top-1/2 -translate-y-1/2 flex justify-between pointer-events-none z-20">
+                        <button
+                          onClick={(e) => prevImage(e, pId, images.length)}
+                          className="pointer-events-auto bg-black/60 hover:bg-black/80 text-white p-1 rounded-full border border-white/30 shadow-md backdrop-blur-sm transition-transform hover:scale-105 cursor-pointer"
+                        >
+                          <ChevronLeft size={14} />
+                        </button>
 
-                      <button
-                        onClick={(e) => nextImage(e, pId, images.length)}
-                        className="bg-black/40 text-white p-1.5 rounded-lg backdrop-blur-sm"
-                      >
-                        <ChevronRight size={16} />
-                      </button>
-                    </div>
-                  )}
+                        <button
+                          onClick={(e) => nextImage(e, pId, images.length)}
+                          className="pointer-events-auto bg-black/60 hover:bg-black/80 text-white p-1 rounded-full border border-white/30 shadow-md backdrop-blur-sm transition-transform hover:scale-105 cursor-pointer"
+                        >
+                          <ChevronRight size={14} />
+                        </button>
+                      </div>
 
-                  {/* DOTS */}
-                  {user && images.length > 1 && (
-                    <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1">
-                      {images.map((_, i) => (
-                        <div
-                          key={i}
-                          className={`h-1 rounded-full ${
-                            i === imgIndex ? "w-4 bg-white" : "w-2 bg-white/50"
-                          }`}
-                        />
-                      ))}
-                    </div>
+                      {/* COMPACT WHITE DOTS WITH BLACK BORDER */}
+                      <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex items-center gap-1.5 pointer-events-none z-20">
+                        {images.map((_, i) => (
+                          <div
+                            key={i}
+                            className={`rounded-full border border-black/80 transition-all duration-200 ${
+                              i === imgIndex
+                                ? "w-2.5 h-2.5 bg-white shadow-sm scale-110"
+                                : "w-1.5 h-1.5 bg-white/70"
+                            }`}
+                          />
+                        ))}
+                      </div>
+                    </>
                   )}
                 </div>
 
@@ -686,18 +725,36 @@ function UserPost({ postsOverride, hideOptions, ownerOverride }) {
         })}
       </div>
 
-      {/* 🔍 HALF-SCREEN FLOATING IMAGE ZOOM PREVIEW ON HOVER */}
+      {/* 🔍 DIRECTIONAL FLOATING IMAGE ZOOM PREVIEW ON HOVER */}
       <AnimatePresence>
         {hoveredPost && (
           <motion.div
             key="hover-zoom"
-            initial={{ opacity: 0, scale: 0.88, y: 15 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.88, y: 15 }}
-            transition={{ duration: 0.2, ease: "easeOut" }}
-            className="fixed inset-0 pointer-events-none z-[500] flex items-center justify-center p-6"
+            initial={
+              popoverPosition === "right"
+                ? { opacity: 0, scale: 0.88, x: -60 }
+                : popoverPosition === "left"
+                ? { opacity: 0, scale: 0.88, x: 60 }
+                : { opacity: 0, scale: 0.88, y: -40 }
+            }
+            animate={{ opacity: 1, scale: 1, x: 0, y: 0 }}
+            exit={
+              popoverPosition === "right"
+                ? { opacity: 0, scale: 0.88, x: -60 }
+                : popoverPosition === "left"
+                ? { opacity: 0, scale: 0.88, x: 60 }
+                : { opacity: 0, scale: 0.88, y: -40 }
+            }
+            transition={{ duration: 0.22, ease: "easeOut" }}
+            className={`fixed pointer-events-none z-[500] flex items-center justify-center p-4 ${
+              popoverPosition === "right"
+                ? "right-6 top-1/2 -translate-y-1/2"
+                : popoverPosition === "left"
+                ? "left-6 top-1/2 -translate-y-1/2"
+                : "inset-x-0 top-6 flex justify-center"
+            }`}
           >
-            <div className="relative w-[36vw] max-w-[550px] h-[36vh] bg-slate-950/90 backdrop-blur-2xl border border-slate-700/60 rounded-2xl overflow-hidden shadow-[0_25px_80px_rgba(0,0,0,0.7)] flex flex-col items-center justify-center p-2.5">
+            <div className="relative w-[46vw] max-w-[760px] h-[50vh] bg-slate-950/92 backdrop-blur-2xl border border-slate-700/60 rounded-3xl overflow-hidden shadow-[0_25px_80px_rgba(0,0,0,0.7)] flex flex-col items-center justify-center p-3">
               {(hoveredPost.imageUrls || hoveredPost.images || []).length > 0 ? (
                 <img
                   src={
@@ -826,9 +883,10 @@ function UserPost({ postsOverride, hideOptions, ownerOverride }) {
           commentText={commentText}
           setCommentText={setCommentText}
           setCommentPost={(upd) => {
-            setCommentPost(upd);
-            if (imagePost && (imagePost.id || imagePost._id) === (upd.id || upd._id)) {
-              setImagePost(upd);
+            const updatedValue = typeof upd === "function" ? upd(commentPost) : upd;
+            setCommentPost(updatedValue);
+            if (updatedValue && imagePost && (imagePost.id || imagePost._id) === (updatedValue.id || updatedValue._id)) {
+              setImagePost(updatedValue);
             }
           }}
           submitComment={submitComment}
