@@ -20,12 +20,14 @@ import API from "../api/Api";
 import dp from "../assets/dp.jpg";
 import { useAuthStore, useUIStore } from "../store/useAuthStore";
 import { showSuccessToastForLogout } from "../toast/Toast";
+import SearchModal from "./SearchModal";
 
 const Navbar = () => {
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isMobileSearchOpen, setIsMobileSearchOpen] = useState(false);
   const [isLoginPromptOpen, setIsLoginPromptOpen] = useState(false);
+  const [isSearchModalOpen, setIsSearchModalOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [suggestions, setSuggestions] = useState([]);
@@ -236,53 +238,30 @@ const { checkAuth } = useAuthStore();
             </div>
 
             {/* BLOCK 2: Center Search Dock (Desktop) */}
-            <div className="hidden flex-1 max-w-lg md:flex justify-center" ref={desktopSearchRef}>
-              <div className="relative w-full">
-                <div className="relative flex items-center rounded-2xl border border-slate-200/80 bg-white/90 p-1.5 shadow-lg shadow-slate-200/50 backdrop-blur-xl transition-within:border-blue-500 transition-within:ring-4 transition-within:ring-blue-100">
+            <div className="hidden flex-1 max-w-lg md:flex justify-center">
+              <div
+                onClick={() => setIsSearchModalOpen(true)}
+                className="w-full cursor-pointer"
+              >
+                <div className="relative flex items-center rounded-2xl border border-slate-200/80 bg-white/90 p-1.5 shadow-lg shadow-slate-200/50 backdrop-blur-xl transition-all hover:border-blue-300">
+                  <Search className="ml-3 h-4 w-4 text-slate-400" />
                   <input
+                    readOnly
                     type="text"
                     placeholder="Search creators by HotDrop ID..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    onKeyDown={handleSearch}
-                    className="w-full bg-transparent px-3 py-1.5 text-sm font-medium text-slate-800 placeholder-slate-400 outline-none"
+                    className="w-full bg-transparent px-3 py-1.5 text-sm font-medium text-slate-800 placeholder-slate-400 outline-none cursor-pointer"
                   />
+                  <span className="mr-2 px-2 py-0.5 text-[10px] font-bold text-slate-400 bg-slate-100 rounded-md border border-slate-200">
+                    Search
+                  </span>
                 </div>
-
-                {/* Suggestions Floating Card */}
-                {showSuggestions && suggestions.length > 0 && (
-                  <div className="absolute left-0 right-0 top-full z-50 mt-3 overflow-hidden rounded-2xl border border-slate-100 bg-white p-2 shadow-2xl animate-in fade-in zoom-in-95 duration-150">
-                    <div className="px-3 py-1.5 text-[10px] font-bold uppercase tracking-widest text-slate-400 border-b border-slate-100 mb-1">
-                      Matching Profiles
-                    </div>
-                    <div className="space-y-1">
-                      {suggestions.map((s) => (
-                        <button
-                          key={s._id || s.id}
-                          onClick={() => handleSuggestionClick(s.hotdropId)}
-                          className="group flex w-full items-center gap-3 rounded-xl px-3 py-2 text-left transition hover:bg-blue-50"
-                        >
-                          <img
-                            src={s.profileImageUrl || s.profilePicture || s.avatar || dp}
-                            alt={s.hotdropId}
-                            className="h-8 w-8 rounded-full object-cover ring-1 ring-slate-200"
-                          />
-                          <div className="flex flex-col min-w-0 flex-1">
-                            <span className="truncate text-sm font-semibold text-slate-900 group-hover:text-blue-600">@{s.hotdropId}</span>
-                            <span className="truncate text-[10px] uppercase font-medium text-slate-400">{s.username}</span>
-                          </div>
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                )}
               </div>
             </div>
 
             {/* BLOCK 3: Right Actions Dock */}
             <div className="flex items-center gap-2 rounded-2xl border border-slate-200/80 bg-white/90 p-1.5 shadow-lg shadow-slate-200/50 backdrop-blur-xl">
               <button
-                onClick={() => setIsMobileSearchOpen(true)}
+                onClick={() => setIsSearchModalOpen(true)}
                 className="rounded-xl p-2 text-slate-600 transition hover:bg-slate-100 md:hidden"
                 aria-label="Search"
               >
@@ -466,6 +445,10 @@ const { checkAuth } = useAuthStore();
           </div>
         </div>
       )}
+      <SearchModal
+        isOpen={isSearchModalOpen}
+        onClose={() => setIsSearchModalOpen(false)}
+      />
     </header>
   );
 };

@@ -368,4 +368,22 @@ public class UserServiceImpl implements UserService {
                 .collect(Collectors.toList());
     }
 
+    public List<PostResponseDto.UserSummaryDto> searchTop5Users(String query) {
+        if (query == null || query.isBlank()) {
+            return Collections.emptyList();
+        }
+
+        String cleanQuery = query.trim();
+        List<User> users = userRepo.findTop5ByHotdropIdContainingIgnoreCaseOrFirstNameContainingIgnoreCase(cleanQuery, cleanQuery);
+
+        return users.stream()
+                .map(user -> PostResponseDto.UserSummaryDto.builder()
+                        .id(user.getId())
+                        .hotdropId(user.getHotdropId())
+                        .profilePicture(user.getProfileImageUrl())
+                        .firstName(user.getFirstName()) 
+                        .lastName(user.getLastName())
+                        .build())
+                .toList();
+    }
 }

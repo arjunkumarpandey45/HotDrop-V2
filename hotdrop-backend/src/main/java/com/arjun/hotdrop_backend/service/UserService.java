@@ -13,5 +13,6 @@ public interface UserService {
     MeResponseDto getMeByHotdropId(String hotdropId);
     MeResponseDto getMe(UUID userId);
     List<UserResponseDto> getFollowersList(UUID userId);
+    List<PostResponseDto.UserSummaryDto> searchTop5Users(String query);
     List<UserResponseDto> getFollowingList(UUID userId);
 }

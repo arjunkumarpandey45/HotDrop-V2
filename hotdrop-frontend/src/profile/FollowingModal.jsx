@@ -1,4 +1,4 @@
-import { X, UserCheck, Loader2, UserMinus } from "lucide-react";
+import { X, UserCheck, Loader2, UserMinus, UserPlus } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "../api/Api";
@@ -14,6 +14,7 @@ function FollowingModal({ isOpen, onClose, userId, onUnfollowSuccess }) {
   const { user: currentUser } = useAuthStore();
   const currentUserId = currentUser?.id || currentUser?._id || currentUser?.userId;
 
+  const isSelfModal = String(userId) === String(currentUserId);
   const fetchedRef = useRef(false);
 
   useEffect(() => {
@@ -29,14 +30,57 @@ function FollowingModal({ isOpen, onClose, userId, onUnfollowSuccess }) {
         setLoading(true);
         fetchedRef.current = true;
 
-        // 🎯 Fetch following list directly from GET /users/{userId}/following
+        // 1. Fetch following list for target profile directly from GET /users/{userId}/following
         const res = await axios.get(`/users/${userId}/following`);
         const payload = res.data?.data || res.data;
         const listData = Array.isArray(payload)
           ? payload
           : payload?.following || payload?.users || payload?.list || [];
 
-        setUsers(listData);
+        // 2. Fetch logged in user's following list to know who currentUser is following
+        let myFollowingIds = new Set();
+        if (currentUserId) {
+          try {
+            const myFollowingRes = await axios.get(`/users/${currentUserId}/following`);
+            const myPayload = myFollowingRes.data?.data || myFollowingRes.data;
+            const myFollowingList = Array.isArray(myPayload)
+              ? myPayload
+              : myPayload?.following || myPayload?.users || [];
+
+            myFollowingList.forEach((item) => {
+              const itemID = String(item.id || item._id || item.userId || item);
+              const itemHandle = (item.hotdropId || item.username || "").toLowerCase();
+              if (itemID) myFollowingIds.add(itemID);
+              if (itemHandle) myFollowingIds.add(itemHandle);
+            });
+          } catch (myFollowErr) {
+            console.warn("Could not fetch my following list in FollowingModal:", myFollowErr);
+          }
+        }
+
+        // 3. Annotate each user with accurate follow status
+        const annotatedUsers = listData.map((u) => {
+          const uId = String(u.id || u._id || u.userId || u.targetUserId || "");
+          const uHandle = (u.hotdropId || u.username || "").toLowerCase();
+
+          let isFollowing = false;
+          if (myFollowingIds.has(uId) || (uHandle && myFollowingIds.has(uHandle))) {
+            isFollowing = true;
+          } else if (typeof u.isFollowing === "boolean") {
+            isFollowing = u.isFollowing;
+          } else if (typeof u.isFollowedByMe === "boolean") {
+            isFollowing = u.isFollowedByMe;
+          }
+
+          return {
+            ...u,
+            isFollowing,
+            following: isFollowing,
+            isFollowedByMe: isFollowing,
+          };
+        });
+
+        setUsers(annotatedUsers);
       } catch (err) {
         console.error("Failed to load following list:", err);
       } finally {
@@ -45,7 +89,7 @@ function FollowingModal({ isOpen, onClose, userId, onUnfollowSuccess }) {
     };
 
     fetchFollowing();
-  }, [isOpen, userId]);
+  }, [isOpen, userId, currentUserId]);
 
   const handleUserClick = (targetHotdrop) => {
     if (!targetHotdrop) return;
@@ -58,10 +102,21 @@ function FollowingModal({ isOpen, onClose, userId, onUnfollowSuccess }) {
 
     const previousUsers = [...users];
 
+    // Optimistically toggle state
     setUsers((prev) =>
-      prev.filter((u) => {
+      prev.map((u) => {
         const uId = u.id || u.userId || u._id || u.targetUserId;
-        return String(uId) !== String(targetUserId);
+        if (String(uId) === String(targetUserId)) {
+          const currentStatus =
+            u.isFollowing ?? u.following ?? u.isFollowedByMe ?? false;
+          return {
+            ...u,
+            isFollowing: !currentStatus,
+            following: !currentStatus,
+            isFollowedByMe: !currentStatus,
+          };
+        }
+        return u;
       })
     );
 
@@ -76,19 +131,41 @@ function FollowingModal({ isOpen, onClose, userId, onUnfollowSuccess }) {
       });
 
       const resData = res.data?.data || res.data;
-      const isStillFollowing =
+      const isNowFollowing =
         resData?.following !== undefined
           ? resData.following
           : resData?.isFollowing !== undefined
           ? resData.isFollowing
           : false;
 
-      if (isStillFollowing === false && onUnfollowSuccess) {
-        onUnfollowSuccess(targetUserId);
+      // If viewing your own profile's following list AND unfollowed, filter it out
+      if (isSelfModal && isNowFollowing === false) {
+        setUsers((prev) =>
+          prev.filter((u) => {
+            const uId = u.id || u.userId || u._id || u.targetUserId;
+            return String(uId) !== String(targetUserId);
+          })
+        );
+      } else {
+        // If viewing someone else's profile, update the user item's follow state in list
+        setUsers((prev) =>
+          prev.map((u) => {
+            const uId = u.id || u.userId || u._id || u.targetUserId;
+            if (String(uId) === String(targetUserId)) {
+              return {
+                ...u,
+                isFollowing: isNowFollowing,
+                following: isNowFollowing,
+                isFollowedByMe: isNowFollowing,
+              };
+            }
+            return u;
+          })
+        );
       }
 
-      if (isStillFollowing === true) {
-        setUsers(previousUsers);
+      if (isNowFollowing === false && onUnfollowSuccess) {
+        onUnfollowSuccess(targetUserId);
       }
     } catch (err) {
       console.error("Unfollow error:", err.response?.data || err.message);
@@ -146,6 +223,10 @@ function FollowingModal({ isOpen, onClose, userId, onUnfollowSuccess }) {
                 (userHandle && currentUser?.hotdropId && userHandle.toLowerCase() === currentUser.hotdropId.toLowerCase()) ||
                 (userHandle && currentUser?.username && userHandle.toLowerCase() === currentUser.username.toLowerCase());
 
+              const isFollowingUser = Boolean(
+                u.isFollowing ?? u.following ?? u.isFollowedByMe ?? false
+              );
+
               return (
                 <div
                   key={uId || i}
@@ -174,17 +255,23 @@ function FollowingModal({ isOpen, onClose, userId, onUnfollowSuccess }) {
                     <button
                       onClick={() => handleToggleFollow(uId)}
                       disabled={togglingId === uId}
-                      className="shrink-0 px-2.5 py-1 rounded-md text-[11px] font-semibold transition active:scale-95 flex items-center gap-1 border bg-slate-100 hover:bg-red-50 text-slate-700 hover:text-red-600 border-slate-200/60"
+                      className={`shrink-0 px-2.5 py-1 rounded-md text-[11px] font-semibold transition active:scale-95 flex items-center gap-1 border ${
+                        isFollowingUser
+                          ? "bg-slate-100 hover:bg-red-50 text-slate-700 hover:text-red-600 border-slate-200/60"
+                          : "bg-blue-600 hover:bg-blue-700 text-white border-blue-600 shadow-sm"
+                      }`}
                     >
                       {togglingId === uId ? (
-                        <Loader2
-                          size={12}
-                          className="animate-spin text-slate-500"
-                        />
-                      ) : (
+                        <Loader2 size={12} className="animate-spin" />
+                      ) : isFollowingUser ? (
                         <>
                           <UserMinus size={12} />
                           <span>Following</span>
+                        </>
+                      ) : (
+                        <>
+                          <UserPlus size={12} />
+                          <span>Follow</span>
                         </>
                       )}
                     </button>

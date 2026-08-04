@@ -12,13 +12,10 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
-
-import static org.springframework.http.MediaType.MULTIPART_FORM_DATA_VALUE;
 
 @RestController
 @RequestMapping("/users")
@@ -122,5 +119,15 @@ public class UserController {
    public ResponseEntity<List<UserResponseDto>> getFollowing(@PathVariable UUID userId) {
       return ResponseEntity.ok(userService.getFollowingList(userId));
    }
+   @GetMapping("/suggestions/{query}")
+   public ResponseEntity<ApiResponse<List<PostResponseDto.UserSummaryDto>>> searchUsersSuggestions(@PathVariable String query) {
+      List<PostResponseDto.UserSummaryDto> suggestions = userService.searchTop5Users(query);
 
+      return ResponseHandler.generateResponse(
+
+              HttpStatus.OK,
+              "User search suggestions fetched successfully",
+              suggestions
+      );
+   }
 }

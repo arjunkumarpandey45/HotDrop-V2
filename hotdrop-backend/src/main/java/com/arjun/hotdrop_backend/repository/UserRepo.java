@@ -10,12 +10,14 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
 public interface UserRepo extends JpaRepository<User, UUID> {
     Optional<User> findByEmail(String email);
 
+    List<User> findTop5ByHotdropIdContainingIgnoreCaseOrFirstNameContainingIgnoreCase(String hotdropId, String firstName);
     Optional<User> findByHotdropId(String hotdropId);
 
     // Cleaned EntityGraph removing non-existent fields ('followers', 'following', 'posts')
