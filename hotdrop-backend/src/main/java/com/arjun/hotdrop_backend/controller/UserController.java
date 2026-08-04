@@ -122,4 +122,5 @@ public class UserController {
    public ResponseEntity<List<UserResponseDto>> getFollowing(@PathVariable UUID userId) {
       return ResponseEntity.ok(userService.getFollowingList(userId));
    }
+
 }

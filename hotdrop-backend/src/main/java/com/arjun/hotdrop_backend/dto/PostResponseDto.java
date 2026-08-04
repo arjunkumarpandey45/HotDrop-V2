@@ -42,7 +42,8 @@ public class PostResponseDto {
     public static class UserSummaryDto {
         private UUID id;
         private String hotdropId;
-       
+       private String firstName;
+        private String lastName;
         private String profilePicture;
     }
 }

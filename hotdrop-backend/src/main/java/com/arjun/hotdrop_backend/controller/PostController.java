@@ -198,4 +198,16 @@ public class PostController {
                 comments
         );
     }
+
+    @GetMapping("/{postId}/likes")
+    public ResponseEntity<ApiResponse<List<PostResponseDto.UserSummaryDto>>> getUsersWhoLikedPost(@PathVariable UUID postId) {
+        List<PostResponseDto.UserSummaryDto> likedUsers = postService.getUsersWhoLikedPost(postId);
+
+        return ResponseHandler.generateResponse(
+                HttpStatus.OK,
+                "Users who liked the post fetched successfully",
+
+                likedUsers
+        );
+    }
 }

@@ -18,4 +18,5 @@ public interface PostService {
     PostListResponseDto getPostsByUserIdPaged(UUID userId, int page, int size, String currentHotdropId);
     PostResponseDto getPostByShareUrl(String shareUrl, String hotdropId);
     List<CommentResponseDto> getCommentsByPostId(UUID postId);
+    List<PostResponseDto.UserSummaryDto> getUsersWhoLikedPost(UUID postId);
 }

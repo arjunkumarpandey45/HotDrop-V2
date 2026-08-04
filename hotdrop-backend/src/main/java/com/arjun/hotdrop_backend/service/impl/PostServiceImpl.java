@@ -431,4 +431,24 @@ public class PostServiceImpl implements PostService {
                 })
                 .collect(Collectors.toList());
     }
+    @Transactional(readOnly = true)
+    public List<PostResponseDto.UserSummaryDto> getUsersWhoLikedPost(UUID postId) {
+        Post post = postRepo.findById(postId)
+                .orElseThrow(() -> new RuntimeException("Post not found with ID: " + postId));
+
+        List<Like> likes = likeRepo.findByPost(post);
+
+        return likes.stream()
+                .map(like -> {
+                    User user = like.getUser();
+                    return PostResponseDto.UserSummaryDto.builder()
+                            .id(user.getId())
+                            .hotdropId(user.getHotdropId())
+                            .firstName(user.getFirstName())
+                            .lastName(user.getLastName())
+                            .profilePicture(user.getProfileImageUrl())
+                            .build();
+                })
+                .toList();
+    }
 }
