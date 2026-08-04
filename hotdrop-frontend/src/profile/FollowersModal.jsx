@@ -1,5 +1,6 @@
 import { X, UserCheck, Loader2, UserMinus, UserPlus } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
+import { useNavigate } from "react-router-dom";
 import axios from "../api/Api";
 import dp from "../assets/dp.jpg";
 import { useAuthStore } from "../store/useAuthStore";
@@ -8,12 +9,11 @@ function FollowersModal({ isOpen, onClose, userId, onFollowStatusChange }) {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(false);
   const [togglingId, setTogglingId] = useState(null);
+  const navigate = useNavigate();
 
-  
   const { user: currentUser } = useAuthStore();
   const currentUserId = currentUser?.id || currentUser?._id || currentUser?.userId;
 
-  
   const fetchedRef = useRef(false);
 
   useEffect(() => {
@@ -28,13 +28,58 @@ function FollowersModal({ isOpen, onClose, userId, onFollowStatusChange }) {
       try {
         setLoading(true);
         fetchedRef.current = true;
+
+        // 🎯 1. Fetch followers list directly from /users/{userId}/followers
         const res = await axios.get(`/users/${userId}/followers`);
+        const payload = res.data?.data || res.data;
+        const listData = Array.isArray(payload)
+          ? payload
+          : payload?.followers || payload?.users || payload?.list || [];
 
-        const listData = Array.isArray(res.data)
-          ? res.data
-          : res.data?.data || res.data?.followers || [];
+        // 2. Fetch logged in user's following list to accurately verify who currentUser follows
+        let myFollowingIds = new Set();
+        if (currentUserId) {
+          try {
+            const myFollowingRes = await axios.get(`/users/${currentUserId}/following`);
+            const myPayload = myFollowingRes.data?.data || myFollowingRes.data;
+            const myFollowingList = Array.isArray(myPayload)
+              ? myPayload
+              : myPayload?.following || myPayload?.users || [];
 
-        setUsers(listData);
+            myFollowingList.forEach((item) => {
+              const itemID = String(item.id || item._id || item.userId || item);
+              const itemHandle = (item.hotdropId || item.username || "").toLowerCase();
+              if (itemID) myFollowingIds.add(itemID);
+              if (itemHandle) myFollowingIds.add(itemHandle);
+            });
+          } catch (myFollowErr) {
+            console.warn("Could not fetch my following list in FollowersModal:", myFollowErr);
+          }
+        }
+
+        // 3. Annotate user list with accurate follow status
+        const annotatedUsers = listData.map((u) => {
+          const uId = String(u.id || u._id || u.userId || u.targetUserId || "");
+          const uHandle = (u.hotdropId || u.username || "").toLowerCase();
+
+          let isFollowing = false;
+          if (myFollowingIds.has(uId) || (uHandle && myFollowingIds.has(uHandle))) {
+            isFollowing = true;
+          } else if (typeof u.isFollowing === "boolean") {
+            isFollowing = u.isFollowing;
+          } else if (typeof u.isFollowedByMe === "boolean") {
+            isFollowing = u.isFollowedByMe;
+          }
+
+          return {
+            ...u,
+            isFollowing,
+            following: isFollowing,
+            isFollowedByMe: isFollowing,
+          };
+        });
+
+        setUsers(annotatedUsers);
       } catch (err) {
         console.error("Failed to load followers list:", err);
       } finally {
@@ -43,7 +88,13 @@ function FollowersModal({ isOpen, onClose, userId, onFollowStatusChange }) {
     };
 
     fetchFollowers();
-  }, [isOpen, userId]);
+  }, [isOpen, userId, currentUserId]);
+
+  const handleUserClick = (targetHotdrop) => {
+    if (!targetHotdrop) return;
+    onClose();
+    navigate(`/user/userprofile/${targetHotdrop}`);
+  };
 
   const handleToggleFollow = async (targetUserId) => {
     if (!targetUserId || togglingId) return;
@@ -72,13 +123,18 @@ function FollowersModal({ isOpen, onClose, userId, onFollowStatusChange }) {
 
       const res = await axios.post("/users/follow", {
         userIdToFollow: String(targetUserId),
+        targetUserId: String(targetUserId),
+        userId: String(targetUserId),
+        id: String(targetUserId),
       });
 
       const resData = res.data?.data || res.data;
       const isNowFollowing =
         resData?.following !== undefined
           ? resData.following
-          : resData?.isFollowing;
+          : resData?.isFollowing !== undefined
+          ? resData.isFollowing
+          : true;
 
       setUsers((prev) =>
         prev.map((u) => {
@@ -96,7 +152,7 @@ function FollowersModal({ isOpen, onClose, userId, onFollowStatusChange }) {
       );
 
       if (onFollowStatusChange) {
-        onFollowStatusChange(isNowFollowing);
+        onFollowStatusChange(targetUserId, isNowFollowing);
       }
     } catch (err) {
       console.error("Toggle follow failed inside Followers modal:", err);
@@ -145,15 +201,17 @@ function FollowersModal({ isOpen, onClose, userId, onFollowStatusChange }) {
             users.map((u, i) => {
               const uId = u.id || u._id || u.userId || u.targetUserId;
               const avatar =
-                u.profileImageUrl || u.profilePicture || u.avatar || dp;
+                u.profilePicture || u.profileImageUrl || u.avatar || dp;
               const name = u.firstName
                 ? `${u.firstName} ${u.lastName || ""}`.trim()
                 : u.username || u.hotdropId || "Creator";
+              const userHandle = u.hotdropId || u.username;
 
-             
-              const isSelf = String(uId) === String(currentUserId);
+              const isSelf =
+                String(uId) === String(currentUserId) ||
+                (userHandle && currentUser?.hotdropId && userHandle.toLowerCase() === currentUser.hotdropId.toLowerCase()) ||
+                (userHandle && currentUser?.username && userHandle.toLowerCase() === currentUser.username.toLowerCase());
 
-      
               const isFollowingBack = Boolean(
                 u.isFollowing ?? u.following ?? u.isFollowedByMe ?? false
               );
@@ -163,18 +221,21 @@ function FollowersModal({ isOpen, onClose, userId, onFollowStatusChange }) {
                   key={uId || i}
                   className="flex items-center justify-between p-2 rounded-xl hover:bg-slate-50 transition"
                 >
-                  <div className="flex items-center gap-2.5 min-w-0 pr-2">
+                  <div
+                    onClick={() => handleUserClick(userHandle)}
+                    className="flex items-center gap-2.5 min-w-0 pr-2 cursor-pointer group/user flex-1"
+                  >
                     <img
                       src={avatar}
                       alt={name}
-                      className="w-9 h-9 sm:w-10 sm:h-10 rounded-full object-cover border border-slate-200 shrink-0 bg-slate-100"
+                      className="w-9 h-9 sm:w-10 sm:h-10 rounded-full object-cover border border-slate-200 shrink-0 bg-slate-100 group-hover/user:opacity-80 transition"
                     />
                     <div className="min-w-0 flex flex-col">
-                      <h4 className="text-xs font-bold text-slate-800 truncate leading-tight">
+                      <h4 className="text-xs font-bold text-slate-800 truncate leading-tight group-hover/user:text-blue-600 transition">
                         {name} {isSelf && "(You)"}
                       </h4>
-                      <span className="text-[11px] text-slate-600 font-medium truncate mt-0.5">
-                        @{u.hotdropId || u.username || "hotdrop"}
+                      <span className="text-[11px] text-slate-600 font-medium truncate mt-0.5 group-hover/user:text-blue-500 transition">
+                        @{userHandle || "hotdrop"}
                       </span>
                     </div>
                   </div>
