@@ -170,7 +170,7 @@ function UserPost({ postsOverride, hideOptions, ownerOverride }) {
     };
 
     try {
-      const res = await API.post(`/posts/like/${postId}`);
+      const res = await API.post(`/posts/like-post/${postId}`);
       if (res.status === 200 || res.data?.statusCode === 200) {
         const payloadData = res.data?.data || res.data;
         const newLikeCount = payloadData?.likeCount ?? (postToLike.likeCount + (postToLike.liked ? -1 : 1));
@@ -288,7 +288,7 @@ function UserPost({ postsOverride, hideOptions, ownerOverride }) {
     const textToSubmit = commentText;
 
     try {
-      const res = await API.post(`/posts/comment/${targetPostId}`, {
+      const res = await API.post(`/posts/comment-to-post/${targetPostId}`, {
         text: textToSubmit,
       });
 

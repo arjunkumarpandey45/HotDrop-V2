@@ -5,7 +5,7 @@ import axios from "../api/Api";
 import dp from "../assets/dp.jpg";
 import { useAuthStore } from "../store/useAuthStore";
 
-function FollowingModal({ isOpen, onClose, userId, onUnfollowSuccess }) {
+function FollowingModal({ isOpen, onClose, userId, onFollowStatusChange }) {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(false);
   const [togglingId, setTogglingId] = useState(null);
@@ -14,7 +14,6 @@ function FollowingModal({ isOpen, onClose, userId, onUnfollowSuccess }) {
   const { user: currentUser } = useAuthStore();
   const currentUserId = currentUser?.id || currentUser?._id || currentUser?.userId;
 
-  const isSelfModal = String(userId) === String(currentUserId);
   const fetchedRef = useRef(false);
 
   useEffect(() => {
@@ -30,8 +29,8 @@ function FollowingModal({ isOpen, onClose, userId, onUnfollowSuccess }) {
         setLoading(true);
         fetchedRef.current = true;
 
-        // 1. Fetch following list for target profile directly from GET /users/{userId}/following
-        const res = await axios.get(`/users/${userId}/following`);
+        // 1. Fetch following list for target profile directly from GET /users/{userId}/get-all-following
+        const res = await axios.get(`/users/${userId}/get-all-following`);
         const payload = res.data?.data || res.data;
         const listData = Array.isArray(payload)
           ? payload
@@ -41,7 +40,7 @@ function FollowingModal({ isOpen, onClose, userId, onUnfollowSuccess }) {
         let myFollowingIds = new Set();
         if (currentUserId) {
           try {
-            const myFollowingRes = await axios.get(`/users/${currentUserId}/following`);
+            const myFollowingRes = await axios.get(`/users/${currentUserId}/get-all-following`);
             const myPayload = myFollowingRes.data?.data || myFollowingRes.data;
             const myFollowingList = Array.isArray(myPayload)
               ? myPayload
@@ -58,18 +57,13 @@ function FollowingModal({ isOpen, onClose, userId, onUnfollowSuccess }) {
           }
         }
 
-        // 3. Annotate each user with accurate follow status
         const annotatedUsers = listData.map((u) => {
           const uId = String(u.id || u._id || u.userId || u.targetUserId || "");
           const uHandle = (u.hotdropId || u.username || "").toLowerCase();
 
-          let isFollowing = false;
-          if (myFollowingIds.has(uId) || (uHandle && myFollowingIds.has(uHandle))) {
-            isFollowing = true;
-          } else if (typeof u.isFollowing === "boolean") {
-            isFollowing = u.isFollowing;
-          } else if (typeof u.isFollowedByMe === "boolean") {
-            isFollowing = u.isFollowedByMe;
+          let isFollowing = true;
+          if (currentUserId && currentUserId !== userId) {
+            isFollowing = myFollowingIds.has(uId) || (uHandle && myFollowingIds.has(uHandle));
           }
 
           return {
@@ -97,15 +91,19 @@ function FollowingModal({ isOpen, onClose, userId, onUnfollowSuccess }) {
     navigate(`/user/userprofile/${targetHotdrop}`);
   };
 
-  const handleToggleFollow = async (targetUserId) => {
-    if (!targetUserId || togglingId) return;
+  const handleToggleFollow = async (userObj) => {
+    const rawId = typeof userObj === "object"
+      ? (userObj.id || userObj._id || userObj.userId || userObj.targetUserId)
+      : userObj;
+
+    if (!rawId || togglingId) return;
+    const targetUserId = String(rawId);
 
     const previousUsers = [...users];
 
-    // Optimistically toggle state
     setUsers((prev) =>
       prev.map((u) => {
-        const uId = u.id || u.userId || u._id || u.targetUserId;
+        const uId = u.id || u._id || u.userId || u.targetUserId;
         if (String(uId) === String(targetUserId)) {
           const currentStatus =
             u.isFollowing ?? u.following ?? u.isFollowedByMe ?? false;
@@ -124,10 +122,7 @@ function FollowingModal({ isOpen, onClose, userId, onUnfollowSuccess }) {
       setTogglingId(targetUserId);
 
       const res = await axios.post("/users/follow", {
-        userIdToFollow: String(targetUserId),
-        targetUserId: String(targetUserId),
-        userId: String(targetUserId),
-        id: String(targetUserId),
+        userIdToFollow: targetUserId,
       });
 
       const resData = res.data?.data || res.data;
@@ -136,39 +131,28 @@ function FollowingModal({ isOpen, onClose, userId, onUnfollowSuccess }) {
           ? resData.following
           : resData?.isFollowing !== undefined
           ? resData.isFollowing
-          : false;
+          : true;
 
-      // If viewing your own profile's following list AND unfollowed, filter it out
-      if (isSelfModal && isNowFollowing === false) {
-        setUsers((prev) =>
-          prev.filter((u) => {
-            const uId = u.id || u.userId || u._id || u.targetUserId;
-            return String(uId) !== String(targetUserId);
-          })
-        );
-      } else {
-        // If viewing someone else's profile, update the user item's follow state in list
-        setUsers((prev) =>
-          prev.map((u) => {
-            const uId = u.id || u.userId || u._id || u.targetUserId;
-            if (String(uId) === String(targetUserId)) {
-              return {
-                ...u,
-                isFollowing: isNowFollowing,
-                following: isNowFollowing,
-                isFollowedByMe: isNowFollowing,
-              };
-            }
-            return u;
-          })
-        );
-      }
+      setUsers((prev) =>
+        prev.map((u) => {
+          const uId = u.id || u._id || u.userId || u.targetUserId;
+          if (String(uId) === String(targetUserId)) {
+            return {
+              ...u,
+              isFollowing: isNowFollowing,
+              following: isNowFollowing,
+              isFollowedByMe: isNowFollowing,
+            };
+          }
+          return u;
+        })
+      );
 
-      if (isNowFollowing === false && onUnfollowSuccess) {
-        onUnfollowSuccess(targetUserId);
+      if (onFollowStatusChange) {
+        onFollowStatusChange(targetUserId, isNowFollowing);
       }
     } catch (err) {
-      console.error("Unfollow error:", err.response?.data || err.message);
+      console.error("Follow error in FollowingModal:", err);
       setUsers(previousUsers);
     } finally {
       setTogglingId(null);
@@ -179,98 +163,90 @@ function FollowingModal({ isOpen, onClose, userId, onUnfollowSuccess }) {
 
   return (
     <div
-      className="fixed inset-0 z-[100] bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 animate-in fade-in duration-200"
+      className="fixed inset-0 bg-slate-950/60 backdrop-blur-md z-[500] flex items-center justify-center p-4 animate-in fade-in duration-200 select-none"
       onClick={onClose}
     >
       <div
-        className="bg-white w-full max-w-sm sm:max-w-md rounded-2xl shadow-xl flex flex-col max-h-[75vh] overflow-hidden border border-slate-100 animate-in zoom-in-95 duration-200"
+        className="bg-white w-full max-w-sm rounded-3xl overflow-hidden shadow-2xl border border-slate-100 animate-in zoom-in-95 duration-150 flex flex-col max-h-[80vh]"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex items-center justify-between px-4 sm:px-5 py-3.5 border-b border-slate-100 shrink-0">
-          <div className="flex items-center gap-2">
-            <h3 className="text-sm font-bold text-slate-800 tracking-tight">
-              Following
-            </h3>
-            <span className="text-[11px] font-semibold bg-slate-100 text-slate-600 px-2 py-0.5 rounded-full">
-              {users.length}
-            </span>
-          </div>
+        {/* Modal Header */}
+        <div className="p-4 px-5 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
+          <h3 className="font-extrabold text-sm text-slate-900">Following</h3>
           <button
             onClick={onClose}
-            className="p-1 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg transition"
+            className="p-1.5 text-slate-400 hover:bg-slate-200/60 hover:text-slate-700 rounded-full transition cursor-pointer"
           >
             <X size={18} />
           </button>
         </div>
 
-        <div className="flex-1 overflow-y-auto p-3 sm:p-4 space-y-1">
+        {/* User List Container */}
+        <div className="flex-1 overflow-y-auto p-3 space-y-1">
           {loading ? (
-            <div className="flex justify-center items-center py-12 text-slate-400">
+            <div className="flex justify-center items-center py-10 text-slate-400">
               <Loader2 size={24} className="animate-spin text-blue-600" />
             </div>
-          ) : users && users.length > 0 ? (
+          ) : users.length > 0 ? (
             users.map((u, i) => {
-              const uId = u.id || u.userId || u._id || u.targetUserId;
-              const avatar =
-                u.profilePicture || u.profileImageUrl || u.avatar || dp;
+              const uId = u.id || u._id || u.userId || u.targetUserId || i;
+              const hotdropId = u.hotdropId || u.username || "user";
+              const avatar = u.profilePicture || u.profileImageUrl || dp;
               const name = u.firstName
                 ? `${u.firstName} ${u.lastName || ""}`.trim()
-                : u.username || u.hotdropId || "Creator";
-              const userHandle = u.hotdropId || u.username;
+                : u.username || "";
 
-              const isSelf =
-                String(uId) === String(currentUserId) ||
-                (userHandle && currentUser?.hotdropId && userHandle.toLowerCase() === currentUser.hotdropId.toLowerCase()) ||
-                (userHandle && currentUser?.username && userHandle.toLowerCase() === currentUser.username.toLowerCase());
-
-              const isFollowingUser = Boolean(
-                u.isFollowing ?? u.following ?? u.isFollowedByMe ?? false
-              );
+              const isSelf = String(uId) === String(currentUserId);
+              const isUserFollowing =
+                u.isFollowing ?? u.following ?? u.isFollowedByMe ?? false;
+              const isPending = String(togglingId) === String(uId);
 
               return (
                 <div
-                  key={uId || i}
-                  className="flex items-center justify-between p-2 rounded-xl hover:bg-slate-50 transition"
+                  key={uId}
+                  className="flex items-center justify-between p-2.5 px-3 rounded-2xl hover:bg-slate-50 transition border border-transparent hover:border-slate-100 group"
                 >
                   <div
-                    onClick={() => handleUserClick(userHandle)}
-                    className="flex items-center gap-2.5 min-w-0 pr-2 cursor-pointer group/user flex-1"
+                    className="flex items-center gap-3 min-w-0 cursor-pointer flex-1"
+                    onClick={() => handleUserClick(hotdropId)}
                   >
                     <img
                       src={avatar}
-                      alt={name}
-                      className="w-9 h-9 sm:w-10 sm:h-10 rounded-full object-cover border border-slate-200 shrink-0 bg-slate-100 group-hover/user:opacity-80 transition"
+                      alt={hotdropId}
+                      className="w-10 h-10 rounded-full object-cover border border-slate-200 shrink-0 group-hover:scale-105 transition"
                     />
-                    <div className="min-w-0 flex flex-col">
-                      <h4 className="text-xs font-bold text-slate-800 truncate leading-tight group-hover/user:text-blue-600 transition">
-                        {name} {isSelf && "(You)"}
-                      </h4>
-                      <span className="text-[11px] text-slate-600 font-medium truncate mt-0.5 group-hover/user:text-blue-500 transition">
-                        @{userHandle || "hotdrop"}
+                    <div className="flex flex-col min-w-0">
+                      <span className="text-xs font-bold text-slate-900 truncate group-hover:text-blue-600 transition">
+                        @{hotdropId}
                       </span>
+                      {name && (
+                        <span className="text-[11px] font-medium text-slate-400 truncate">
+                          {name}
+                        </span>
+                      )}
                     </div>
                   </div>
 
-                  {!isSelf && (
+                  {!isSelf && currentUserId && (
                     <button
-                      onClick={() => handleToggleFollow(uId)}
-                      disabled={togglingId === uId}
-                      className={`shrink-0 px-2.5 py-1 rounded-md text-[11px] font-semibold transition active:scale-95 flex items-center gap-1 border ${
-                        isFollowingUser
-                          ? "bg-slate-100 hover:bg-red-50 text-slate-700 hover:text-red-600 border-slate-200/60"
-                          : "bg-blue-600 hover:bg-blue-700 text-white border-blue-600 shadow-sm"
+                      onClick={() => handleToggleFollow(u)}
+                      disabled={isPending}
+                      className={`px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shrink-0 ${
+                        isUserFollowing
+                          ? "bg-slate-100 text-slate-700 hover:bg-red-50 hover:text-red-600 border border-slate-200"
+                          : "bg-blue-600 text-white hover:bg-blue-700 shadow-md shadow-blue-500/20"
                       }`}
                     >
-                      {togglingId === uId ? (
-                        <Loader2 size={12} className="animate-spin" />
-                      ) : isFollowingUser ? (
+                      {isPending ? (
+                        <Loader2 size={13} className="animate-spin" />
+                      ) : isUserFollowing ? (
                         <>
-                          <UserMinus size={12} />
+                          <UserCheck size={13} />
                           <span>Following</span>
                         </>
                       ) : (
                         <>
-                          <UserPlus size={12} />
+                          <UserPlus size={13} />
                           <span>Follow</span>
                         </>
                       )}
@@ -280,11 +256,8 @@ function FollowingModal({ isOpen, onClose, userId, onUnfollowSuccess }) {
               );
             })
           ) : (
-            <div className="flex flex-col items-center justify-center py-12 text-slate-400">
-              <UserCheck size={32} className="mb-2 text-slate-300" />
-              <p className="text-xs font-medium text-slate-500">
-                Not following anyone yet
-              </p>
+            <div className="text-center py-10 text-slate-400 text-xs font-medium">
+              Not following anyone yet
             </div>
           )}
         </div>

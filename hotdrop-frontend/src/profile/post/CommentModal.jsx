@@ -20,31 +20,33 @@ function CommentModal({
   const [deleteConfirm, setDeleteConfirm] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
-  const [loadingComments, setLoadingComments] = useState(false);
-  const [localComments, setLocalComments] = useState(post?.comments || []);
+  const [loadingComments, setLoadingComments] = useState(true);
+  const [localComments, setLocalComments] = useState(Array.isArray(post?.comments) ? post.comments : []);
 
   const postId = post?.id || post?._id;
 
-  // 1. Instantly update local comments when post.comments prop changes!
+  // 1. Instantly sync with prop updates
   useEffect(() => {
     if (Array.isArray(post?.comments)) {
       setLocalComments(post.comments);
     }
   }, [post?.comments]);
 
-  // 2. Fetch fresh comments list from backend on modal open
+  // 2. Fetch fresh comments from GET /posts/comments/{postId}
   useEffect(() => {
     const fetchComments = async () => {
-      if (!postId) return;
+      if (!postId) {
+        setLoadingComments(false);
+        return;
+      }
       try {
         setLoadingComments(true);
-        // 🎯 Official Endpoint: GET /posts/comments/{postId}
-        const res = await API.get(`/posts/comments/${postId}`);
-        const commentsList = res.data?.data || res.data || [];
+        // GET /posts/get-comment-by-post-id/{postId} -> returns ApiResponse<List<CommentResponseDto>>
+        const res = await API.get(`/posts/get-comment-by-post-id/${postId}`);
+        const commentsList = res.data?.data;
 
         if (Array.isArray(commentsList)) {
           setLocalComments(commentsList);
-
           if (setCommentPost) {
             setCommentPost((prev) => {
               if (!prev) return post;
@@ -70,7 +72,6 @@ function CommentModal({
     if (isDeleting) return;
     setIsDeleting(true);
 
-    // ⚡ 1. INSTANT OPTIMISTIC UI DELETION
     const previousComments = [...localComments];
     setLocalComments((prev) =>
       prev.filter((c) => String(c.id || c._id || c) !== String(commentId))
@@ -90,40 +91,13 @@ function CommentModal({
       });
     }
 
-    useAuthStore.setState((state) => {
-      const updateFn = (p) =>
-        String(p.id || p._id) === String(postId)
-          ? {
-              ...p,
-              comments: (p.comments || []).filter(
-                (c) => String(c.id || c._id || c) !== String(commentId)
-              ),
-              commentCount: Math.max(
-                0,
-                (p.commentCount ?? (p.comments || []).length) - 1
-              ),
-            }
-          : p;
-
-      return {
-        userPosts: (state.userPosts || []).map(updateFn),
-        user: state.user
-          ? {
-              ...state.user,
-              posts: (state.user.posts || []).map(updateFn),
-            }
-          : null,
-      };
-    });
-
     try {
-      // 🎯 Official Backend Endpoint: DELETE /posts/delete-comment/{commentId}
+      // DELETE /posts/delete-comment/{commentId}
       await API.delete(`/posts/delete-comment/${commentId}`);
       showCommentDeletedToast("Comment deleted!");
     } catch (error) {
       console.error("Delete comment error:", error);
       showErrorToast("Failed to delete comment");
-      // Revert if API fails
       setLocalComments(previousComments);
     } finally {
       setDeleteConfirm(null);
@@ -150,23 +124,24 @@ function CommentModal({
     e.preventDefault();
     if (!commentText?.trim() || isSubmitting) return;
 
-    const textToSubmit = commentText;
-    setCommentText(""); // clear input immediately!
-
     try {
       setIsSubmitting(true);
-      await submitComment(e);
+      await submitComment(e, commentText.trim());
     } catch (error) {
       console.error("Error submitting comment:", error);
-      setCommentText(textToSubmit);
     } finally {
       setIsSubmitting(false);
     }
   };
 
+  const totalCount = Math.max(post?.commentCount || 0, localComments.length);
+
   return (
-    <div className="fixed inset-0 bg-slate-950/70 backdrop-blur-md z-[1500] flex items-center justify-center p-4 animate-in fade-in duration-200">
-      {/* SLEEK DELETE CONFIRMATION MODAL */}
+    <div 
+      className="fixed inset-0 bg-slate-950/70 backdrop-blur-md z-[1500] flex items-center justify-center p-4 animate-in fade-in duration-200 select-none"
+      onClick={onClose}
+    >
+      {/* DELETE CONFIRMATION MODAL */}
       {deleteConfirm && (
         <div className="fixed inset-0 z-[1600] flex items-center justify-center p-4">
           <div
@@ -192,7 +167,7 @@ function CommentModal({
               <button
                 onClick={() => handleDeleteComment(deleteConfirm)}
                 disabled={isDeleting}
-                className="flex-1 py-2 text-xs font-bold bg-gradient-to-r from-red-600 to-rose-600 text-white rounded-xl hover:from-red-700 hover:to-rose-700 transition disabled:opacity-60 flex items-center justify-center gap-1 shadow-md shadow-red-500/20 active:scale-95 cursor-pointer"
+                className="flex-1 py-2 text-xs font-bold bg-gradient-to-r from-red-600 to-rose-600 text-white rounded-xl hover:from-red-700 hover:to-rose-700 transition disabled:opacity-60 flex items-center justify-center gap-1 shadow-md shadow-red-500/20 cursor-pointer"
               >
                 {isDeleting ? <Loader2 size={12} className="animate-spin" /> : "Delete"}
               </button>
@@ -202,7 +177,10 @@ function CommentModal({
       )}
 
       {/* DIALOG BOX */}
-      <div className="bg-white w-full max-w-md h-[520px] rounded-3xl shadow-2xl flex flex-col overflow-hidden border border-slate-100 animate-in zoom-in-95 duration-200">
+      <div 
+        className="bg-white w-full max-w-md h-[520px] rounded-3xl shadow-2xl flex flex-col overflow-hidden border border-slate-100 animate-in zoom-in-95 duration-200"
+        onClick={(e) => e.stopPropagation()}
+      >
         {/* HEADER */}
         <div className="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
           <div className="flex items-center gap-2.5">
@@ -210,7 +188,7 @@ function CommentModal({
               <MessageSquare size={18} />
             </div>
             <h3 className="font-extrabold text-sm text-slate-900">
-              Comments ({localComments.length})
+              Comments ({totalCount})
             </h3>
           </div>
           <button
@@ -234,93 +212,97 @@ function CommentModal({
               .map((c, i) => {
                 const cId = c.id || c._id || i;
                 const author = c.user || c.creator || {};
-                const authorId = String(author.id || author._id || c.user || c.creator || "");
                 const authorAvatar = author.profilePicture || author.profileImageUrl || dp;
-                const authorHotdropId = author.hotdropId || "user";
+                const authorHotdropId = author.hotdropId || author.username || "user";
                 const textContent = c.text || "";
 
-                const currentUserId = String(user?.id || user?._id || "");
+                const currentUserId = String(user?.id || user?._id || user?.userId || "");
+                const currentHotdropId = (user?.hotdropId || user?.username || "").toLowerCase();
+
+                const authorId = String(author.id || author._id || author.userId || "");
+                const authorHandle = (author.hotdropId || author.username || "").toLowerCase();
+
                 const postOwner = (typeof post?.creator === "object" ? post.creator : null) || (typeof post?.user === "object" ? post.user : null) || {};
-                const postOwnerId = String(postOwner.id || postOwner._id || post?.creator || post?.user || "");
+                const postOwnerId = String(postOwner.id || postOwner._id || postOwner.userId || "");
+                const postOwnerHandle = (postOwner.hotdropId || postOwner.username || "").toLowerCase();
 
                 const canDelete =
-                  Boolean(currentUserId) &&
-                  (currentUserId === authorId || currentUserId === postOwnerId);
+                  Boolean(user) &&
+                  (
+                    (currentUserId && authorId && currentUserId === authorId) ||
+                    (currentHotdropId && authorHandle && currentHotdropId === authorHandle) ||
+                    (currentUserId && postOwnerId && currentUserId === postOwnerId) ||
+                    (currentHotdropId && postOwnerHandle && currentHotdropId === postOwnerHandle)
+                  );
 
                 return (
                   <div key={cId} className="flex gap-3 group/comment">
                     <img
                       src={authorAvatar}
-                      className="w-9 h-9 rounded-full object-cover shrink-0 ring-1 ring-slate-100"
-                      alt="avatar"
+                      className="w-8 h-8 rounded-full object-cover ring-1 ring-slate-200 shrink-0 cursor-pointer"
+                      alt={authorHotdropId}
+                      onClick={() => {
+                        onClose();
+                        navigate(`/user/userprofile/${authorHotdropId}`);
+                      }}
                     />
-                    <div className="flex flex-col flex-1 min-w-0">
-                      <div className="flex justify-between items-center">
-                        <span
+                    <div className="flex-1 bg-slate-50 border border-slate-100 rounded-2xl p-3 text-xs">
+                      <div className="flex justify-between items-center mb-1">
+                        <span 
                           onClick={() => {
                             onClose();
                             navigate(`/user/userprofile/${authorHotdropId}`);
                           }}
-                          className="text-xs font-bold text-slate-900 hover:text-blue-600 cursor-pointer truncate"
+                          className="font-bold text-slate-900 cursor-pointer hover:text-blue-600 truncate max-w-[140px]"
                         >
                           @{authorHotdropId}
                         </span>
-                        <div className="flex items-center gap-1.5 shrink-0">
-                          <span className="text-[10px] text-slate-400 font-medium">
-                            {formatDate(c.createdAt)}
-                          </span>
+
+                        <div className="flex items-center gap-2 shrink-0">
+                          <span className="text-[10px] text-slate-400 font-mono">{formatDate(c.createdAt)}</span>
                           {canDelete && (
                             <button
+                              type="button"
                               onClick={() => setDeleteConfirm(cId)}
-                              className="p-1 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
+                              className="text-red-500 hover:text-red-700 p-1 rounded-lg hover:bg-red-50 transition cursor-pointer flex items-center gap-1 font-bold text-[10px]"
                               title="Delete comment"
                             >
                               <Trash2 size={13} />
+                              
                             </button>
                           )}
                         </div>
                       </div>
-
-                      <div className="mt-1 bg-slate-50 border border-slate-100 px-3.5 py-2 rounded-2xl max-w-full">
-                        <p className="text-xs text-slate-700 break-words whitespace-pre-wrap leading-relaxed font-normal">
-                          {textContent}
-                        </p>
-                      </div>
+                      <p className="text-slate-800 font-medium leading-relaxed">{textContent}</p>
                     </div>
                   </div>
                 );
               })
           ) : (
-            <div className="h-full flex flex-col items-center justify-center text-slate-300 py-12">
-              <MessageSquare size={36} />
-              <p className="text-xs font-semibold text-slate-400 mt-2">No comments yet. Be the first to reply!</p>
+            <div className="h-full flex flex-col items-center justify-center py-12 text-slate-400 text-xs font-semibold">
+              No comments yet. Be the first to comment!
             </div>
           )}
         </div>
 
-        {/* INPUT BOX */}
-        <div className="p-4 border-t border-slate-100 bg-slate-50/50">
-          <form
-            onSubmit={handleSubmit}
-            className="flex items-center gap-2 bg-white p-2 rounded-2xl border border-slate-200 shadow-sm focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-100 transition"
+        {/* INPUT FOOTER */}
+        <form onSubmit={handleSubmit} className="p-4 border-t border-slate-100 bg-white flex items-center gap-2">
+          <input
+            type="text"
+            placeholder={user ? "Write a comment..." : "Sign in to comment"}
+            disabled={!user || isSubmitting}
+            value={commentText}
+            onChange={(e) => setCommentText(e.target.value)}
+            className="flex-1 bg-slate-50 border border-slate-200 rounded-2xl px-4 py-2.5 text-xs font-medium text-slate-800 placeholder-slate-400 outline-none focus:border-blue-500 focus:bg-white transition disabled:opacity-60"
+          />
+          <button
+            type="submit"
+            disabled={!user || !commentText?.trim() || isSubmitting}
+            className="p-2.5 bg-blue-600 text-white rounded-2xl hover:bg-blue-700 transition disabled:opacity-40 cursor-pointer shadow-md shadow-blue-500/20"
           >
-            <input
-              value={commentText}
-              onChange={(e) => setCommentText(e.target.value)}
-              autoFocus
-              placeholder="Write a comment..."
-              className="flex-1 text-xs font-medium text-slate-800 outline-none px-2"
-              disabled={isSubmitting}
-            />
-            <button
-              type="submit"
-              disabled={!commentText?.trim() || isSubmitting}
-              className="bg-blue-600 text-white px-3.5 py-2 rounded-xl text-xs font-bold flex items-center gap-1 hover:bg-blue-700 transition disabled:opacity-50 shadow-md shadow-blue-500/20 cursor-pointer"
-            >
-              {isSubmitting ? <Loader2 size={14} className="animate-spin" /> : <Send size={14} />}
-            </button>
-          </form>
-        </div>
+            {isSubmitting ? <Loader2 size={16} className="animate-spin" /> : <Send size={16} />}
+          </button>
+        </form>
       </div>
     </div>
   );

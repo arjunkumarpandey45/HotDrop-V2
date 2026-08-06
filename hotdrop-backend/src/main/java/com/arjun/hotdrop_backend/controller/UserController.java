@@ -55,7 +55,7 @@ public class UserController {
       );
    }
 
-   @GetMapping("/{userId}/followers")
+   @GetMapping("/{userId}/get-all-followers")
    public ResponseEntity<List<FollowerUserDto>> getFollowers(
            @PathVariable UUID userId,
            @AuthenticationPrincipal UserDetails userDetails) {
@@ -68,7 +68,7 @@ public class UserController {
 
       return ResponseEntity.ok(followers);
    }
-   @PutMapping(value = "/update/{userIdFromParams}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+   @PutMapping(value = "/update-profile/{userIdFromParams}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
    public ResponseEntity<ApiResponse<UserResponseDto>> updateProfile(
            @PathVariable UUID userIdFromParams,
            @ModelAttribute ProfileUpdateRequestDto requestDto,
@@ -115,7 +115,7 @@ public class UserController {
    }
 
 
-   @GetMapping("/{userId}/following")
+   @GetMapping("/{userId}/get-all-following")
    public ResponseEntity<List<UserResponseDto>> getFollowing(@PathVariable UUID userId) {
       return ResponseEntity.ok(userService.getFollowingList(userId));
    }

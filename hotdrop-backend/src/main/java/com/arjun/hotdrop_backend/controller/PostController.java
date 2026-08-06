@@ -94,7 +94,7 @@ public class PostController {
         );
     }
 
-    @GetMapping("/{postId}")
+    @GetMapping("get-post-by-postId/{postId}")
     public ResponseEntity<ApiResponse<PostResponseDto>> getPostViaPostId(@PathVariable String postId) {
         UUID validUuid;
         try {
@@ -124,7 +124,7 @@ public class PostController {
 
     ;
 
-    @PostMapping("/like/{postId}")
+    @PostMapping("/like-post/{postId}")
     public ResponseEntity<ApiResponse<PostResponseDto>> likePost(
             @PathVariable UUID postId,
             @AuthenticationPrincipal UserDetails userDetails) {
@@ -139,7 +139,7 @@ public class PostController {
         );
     }
 
-    @PostMapping("/comment/{postId}")
+    @PostMapping("/comment-to-post/{postId}")
     public ResponseEntity<ApiResponse<CommentResponseDto>> comment(
             @PathVariable UUID postId,
             @RequestBody Map<String, String> requestBody,
@@ -162,7 +162,7 @@ public class PostController {
         return ResponseHandler.generateResponse(HttpStatus.NO_CONTENT
         ,"Comment Deleted Successfully from "+hotdropId+"'s post",null);
     }
-    @GetMapping("/user/{userId}")
+    @GetMapping("/get-user-post/{userId}")
     public ResponseEntity<ApiResponse<PostListResponseDto>> getUserPosts(
             @PathVariable UUID userId,
             @RequestParam(defaultValue = "0") int page,
@@ -180,14 +180,14 @@ public class PostController {
                 paginatedPosts
         );
     }
-    @GetMapping("/share/{shareUrl}")
+    @GetMapping("/share-post/{shareUrl}")
     public ResponseEntity<PostResponseDto> getPostByShareUrl(@PathVariable String shareUrl,@AuthenticationPrincipal UserDetails userDetails) {
 
         String hotdropId=userDetails!=null?userDetails.getUsername():null;
         PostResponseDto response = postService.getPostByShareUrl(shareUrl,hotdropId);
         return ResponseEntity.ok(response);
     }
-    @GetMapping("/comments/{postId}")
+    @GetMapping("/get-comment-by-post-id/{postId}")
     public ResponseEntity<ApiResponse<List<CommentResponseDto>>> getCommentsByPostId(@PathVariable UUID postId) {
         List<CommentResponseDto> comments = postService.getCommentsByPostId(postId);
 
@@ -199,7 +199,7 @@ public class PostController {
         );
     }
 
-    @GetMapping("/{postId}/likes")
+    @GetMapping("/{postId}/get-who-likes-post")
     public ResponseEntity<ApiResponse<List<PostResponseDto.UserSummaryDto>>> getUsersWhoLikedPost(@PathVariable UUID postId) {
         List<PostResponseDto.UserSummaryDto> likedUsers = postService.getUsersWhoLikedPost(postId);
 

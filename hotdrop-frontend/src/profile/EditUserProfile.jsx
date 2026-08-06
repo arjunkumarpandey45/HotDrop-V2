@@ -177,7 +177,7 @@ function EditUserProfile() {
         const targetUserId = getEntityId(userData);
         if (targetUserId) {
           try {
-            const postsRes = await axios.get(`/posts/user/${targetUserId}`);
+            const postsRes = await axios.get(`/posts/get-user-post/${targetUserId}`);
             const postsPayload =
               postsRes.data?.data || postsRes.data?.posts || postsRes.data;
             const fetchedPosts = Array.isArray(postsPayload)
@@ -208,7 +208,7 @@ function EditUserProfile() {
         const myUserId = getEntityId(loggedInUser);
         if (myUserId && targetUserId) {
           try {
-            const followingRes = await axios.get(`/users/${myUserId}/following`);
+            const followingRes = await axios.get(`/users/${myUserId}/get-all-following`);
             const followingList = Array.isArray(followingRes.data)
               ? followingRes.data
               : followingRes.data?.data || followingRes.data?.following || [];
@@ -366,7 +366,7 @@ function EditUserProfile() {
       }
 
       const res = await axios.put(
-        `/users/update/${userId}`,
+        `/users/update-profile/${userId}`,
         formDataFromModal,
         {
           headers: { "Content-Type": "multipart/form-data" },

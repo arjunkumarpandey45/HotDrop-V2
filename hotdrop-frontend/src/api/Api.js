@@ -45,7 +45,9 @@ API.interceptors.response.use(
       originalRequest.url?.includes("/auth/login") ||
       originalRequest.url?.includes("/auth/signup") ||
       originalRequest.url?.includes("/auth/logout") ||
-      originalRequest.url?.includes("/posts/share")
+      originalRequest.url?.includes("/posts/share") ||
+      originalRequest.url?.includes("/posts/share-post") ||
+      originalRequest.url?.includes("/posts/get-post-by-postId")
     ) {
       return Promise.reject(error);
     }

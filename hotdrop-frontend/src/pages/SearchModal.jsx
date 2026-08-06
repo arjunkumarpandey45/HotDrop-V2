@@ -1,195 +1,317 @@
 import { useEffect, useState, useRef } from "react";
-import { Search, X, ArrowRight, Sparkles } from "lucide-react";
+import { Search, X, ArrowRight, Sparkles, User, Flame, Globe } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import API from "../api/Api";
 import dp from "../assets/dp.jpg";
 
-function SearchModal({ isOpen, onClose }) {
+function SearchModal({ isOpen, onClose, initialMode = "users" }) {
+  const [searchMode, setSearchMode] = useState(initialMode); // 'users' | 'projects'
   const [searchQuery, setSearchQuery] = useState("");
-  const [suggestions, setSuggestions] = useState([]);
+  const [userSuggestions, setUserSuggestions] = useState([]);
+  const [projectSuggestions, setProjectSuggestions] = useState([]);
   const [loading, setLoading] = useState(false);
   const inputRef = useRef(null);
   const navigate = useNavigate();
 
   useEffect(() => {
     if (isOpen) {
+      setSearchMode(initialMode);
       setTimeout(() => {
         inputRef.current?.focus();
-      }, 60);
+      }, 50);
     } else {
       setSearchQuery("");
-      setSuggestions([]);
+      setUserSuggestions([]);
+      setProjectSuggestions([]);
     }
-  }, [isOpen]);
+  }, [isOpen, initialMode]);
 
+  // LIVE LETTER-BY-LETTER SUGGESTIONS FETCHING
   useEffect(() => {
-    const q = searchQuery.trim();
-    if (!q) {
-      setSuggestions([]);
+    const rawQ = searchQuery.trim();
+    if (!rawQ) {
+      setUserSuggestions([]);
+      setProjectSuggestions([]);
+      setLoading(false);
+      return;
+    }
+
+    const cleanQ = rawQ.replace(/^@/, "").trim();
+    if (!cleanQ) {
+      setUserSuggestions([]);
+      setProjectSuggestions([]);
       setLoading(false);
       return;
     }
 
     const fetchSuggestions = async () => {
-      try {
-        setLoading(true);
-        let userList = [];
+      setLoading(true);
 
-        // 🎯 Attempt 1: GET /users/search/{query}
+      if (searchMode === "users") {
+        // --- 👤 CREATOR SUGGESTIONS (GET /users/suggestions/{query} & /users/search/{hotdropId}) ---
         try {
-          const res = await API.get(`/users/suggestions/${encodeURIComponent(q)}`);
-          const data = res.data;
-          userList = Array.isArray(data)
-            ? data
-            : data?.data || data?.users || data?.user || [];
+          let userList = [];
 
-          if (!Array.isArray(userList) && typeof userList === "object" && (userList.hotdropId || userList.username)) {
-            userList = [userList];
-          }
-        } catch {
-          // Fallback if 400 Bad Request is returned (e.g., query params /users/search?query=q)
+          // Primary Spring Boot route: GET /users/suggestions/{query}
           try {
-            const res2 = await API.get(`/users/search`, { params: { query: q, q, hotdropId: q } });
-            const data2 = res2.data;
-            userList = Array.isArray(data2)
-              ? data2
-              : data2?.data || data2?.users || [];
+            const res1 = await API.get(`/users/suggestions/${encodeURIComponent(cleanQ)}`);
+            const payload1 = res1.data?.data;
+            userList = Array.isArray(payload1)
+              ? payload1
+              : payload1?.users || (payload1?.hotdropId ? [payload1] : []);
           } catch {
-            userList = [];
+            // Secondary Spring Boot route: GET /users/search/{hotdropId}
+            try {
+              const res2 = await API.get(`/users/search/${encodeURIComponent(cleanQ)}`);
+              const payload2 = res2.data?.data;
+              userList = Array.isArray(payload2)
+                ? payload2
+                : payload2?.hotdropId
+                ? [payload2]
+                : [];
+            } catch {
+              userList = [];
+            }
           }
+
+          const rawArr = Array.isArray(userList) ? userList : [];
+          setUserSuggestions(rawArr.slice(0, 6));
+        } catch (err) {
+          console.error("Live user search error:", err);
+          setUserSuggestions([]);
+        } finally {
+          setLoading(false);
         }
-
-        if (!Array.isArray(userList)) {
-          userList = [];
+      } else {
+        // --- 🚀 PROJECT DROPS SUGGESTIONS (GET /posts/feed?search={query}) ---
+        try {
+          const res = await API.get("/posts/feed", {
+            params: { page: 0, size: 6, search: cleanQ, sortBy: "created_at", direction: "DESC" },
+          });
+          const payload = res.data?.data;
+          const postList = payload?.posts || (Array.isArray(payload) ? payload : []);
+          setProjectSuggestions(postList.slice(0, 6));
+        } catch (err) {
+          console.error("Live post search error:", err);
+          setProjectSuggestions([]);
+        } finally {
+          setLoading(false);
         }
-
-        // Filter & Slice to MAX 5 items
-        const lowerQ = q.toLowerCase();
-        const matched = userList.filter((u) => {
-          if (!u) return false;
-          const hId = (u.hotdropId || u.username || "").toLowerCase();
-          const fName = (u.firstName || "").toLowerCase();
-          const lName = (u.lastName || "").toLowerCase();
-          return hId.includes(lowerQ) || fName.includes(lowerQ) || lName.includes(lowerQ);
-        });
-
-        const finalResults = (matched.length > 0 ? matched : userList).slice(0, 5);
-        setSuggestions(finalResults);
-      } catch (err) {
-        setSuggestions([]);
-      } finally {
-        setLoading(false);
       }
     };
 
-    const timeoutId = setTimeout(fetchSuggestions, 200);
+    const timeoutId = setTimeout(fetchSuggestions, 150);
     return () => clearTimeout(timeoutId);
-  }, [searchQuery]);
+  }, [searchQuery, searchMode]);
 
   if (!isOpen) return null;
 
   const handleSelectUser = (hotdropId) => {
-    if (!hotdropId) return;
+    const cleanId = (hotdropId || "").replace(/^@/, "").trim();
+    if (!cleanId) return;
     onClose();
-    navigate(`/user/userprofile/${hotdropId}`);
+    navigate(`/user/userprofile/${cleanId}`);
+  };
+
+  const handleSelectProject = (titleOrQuery) => {
+    onClose();
+    navigate(`/search?q=${encodeURIComponent(titleOrQuery)}`);
   };
 
   const handleKeyDown = (e) => {
     if (e.key === "Escape") {
       onClose();
     } else if (e.key === "Enter" && searchQuery.trim()) {
-      if (suggestions.length > 0) {
-        handleSelectUser(suggestions[0].hotdropId || suggestions[0].username);
+      const cleanQ = searchQuery.replace(/^@/, "").trim();
+      if (searchMode === "users") {
+        if (userSuggestions.length > 0) {
+          handleSelectUser(userSuggestions[0].hotdropId || userSuggestions[0].username || cleanQ);
+        } else {
+          handleSelectUser(cleanQ);
+        }
       } else {
-        handleSelectUser(searchQuery.trim());
+        handleSelectProject(cleanQ);
       }
     }
   };
 
+  const activeCleanQuery = searchQuery.replace(/^@/, "").trim();
+
   return (
     <div
-      className="fixed inset-0 z-[999] bg-slate-950/60 backdrop-blur-md flex items-start justify-center p-3 sm:p-6 pt-16 sm:pt-24 animate-in fade-in duration-200 select-none"
+      className="fixed inset-0 z-[9999] bg-slate-950/60 backdrop-blur-md flex items-start justify-center p-3 sm:p-6 pt-16 sm:pt-24 animate-in fade-in duration-200 select-none"
       onClick={onClose}
     >
       <div
         className="bg-white w-full max-w-lg rounded-3xl shadow-2xl border border-slate-100 overflow-hidden animate-in zoom-in-95 duration-150 flex flex-col"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* SEARCH INPUT HEADER */}
-        <div className="flex items-center gap-3 p-3.5 px-4 sm:px-5 border-b border-slate-100 bg-slate-50/50">
-          <Search className="w-5 h-5 text-slate-400 shrink-0" />
+        {/* MODE TABS */}
+        <div className="flex items-center justify-between p-3 px-4 border-b border-slate-100 bg-slate-50/60">
+          <div className="inline-flex bg-slate-200/70 p-1 rounded-xl">
+            <button
+              onClick={() => setSearchMode("users")}
+              className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                searchMode === "users"
+                  ? "bg-white text-slate-900 shadow-sm"
+                  : "text-slate-500 hover:text-slate-900"
+              }`}
+            >
+              Creators (HotDrop ID)
+            </button>
+            <button
+              onClick={() => setSearchMode("projects")}
+              className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                searchMode === "projects"
+                  ? "bg-white text-slate-900 shadow-sm"
+                  : "text-slate-500 hover:text-slate-900"
+              }`}
+            >
+              Projects
+            </button>
+          </div>
+
+          <button
+            onClick={onClose}
+            className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-200/50 rounded-full transition cursor-pointer"
+          >
+            <X size={18} />
+          </button>
+        </div>
+
+        {/* INPUT HEADER */}
+        <div className="flex items-center gap-3 p-3.5 px-4 sm:px-5 border-b border-slate-100">
+          <Search className="w-4 h-4 text-slate-400 shrink-0" />
           <input
             ref={inputRef}
             type="text"
-            placeholder="Type at least 1 letter to search creators..."
+            placeholder={
+              searchMode === "users"
+                ? "Type HotDrop ID or name..."
+                : "Search project drops by title or #tag..."
+            }
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             onKeyDown={handleKeyDown}
-            className="flex-1 bg-transparent text-sm font-semibold text-slate-800 placeholder-slate-400 outline-none"
+            className="flex-1 bg-transparent text-xs sm:text-sm font-semibold text-slate-900 placeholder-slate-400 outline-none"
           />
           {searchQuery && (
             <button
               onClick={() => setSearchQuery("")}
-              className="p-1 text-slate-400 hover:text-slate-600 rounded-full hover:bg-slate-200/50 transition"
+              className="p-1 text-slate-400 hover:text-slate-600 rounded-full transition cursor-pointer"
             >
-              <X size={16} />
+              <X size={14} />
             </button>
           )}
-       
         </div>
 
-        {/* RESULTS SECTION (MAX 5 ITEMS) */}
-        <div className="p-3 max-h-[380px] overflow-y-auto">
+        {/* RESULTS SECTION */}
+        <div className="p-3 max-h-[360px] overflow-y-auto">
           {searchQuery.trim().length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-8 text-center text-slate-400">
-              <Sparkles size={28} className="text-orange-400 mb-2 animate-pulse" />
-              <p className="text-xs font-semibold text-slate-600">Start typing to search creators</p>
-               </div>
-          ) : loading ? (
-            <div className="flex items-center justify-center py-8 text-xs font-semibold text-slate-400">
-              Searching creators...
+            <div className="flex flex-col items-center justify-center py-8 text-center text-slate-400 space-y-1">
+              <span className="text-xs font-medium text-slate-500">
+                {searchMode === "users"
+                  ? "Type any HotDrop ID or name to search creators"
+                  : "Type title keywords or #tags to search drops"}
+              </span>
             </div>
-          ) : suggestions.length > 0 ? (
+          ) : loading ? (
+            <div className="flex items-center justify-center py-8 text-xs font-medium text-slate-400">
+              Searching suggestions...
+            </div>
+          ) : searchMode === "users" ? (
+            /* USER CREATOR RESULTS */
             <div className="space-y-1">
-             
-              {suggestions.slice(0, 5).map((s, index) => {
-                const avatar =
-                  s.profilePicture || s.profileImageUrl || s.avatar || dp;
-                const name = s.firstName
-                  ? `${s.firstName} ${s.lastName || ""}`.trim()
-                  :  "Creator";
+              {userSuggestions.map((s, index) => {
+                const avatar = s.profilePicture || s.profileImageUrl || dp;
                 const handle = s.hotdropId || s.username || "user";
+                const fullName = [s.firstName, s.lastName].filter(Boolean).join(" ");
 
                 return (
                   <div
-                    key={s._id || s.id || index}
+                    key={s.id || s._id || index}
                     onClick={() => handleSelectUser(handle)}
                     className="flex items-center gap-3 p-2.5 px-3 rounded-2xl cursor-pointer hover:bg-blue-50/80 transition group border border-transparent hover:border-blue-100"
                   >
                     <img
                       src={avatar}
                       alt={handle}
-                      className="w-10 h-10 rounded-full object-cover border border-slate-200 shrink-0 group-hover:scale-105 transition"
+                      className="w-9 h-9 rounded-full object-cover border border-slate-200 shrink-0 group-hover:scale-105 transition"
                     />
                     <div className="flex flex-col min-w-0 flex-1">
                       <span className="text-xs font-bold text-slate-900 truncate group-hover:text-blue-600 transition">
                         @{handle}
                       </span>
-                      {name && (
-                        <span className="text-[11px] font-medium text-slate-500 truncate">
-                          {name}
+                      {fullName && (
+                        <span className="text-[11px] font-medium text-slate-400 truncate">
+                          {fullName}
                         </span>
                       )}
                     </div>
-                    <ArrowRight size={16} className="text-slate-300 group-hover:text-blue-600 transition -translate-x-1 group-hover:translate-x-0 opacity-0 group-hover:opacity-100" />
+                    <ArrowRight size={15} className="text-slate-300 group-hover:text-blue-600 transition" />
                   </div>
                 );
               })}
+
+              {/* DIRECT HOTDROP ID FALLBACK OPTION */}
+              <button
+                onClick={() => handleSelectUser(activeCleanQuery)}
+                className="w-full mt-2 p-2.5 px-3 bg-blue-50 hover:bg-blue-100/80 text-blue-600 rounded-2xl text-xs font-bold transition flex items-center justify-between cursor-pointer border border-blue-100"
+              >
+                <span>Open profile <strong>@{activeCleanQuery}</strong></span>
+                <ArrowRight size={14} />
+              </button>
             </div>
           ) : (
-            <div className="text-center py-8 text-slate-400 text-xs font-medium">
-              No matching creators found for "{searchQuery}"
-            </div>
+            /* PROJECT DROPS RESULTS */
+            projectSuggestions.length > 0 ? (
+              <div className="space-y-1">
+                {projectSuggestions.map((post, index) => {
+                  const pTitle = post.title || "Project Drop";
+                  const pOwner = post.creator || post.user || {};
+                  const pHandle = pOwner.hotdropId || pOwner.username || "dev";
+
+                  return (
+                    <div
+                      key={post.id || post._id || index}
+                      onClick={() => handleSelectProject(post.title || activeCleanQuery)}
+                      className="flex items-center justify-between p-2.5 px-3 rounded-2xl cursor-pointer hover:bg-slate-50 transition group"
+                    >
+                      <div className="flex items-center gap-3 truncate">
+                        <div className="w-8 h-8 bg-blue-50 text-blue-600 rounded-xl flex items-center justify-center shrink-0">
+                          <Globe size={16} />
+                        </div>
+                        <div className="flex flex-col truncate">
+                          <span className="text-xs font-extrabold text-slate-900 truncate group-hover:text-blue-600 uppercase">
+                            {pTitle}
+                          </span>
+                          <span className="text-[10px] font-semibold text-slate-400">
+                            by @{pHandle}
+                          </span>
+                        </div>
+                      </div>
+                      <ArrowRight size={15} className="text-slate-300 group-hover:text-blue-600 transition" />
+                    </div>
+                  );
+                })}
+                <button
+                  onClick={() => handleSelectProject(activeCleanQuery)}
+                  className="w-full mt-2 py-2 bg-slate-900 text-white rounded-xl text-xs font-bold hover:bg-slate-800 transition flex items-center justify-center gap-1.5 cursor-pointer"
+                >
+                  View All Matching Drops <ArrowRight size={14} />
+                </button>
+              </div>
+            ) : (
+              <div className="text-center py-8 space-y-3">
+                <p className="text-slate-400 text-xs font-medium">No direct drop match for "{activeCleanQuery}"</p>
+                <button
+                  onClick={() => handleSelectProject(activeCleanQuery)}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-xl text-xs font-bold hover:bg-blue-700 transition cursor-pointer"
+                >
+                  Search Drops for "{activeCleanQuery}"
+                </button>
+              </div>
+            )
           )}
         </div>
       </div>

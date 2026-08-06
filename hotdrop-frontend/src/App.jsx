@@ -13,16 +13,11 @@ import FromShare from './profile/post/FromShare';
 import { useAuthStore, useUIStore } from './store/useAuthStore';
 import { Slide, ToastContainer } from 'react-toastify';
 
+import AllPost from './pages/AllPost/AllPost';
+import SearchPage from './pages/Search/SearchPage';
+
 function HomePage() {
-  return (
-    <div className="min-h-screen bg-slate-50 pt-24 px-4 max-w-7xl mx-auto">
-      {/* Feed / Home Content */}
-      <div className="rounded-3xl border border-slate-200 bg-white p-8 shadow-sm">
-        <h1 className="text-2xl font-black text-slate-900">Explore Feed</h1>
-        <p className="mt-2 text-sm text-slate-600">Live project drops will appear here.</p>
-      </div>
-    </div>
-  );
+  return <AllPost />;
 }
 
 function AppLayout() {
@@ -60,6 +55,10 @@ function App() {
           element: <HomePage />,
         },
         {
+          path: '/search',
+          element: <SearchPage />,
+        },
+        {
           path: '/signup',
           element: <Signup />,
         },
@@ -77,6 +76,10 @@ function App() {
         },
         {
           path: '/posts/share/:postId',
+          element: <FromShare />,
+        },
+        {
+          path: '/posts/share-post/:postId',
           element: <FromShare />,
         },
         {

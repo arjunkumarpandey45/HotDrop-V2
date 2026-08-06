@@ -6,13 +6,10 @@ import {
   Plus,
   Menu,
   X,
-  Info,
-  Mail,
-  LayoutGrid,
   Notebook,
   UserPlus,
-  ChevronDown,
-  Sparkles,
+  ArrowRight,
+  Globe,
 } from "lucide-react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 
@@ -32,17 +29,16 @@ const Navbar = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [suggestions, setSuggestions] = useState([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
+  const [searchMode, setSearchMode] = useState("projects"); // 'projects' | 'users'
 
   const desktopSearchRef = useRef(null);
   const mobileSearchRef = useRef(null);
 
-  const { user, isLoggedIn, logout } = useAuthStore();
+  const { user, isLoggedIn, logout, checkAuth } = useAuthStore();
   const navigate = useNavigate();
   const location = useLocation();
-const { checkAuth } = useAuthStore();
 
   useEffect(() => {
-    
     checkAuth(true);
   }, []);
 
@@ -75,19 +71,50 @@ const { checkAuth } = useAuthStore();
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [showSuggestions]);
 
+  // LIVE SUGGESTIONS FETCHING FOR DESKTOP & MOBILE (Supports both 'users' & 'projects')
   useEffect(() => {
-    const fetchSuggestions = async () => {
-      if (searchQuery.trim().length < 1) {
-        setSuggestions([]);
-        setShowSuggestions(false);
-        return;
-      }
+    const q = searchQuery.trim().replace(/^@/, "");
+    if (!q) {
+      setSuggestions([]);
+      setShowSuggestions(false);
+      return;
+    }
 
+    const fetchSuggestions = async () => {
       try {
-        const { data } = await API.get(`/users/search/${searchQuery}`);
-        const userList = data?.data || data;
-        setSuggestions(Array.isArray(userList) ? userList : []);
-        setShowSuggestions(true);
+        if (searchMode === "projects") {
+          // --- 🚀 PROJECT DROPS SEARCH (/posts/feed?search=...) ---
+          const res = await API.get("/posts/feed", {
+            params: { page: 0, size: 5, search: q, sortBy: "created_at", direction: "DESC" },
+          });
+          const payload = res.data?.data || res.data;
+          const postList = payload?.posts || (Array.isArray(payload) ? payload : []);
+          setSuggestions(postList.slice(0, 5));
+          setShowSuggestions(true);
+        } else {
+          // --- 👤 CREATOR SEARCH (/users/suggestions or /users/search) ---
+          let userList = [];
+          try {
+            const res = await API.get(`/users/suggestions/${encodeURIComponent(q)}`);
+            userList = res.data?.data || res.data;
+          } catch {
+            try {
+              const res2 = await API.get(`/users/search/${encodeURIComponent(q)}`);
+              userList = res2.data?.data || res2.data;
+            } catch {
+              userList = [];
+            }
+          }
+
+          const arr = Array.isArray(userList)
+            ? userList
+            : userList?.hotdropId
+            ? [userList]
+            : [];
+
+          setSuggestions(arr.slice(0, 5));
+          setShowSuggestions(true);
+        }
       } catch (err) {
         console.error("Search error", err);
         setSuggestions([]);
@@ -95,18 +122,20 @@ const { checkAuth } = useAuthStore();
       }
     };
 
-    const timeoutId = setTimeout(fetchSuggestions, 250);
+    const timeoutId = setTimeout(fetchSuggestions, 150);
     return () => clearTimeout(timeoutId);
-  }, [searchQuery]);
+  }, [searchQuery, searchMode]);
 
-  const handleSuggestionClick = (hotdropId) => {
-    if (!isLoggedIn) {
-      setIsLoginPromptOpen(true);
-      setIsMobileSearchOpen(false);
-      return;
+  const handleSuggestionClick = (value, mode = searchMode) => {
+    const clean = (value || "").replace(/^@/, "").trim();
+    if (!clean) return;
+
+    if (mode === "users") {
+      navigate(`/user/userprofile/${clean}`);
+    } else {
+      navigate(`/search?q=${encodeURIComponent(clean)}`);
     }
 
-    navigate(`/user/userprofile/${hotdropId}`);
     setSearchQuery("");
     setSuggestions([]);
     setShowSuggestions(false);
@@ -115,13 +144,12 @@ const { checkAuth } = useAuthStore();
 
   const handleSearch = (e) => {
     if (e.key === "Enter" && searchQuery.trim() !== "") {
-      if (!isLoggedIn) {
-        setIsLoginPromptOpen(true);
-        setIsMobileSearchOpen(false);
-        return;
+      const clean = searchQuery.trim().replace(/^@/, "");
+      if (searchMode === "users") {
+        navigate(`/user/userprofile/${clean}`);
+      } else {
+        navigate(`/search?q=${encodeURIComponent(clean)}`);
       }
-
-      navigate(`/user/userprofile/${searchQuery}`);
       setSearchQuery("");
       setSuggestions([]);
       setShowSuggestions(false);
@@ -143,14 +171,11 @@ const { checkAuth } = useAuthStore();
   const handleLogout = async () => {
     try {
       logout();
-      
-      
-      
-     setTimeout(() => {
-      showSuccessToastForLogout();
-     }, 500);
-     setIsProfileOpen(false);
-     navigate("/login")
+      setTimeout(() => {
+        showSuccessToastForLogout();
+      }, 500);
+      setIsProfileOpen(false);
+      navigate("/login");
     } catch {
       console.error("Logout failed");
     }
@@ -174,47 +199,99 @@ const { checkAuth } = useAuthStore();
 
       {/* Dock Structure Container */}
       <div className="relative z-50 mx-auto flex max-w-7xl items-center justify-between gap-2 sm:gap-3">
-        {/* MOBILE FULL-WIDTH SEARCH BAR */}
+        {/* MOBILE FULL-WIDTH SEARCH BAR WITH MODE TOGGLE & LIVE SUGGESTIONS */}
         {isMobileSearchOpen ? (
-          <div className="flex w-full items-center gap-2 rounded-2xl border border-slate-200/90 bg-white/95 p-2 shadow-2xl backdrop-blur-2xl md:hidden animate-in fade-in zoom-in-95 duration-150">
+          <div className="flex w-full items-center gap-1.5 rounded-2xl border border-slate-200/90 bg-white/95 p-1.5 shadow-2xl backdrop-blur-2xl md:hidden animate-in fade-in zoom-in-95 duration-150">
             <button
               onClick={() => setIsMobileSearchOpen(false)}
-              className="rounded-xl p-2 text-slate-500 hover:bg-slate-100 transition shrink-0"
+              className="rounded-xl p-1.5 text-slate-500 hover:bg-slate-100 transition shrink-0"
               aria-label="Close search"
             >
               <X className="h-5 w-5" />
             </button>
 
-            <div className="relative flex-1" ref={mobileSearchRef}>
+            {/* Mobile Mode Select Toggle */}
+            <select
+              value={searchMode}
+              onChange={(e) => setSearchMode(e.target.value)}
+              className="bg-slate-100 text-slate-800 font-black text-[10px] uppercase px-2 py-2 rounded-xl border border-slate-200/80 outline-none cursor-pointer shrink-0"
+            >
+              <option value="projects">Projects 🚀</option>
+              <option value="users">Creators 👤</option>
+            </select>
+
+            <div className="relative flex-1 min-w-0" ref={mobileSearchRef}>
               <input
                 autoFocus
                 type="text"
-                placeholder="Search HotDrop ID..."
+                placeholder={searchMode === "users" ? "Search creators..." : "Search drops..."}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 onKeyDown={handleSearch}
-                className="w-full rounded-xl border border-slate-200 bg-slate-50 px-2 py-2 pl-3 pr-4 text-sm font-medium text-slate-800 placeholder-slate-400 outline-none focus:border-blue-500 focus:bg-white focus:ring-2 focus:ring-blue-100 transition"
+                onFocus={() => {
+                  if (searchQuery.trim()) setShowSuggestions(true);
+                }}
+                className="w-full rounded-xl border border-slate-200 bg-slate-50 px-2.5 py-1.5 text-xs font-semibold text-slate-800 placeholder-slate-400 outline-none focus:border-blue-500 focus:bg-white transition"
               />
 
-              {showSuggestions && suggestions.length > 0 && (
-                <div className="absolute left-0 right-0 top-full z-50 mt-2.5 overflow-hidden rounded-2xl border border-slate-100 bg-white p-1.5 shadow-2xl">
-                  {suggestions.map((s) => (
+              {/* Mobile Live Suggestions Dropdown */}
+              {showSuggestions && (
+                <div className="absolute left-0 right-0 top-full z-[100] mt-2.5 max-h-[300px] overflow-y-auto rounded-2xl border border-slate-100 bg-white p-1.5 shadow-2xl">
+                  {suggestions.length > 0 ? (
+                    searchMode === "projects" ? (
+                      suggestions.map((p, index) => {
+                        const pTitle = p.title || "Project Drop";
+                        const pOwner = p.creator || p.user || {};
+                        const pHandle = pOwner.hotdropId || pOwner.username || "dev";
+                        return (
+                          <button
+                            key={p.id || p._id || index}
+                            type="button"
+                            onClick={() => handleSuggestionClick(pTitle, "projects")}
+                            className="flex w-full items-center gap-3 rounded-xl px-3 py-2 text-left transition hover:bg-blue-50/80 cursor-pointer"
+                          >
+                            <div className="w-7 h-7 bg-blue-100 text-blue-600 rounded-lg flex items-center justify-center shrink-0">
+                              <Globe size={14} />
+                            </div>
+                            <div className="flex flex-col min-w-0 flex-1">
+                              <span className="truncate text-xs font-black uppercase text-slate-900">{pTitle}</span>
+                              <span className="truncate text-[10px] text-slate-400 font-semibold">by @{pHandle}</span>
+                            </div>
+                            <ArrowRight size={14} className="text-slate-400 shrink-0" />
+                          </button>
+                        );
+                      })
+                    ) : (
+                      suggestions.map((s, index) => (
+                        <button
+                          key={s._id || s.id || index}
+                          type="button"
+                          onClick={() => handleSuggestionClick(s.hotdropId || s.username, "users")}
+                          className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left transition hover:bg-blue-50/70 cursor-pointer"
+                        >
+                          <img
+                            src={s.profilePicture || s.profileImageUrl || s.avatar || dp}
+                            alt={s.hotdropId}
+                            className="h-8 w-8 rounded-full object-cover ring-1 ring-slate-200 shrink-0"
+                          />
+                          <div className="flex flex-col min-w-0 flex-1">
+                            <span className="truncate text-xs font-bold text-slate-900">@{s.hotdropId || s.username}</span>
+                            <span className="truncate text-[10px] text-slate-400 font-medium">{[s.firstName, s.lastName].filter(Boolean).join(" ")}</span>
+                          </div>
+                          <ArrowRight size={14} className="text-slate-400 shrink-0" />
+                        </button>
+                      ))
+                    )
+                  ) : (
                     <button
-                      key={s._id || s.id}
-                      onClick={() => handleSuggestionClick(s.hotdropId)}
-                      className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left transition hover:bg-blue-50/70"
+                      type="button"
+                      onClick={() => handleSuggestionClick(searchQuery, searchMode)}
+                      className="flex w-full items-center justify-between px-3 py-2.5 text-xs font-bold text-blue-600 hover:bg-blue-50 rounded-xl transition cursor-pointer"
                     >
-                      <img
-                        src={s.profileImageUrl || s.profilePicture || s.avatar || dp}
-                        alt={s.hotdropId}
-                        className="h-8 w-8 rounded-full object-cover ring-1 ring-slate-200"
-                      />
-                      <div className="flex flex-col min-w-0">
-                        <span className="truncate text-sm font-semibold text-slate-900">@{s.hotdropId}</span>
-                        <span className="truncate text-[10px] uppercase text-slate-400 font-medium">{s.username}</span>
-                      </div>
+                      <span>{searchMode === "users" ? `Go to profile @${searchQuery.replace(/^@/, "")}` : `Search drops for "${searchQuery}"`}</span>
+                      <ArrowRight size={14} />
                     </button>
-                  ))}
+                  )}
                 </div>
               )}
             </div>
@@ -237,25 +314,136 @@ const { checkAuth } = useAuthStore();
               </Link>
             </div>
 
-            {/* BLOCK 2: Center Search Dock (Desktop) */}
-            <div className="hidden flex-1 max-w-lg md:flex justify-center">
-              <div
-                onClick={() => setIsSearchModalOpen(true)}
-                className="w-full cursor-pointer"
+            {/* BLOCK 2: Center Search Dock (Desktop View with Live Project & User Suggestions) */}
+            <div className="hidden flex-1 max-w-lg md:flex justify-center" ref={desktopSearchRef}>
+              <form 
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  if (searchQuery.trim()) {
+                    const clean = searchQuery.trim().replace(/^@/, "");
+                    if (searchMode === "users") {
+                      navigate(`/user/userprofile/${clean}`);
+                    } else {
+                      navigate(`/search?q=${encodeURIComponent(clean)}`);
+                    }
+                    setSearchQuery("");
+                    setShowSuggestions(false);
+                  }
+                }}
+                className="w-full relative"
               >
-                <div className="relative flex items-center rounded-2xl border border-slate-200/80 bg-white/90 p-1.5 shadow-lg shadow-slate-200/50 backdrop-blur-xl transition-all hover:border-blue-300">
-                  <Search className="ml-3 h-4 w-4 text-slate-400" />
+                <div className="relative flex items-center gap-1 rounded-2xl border border-slate-200/80 bg-white/90 p-1.5 shadow-lg shadow-slate-200/50 backdrop-blur-xl transition-all focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-100">
+                  <select
+                    value={searchMode}
+                    onChange={(e) => setSearchMode(e.target.value)}
+                    className="ml-1 bg-slate-100 text-slate-700 font-extrabold text-[10px] uppercase px-2 py-1.5 rounded-xl border border-slate-200/80 outline-none cursor-pointer hover:bg-slate-200/60 transition shrink-0"
+                  >
+                    <option value="projects">Projects 🚀</option>
+                    <option value="users">Creators 👤</option>
+                  </select>
+
                   <input
-                    readOnly
                     type="text"
-                    placeholder="Search creators by HotDrop ID..."
-                    className="w-full bg-transparent px-3 py-1.5 text-sm font-medium text-slate-800 placeholder-slate-400 outline-none cursor-pointer"
+                    placeholder={
+                      searchMode === "users"
+                        ? "Search creators by HotDrop ID..."
+                        : "Search drops by title or #tag..."
+                    }
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    onKeyDown={handleSearch}
+                    onFocus={() => {
+                      if (searchQuery.trim()) setShowSuggestions(true);
+                    }}
+                    className="w-full bg-transparent px-2.5 py-1 text-xs font-semibold text-slate-800 placeholder-slate-400 outline-none"
                   />
-                  <span className="mr-2 px-2 py-0.5 text-[10px] font-bold text-slate-400 bg-slate-100 rounded-md border border-slate-200">
+
+                  <button
+                    type="submit"
+                    className="mr-0.5 px-3 py-1.5 text-[10px] font-black uppercase tracking-wider text-white bg-blue-600 hover:bg-blue-700 rounded-xl transition shadow-md shadow-blue-500/20 cursor-pointer shrink-0"
+                  >
                     Search
-                  </span>
+                  </button>
                 </div>
-              </div>
+
+                {/* DESKTOP LIVE SUGGESTIONS DROPDOWN */}
+                {showSuggestions && (
+                  <div className="absolute left-0 right-0 top-full z-[100] mt-2 overflow-hidden rounded-2xl border border-slate-100 bg-white p-1.5 shadow-2xl animate-in fade-in zoom-in-95 duration-150">
+                    {suggestions.length > 0 ? (
+                      searchMode === "projects" ? (
+                        suggestions.map((p, index) => {
+                          const pTitle = p.title || "Project Drop";
+                          const pOwner = p.creator || p.user || {};
+                          const pHandle = pOwner.hotdropId || pOwner.username || "dev";
+                          return (
+                            <button
+                              key={p.id || p._id || index}
+                              type="button"
+                              onClick={() => handleSuggestionClick(pTitle, "projects")}
+                              className="flex w-full items-center gap-3 rounded-xl px-3 py-2 text-left transition hover:bg-blue-50/80 cursor-pointer"
+                            >
+                              <div className="w-7 h-7 bg-blue-100 text-blue-600 rounded-lg flex items-center justify-center shrink-0">
+                                <Globe size={14} />
+                              </div>
+                              <div className="flex flex-col min-w-0 flex-1">
+                                <span className="truncate text-xs font-black uppercase text-slate-900">
+                                  {pTitle}
+                                </span>
+                                <span className="truncate text-[10px] text-slate-400 font-semibold">
+                                  by @{pHandle}
+                                </span>
+                              </div>
+                              <ArrowRight size={14} className="text-slate-400 shrink-0" />
+                            </button>
+                          );
+                        })
+                      ) : (
+                        suggestions.map((s, index) => (
+                          <button
+                            key={s._id || s.id || index}
+                            type="button"
+                            onClick={() => handleSuggestionClick(s.hotdropId || s.username, "users")}
+                            className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left transition hover:bg-blue-50/80 cursor-pointer"
+                          >
+                            <img
+                              src={s.profilePicture || s.profileImageUrl || s.avatar || dp}
+                              alt={s.hotdropId}
+                              className="h-8 w-8 rounded-full object-cover ring-1 ring-slate-200 shrink-0"
+                            />
+                            <div className="flex flex-col min-w-0 flex-1">
+                              <span className="truncate text-xs font-bold text-slate-900">
+                                @{s.hotdropId || s.username}
+                              </span>
+                              <span className="truncate text-[10px] text-slate-400 font-medium">
+                                {[s.firstName, s.lastName].filter(Boolean).join(" ") || "Creator Profile"}
+                              </span>
+                            </div>
+                            <ArrowRight size={14} className="text-slate-400 shrink-0" />
+                          </button>
+                        ))
+                      )
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const clean = searchQuery.trim().replace(/^@/, "");
+                          if (searchMode === "users") {
+                            navigate(`/user/userprofile/${clean}`);
+                          } else {
+                            navigate(`/search?q=${encodeURIComponent(clean)}`);
+                          }
+                          setSearchQuery("");
+                          setShowSuggestions(false);
+                        }}
+                        className="flex w-full items-center justify-between px-3 py-2.5 text-xs font-bold text-blue-600 hover:bg-blue-50 rounded-xl transition cursor-pointer"
+                      >
+                        <span>{searchMode === "users" ? `Go to profile @${searchQuery.replace(/^@/, "")}` : `Search drops for "${searchQuery}"`}</span>
+                        <ArrowRight size={14} />
+                      </button>
+                    )}
+                  </div>
+                )}
+              </form>
             </div>
 
             {/* BLOCK 3: Right Actions Dock */}
@@ -290,7 +478,6 @@ const { checkAuth } = useAuthStore();
                     onClick={() => setIsProfileOpen((prev) => !prev)}
                     className="flex items-center gap-1 rounded-xl p-1 hover:bg-slate-100 transition"
                   >
-                    {/* 🎯 Profile Picture Fix */}
                     <div className="flex h-8 w-8 items-center justify-center overflow-hidden rounded-lg bg-slate-100 border border-slate-200 shrink-0">
                       <img
                         src={userAvatar}
@@ -302,39 +489,22 @@ const { checkAuth } = useAuthStore();
                         }}
                       />
                     </div>
-                    <ChevronDown className={`h-3.5 w-3.5 text-slate-400 transition-transform ${isProfileOpen ? "rotate-180" : ""}`} />
                   </button>
 
-                  {/* Profile Dropdown Card */}
                   {isProfileOpen && (
-                    <div className="absolute right-0 z-50 mt-3 w-52 overflow-hidden rounded-2xl border border-slate-100 bg-white p-1.5 shadow-2xl">
-                      <div className="mb-1 border-b border-slate-100 px-3 py-2 flex items-center gap-2.5">
-                        <img
-                          src={userAvatar}
-                          alt="Avatar"
-                          className="w-8 h-8 rounded-full object-cover border border-slate-200"
-                        />
-                        <div className="min-w-0 flex flex-col">
-                          <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Signed in as</p>
-                          <p className="truncate text-sm font-bold text-slate-900">@{user?.hotdropId || "dev"}</p>
-                        </div>
-                      </div>
-
+                    <div className="absolute right-0 top-full mt-2 w-48 rounded-2xl border border-slate-100 bg-white p-1.5 shadow-2xl animate-in fade-in zoom-in-95 duration-150">
                       <Link
-                        to="/profile/me"
+                        to={`/user/userprofile/${user?.hotdropId || user?.username}`}
                         onClick={() => setIsProfileOpen(false)}
-                        className="flex items-center gap-3 rounded-xl px-3 py-2 text-sm font-semibold text-slate-600 hover:bg-blue-50 hover:text-blue-600"
+                        className="flex items-center gap-2.5 rounded-xl px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-100 hover:text-slate-900"
                       >
                         <User className="h-4 w-4" /> Profile
                       </Link>
-
-                      <div className="my-1 h-px bg-slate-100" />
-
                       <button
                         onClick={handleLogout}
-                        className="flex w-full items-center gap-3 rounded-xl px-3 py-2 text-sm font-semibold text-red-500 hover:bg-red-50"
+                        className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-xs font-semibold text-red-600 hover:bg-red-50"
                       >
-                        <LogOut className="h-4 w-4" /> Sign Out
+                        <LogOut className="h-4 w-4" /> Logout
                       </button>
                     </div>
                   )}
@@ -345,23 +515,24 @@ const { checkAuth } = useAuthStore();
         )}
       </div>
 
-      {/* Slide-out Navigation Drawer */}
-      <aside className={`fixed left-0 top-0 z-[60] h-full w-72 bg-white shadow-2xl transition-transform duration-300 ease-in-out ${isSidebarOpen ? "translate-x-0" : "-translate-x-full"}`}>
-        <div className="flex h-full flex-col p-6">
-          <div className="mb-8 flex items-center justify-between border-b border-slate-100 pb-4">
-            <div className="flex items-center tracking-tighter">
-              <span className="text-2xl font-black uppercase text-orange-500">HOT</span>
-              <span className="text-2xl font-black uppercase text-blue-600">DROP</span>
-            </div>
+      {/* MOBILE DRAWER SIDEBAR */}
+      <aside
+        className={`fixed inset-y-0 left-0 z-50 w-72 bg-white shadow-2xl transition-transform duration-300 ${
+          isSidebarOpen ? "translate-x-0" : "-translate-x-full"
+        }`}
+      >
+        <div className="flex flex-col h-full p-4">
+          <div className="flex justify-between items-center pb-4 border-b border-slate-100">
+            <span className="font-extrabold text-lg tracking-tight">Navigation</span>
             <button
               onClick={() => setIsSidebarOpen(false)}
-              className="rounded-xl p-2 text-slate-400 hover:bg-slate-100 hover:text-slate-700"
+              className="p-1 rounded-full text-slate-400 hover:bg-slate-100"
             >
               <X className="h-5 w-5" />
             </button>
           </div>
 
-          <nav className="flex-1 space-y-1.5">
+          <nav className="space-y-1.5 mt-4">
             <Link
               to="/"
               onClick={() => setIsSidebarOpen(false)}
@@ -369,37 +540,7 @@ const { checkAuth } = useAuthStore();
                 isActive("/") ? "bg-blue-50 text-blue-600" : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
               }`}
             >
-              <LayoutGrid className="h-5 w-5" /> Explore Feed
-            </Link>
-
-            <Link
-              to="/about"
-              onClick={() => setIsSidebarOpen(false)}
-              className={`flex items-center gap-3 rounded-xl px-3.5 py-2.5 text-sm font-bold transition ${
-                isActive("/about") ? "bg-blue-50 text-blue-600" : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
-              }`}
-            >
-              <Info className="h-5 w-5" /> About
-            </Link>
-
-            <Link
-              to="/contact"
-              onClick={() => setIsSidebarOpen(false)}
-              className={`flex items-center gap-3 rounded-xl px-3.5 py-2.5 text-sm font-bold transition ${
-                isActive("/contact") ? "bg-blue-50 text-blue-600" : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
-              }`}
-            >
-              <Mail className="h-5 w-5" /> Contact us
-            </Link>
-
-            <Link
-              to="/notice"
-              onClick={() => setIsSidebarOpen(false)}
-              className={`flex items-center gap-3 rounded-xl px-3.5 py-2.5 text-sm font-bold transition ${
-                isActive("/notice") ? "bg-blue-50 text-blue-600" : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
-              }`}
-            >
-              <Notebook className="h-5 w-5" /> Notice
+              <Notebook className="h-5 w-5" /> Global Feed
             </Link>
           </nav>
         </div>
@@ -416,13 +557,9 @@ const { checkAuth } = useAuthStore();
               <X className="h-5 w-5" />
             </button>
 
-            <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-blue-50 text-blue-600">
-              <Sparkles className="h-7 w-7" />
-            </div>
-
-            <h3 className="mb-1 text-xl font-bold text-slate-900">Sign in to search</h3>
+            <h3 className="mb-1 text-xl font-bold text-slate-900">Sign in required</h3>
             <p className="mb-6 text-xs text-slate-500 leading-relaxed">
-              You need to be logged in to search for other HotDrop creators and view their profiles.
+              Please sign in to search and view creator profiles.
             </p>
 
             <div className="flex gap-2.5">
@@ -445,9 +582,11 @@ const { checkAuth } = useAuthStore();
           </div>
         </div>
       )}
+
       <SearchModal
         isOpen={isSearchModalOpen}
         onClose={() => setIsSearchModalOpen(false)}
+        initialMode={searchMode}
       />
     </header>
   );

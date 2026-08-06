@@ -25,6 +25,7 @@ import API from "../../api/Api";
 import { showCommentToast, showErrorToast } from "../../toast/Toast";
 import dp from "../../assets/dp.jpg";
 import { AnimatePresence } from "framer-motion";
+import { toast } from "react-toastify";
 
 function FromShare() {
   const { postId } = useParams();
@@ -52,8 +53,8 @@ function FromShare() {
         setLoading(true);
         const shareUrl = postId;
 
-        // 🎯 Official Backend Endpoint: GET /posts/share/{shareUrl}
-        const res = await API.get(`/posts/share/${shareUrl}`);
+        // 🎯 Official Backend Endpoint: GET /posts/share-post/{shareUrl}
+        const res = await API.get(`/posts/share-post/${shareUrl}`);
         const payload = res.data?.data || res.data;
         const postData = payload?.post || payload;
         setPost(postData);
@@ -78,7 +79,7 @@ function FromShare() {
     const targetId = postToLike.id || postToLike._id;
 
     try {
-      const res = await API.post(`/posts/like/${targetId}`);
+      const res = await API.post(`/posts/like-post/${targetId}`);
       if (res.status === 200 || res.data?.statusCode === 200) {
         const payloadData = res.data?.data || res.data;
         const newLikeCount = payloadData?.likeCount ?? (postToLike.likeCount + (postToLike.liked ? -1 : 1));
@@ -92,6 +93,7 @@ function FromShare() {
 
         toast.success(newLikedState ? "Drop liked! ❤️" : "Unliked");
       }
+    // eslint-disable-next-line no-unused-vars
     } catch (error) {
       toast.error("Action failed");
     }
@@ -106,7 +108,7 @@ function FromShare() {
     const textToSubmit = commentText;
 
     try {
-      const res = await API.post(`/posts/comment/${targetId}`, {
+      const res = await API.post(`/posts/comment-to-post/${targetId}`, {
         text: textToSubmit,
       });
       const rawComment = res.data?.data?.comment || res.data?.data || res.data;
