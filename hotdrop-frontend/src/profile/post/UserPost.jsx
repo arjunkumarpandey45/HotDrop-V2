@@ -23,7 +23,7 @@ import ShareModal from "./ShareModal";
 import PreviewModal from "./PreviewModal";
 import API from "../../api/Api";
 import { toast } from "react-toastify";
-import { showLikeToast, showCommentToast } from "../../toast/Toast";
+import { showLikeToast, showCommentToast, showProjectDeletedToast } from "../../toast/Toast";
 import { AnimatePresence, motion } from "framer-motion";
 import { Link, useNavigate } from "react-router-dom";
 import dp from "../../assets/dp.jpg";
@@ -117,12 +117,8 @@ function UserPost({ postsOverride, hideOptions, ownerOverride }) {
     try {
       const res = await API.delete(`/posts/delete-post/${targetId}`);
       if (res.status === 200 || res.data?.success || res.data?.statusCode === 200) {
-        toast.update(loadingToast, {
-          render: "Drop deleted successfully! 🗑️",
-          type: "success",
-          isLoading: false,
-          autoClose: 2000,
-        });
+        toast.dismiss(loadingToast);
+        showProjectDeletedToast(deleteConfirm.title || "Project Drop");
 
         useAuthStore.setState((state) => {
           const filterFn = (p) => (p.id || p._id) !== targetId;
@@ -392,7 +388,7 @@ function UserPost({ postsOverride, hideOptions, ownerOverride }) {
             <div key={pId} className="w-full">
               {/* 💻 CLEAN LIGHT DESKTOP GRID CARD WITH HALF-SCREEN HOVER ZOOM */}
               <div
-                className="hidden md:block relative bg-slate-50 rounded-2xl overflow-hidden cursor-pointer aspect-video group shadow-sm hover:shadow-lg transition-all duration-200 border border-slate-200/60 select-none"
+                className="hidden md:block relative bg-slate-50 rounded-2xl overflow-hidden cursor-pointer aspect-[4/3] group shadow-sm hover:shadow-lg transition-all duration-200 border border-slate-200/60 select-none"
                 onClick={(e) => handleImageClick(e, post, imgIndex)}
                 onMouseEnter={(e) => handleCardHover(e, post)}
                 onMouseLeave={() => setHoveredPost(null)}
@@ -495,7 +491,7 @@ function UserPost({ postsOverride, hideOptions, ownerOverride }) {
 
                 {/* IMAGE WITH DOUBLE-TAP TO LIKE */}
                 <div
-                  className="relative bg-slate-50 cursor-pointer flex items-center justify-center aspect-video overflow-hidden select-none"
+                  className="relative bg-slate-50 cursor-pointer flex items-center justify-center aspect-[4/3] overflow-hidden select-none"
                   onClick={(e) => handleImageClick(e, post, imgIndex)}
                 >
                   <img

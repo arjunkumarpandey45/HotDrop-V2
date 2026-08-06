@@ -1,5 +1,5 @@
 import { X, UserCheck, Loader2, UserMinus, UserPlus } from "lucide-react";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "../api/Api";
 import dp from "../assets/dp.jpg";
@@ -14,20 +14,17 @@ function FollowersModal({ isOpen, onClose, userId, onFollowStatusChange }) {
   const { user: currentUser } = useAuthStore();
   const currentUserId = currentUser?.id || currentUser?._id || currentUser?.userId;
 
-  const fetchedRef = useRef(false);
-
   useEffect(() => {
-    if (!isOpen) {
-      fetchedRef.current = false;
+    if (!isOpen || !userId || userId === "undefined") {
+      setUsers([]);
       return;
     }
 
-    if (!userId || userId === "undefined" || fetchedRef.current) return;
+    let isMounted = true;
 
     const fetchFollowers = async () => {
       try {
         setLoading(true);
-        fetchedRef.current = true;
 
         // 1. Fetch followers list directly from /users/{userId}/get-all-followers
         const res = await axios.get(`/users/${userId}/get-all-followers`);
@@ -57,6 +54,8 @@ function FollowersModal({ isOpen, onClose, userId, onFollowStatusChange }) {
           }
         }
 
+        if (!isMounted) return;
+
         // 3. Annotate user list with accurate follow status
         const annotatedUsers = listData.map((u) => {
           const uId = String(u.id || u._id || u.userId || u.targetUserId || "");
@@ -82,12 +81,17 @@ function FollowersModal({ isOpen, onClose, userId, onFollowStatusChange }) {
         setUsers(annotatedUsers);
       } catch (err) {
         console.error("Failed to load followers list:", err);
+        if (isMounted) setUsers([]);
       } finally {
-        setLoading(false);
+        if (isMounted) setLoading(false);
       }
     };
 
     fetchFollowers();
+
+    return () => {
+      isMounted = false;
+    };
   }, [isOpen, userId, currentUserId]);
 
   const handleUserClick = (targetHotdrop) => {
@@ -128,6 +132,9 @@ function FollowersModal({ isOpen, onClose, userId, onFollowStatusChange }) {
 
       const res = await axios.post("/users/follow", {
         userIdToFollow: targetUserId,
+        targetUserId: targetUserId,
+        userId: targetUserId,
+        id: targetUserId,
       });
 
       const resData = res.data?.data || res.data;

@@ -181,6 +181,18 @@ const Navbar = () => {
     }
   };
 
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === "k") {
+        e.preventDefault();
+        setIsSearchModalOpen((prev) => !prev);
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, []);
+
   const isActive = (path) => location.pathname === path;
 
   return (
@@ -216,15 +228,15 @@ const Navbar = () => {
               onChange={(e) => setSearchMode(e.target.value)}
               className="bg-slate-100 text-slate-800 font-black text-[10px] uppercase px-2 py-2 rounded-xl border border-slate-200/80 outline-none cursor-pointer shrink-0"
             >
-              <option value="projects">Projects 🚀</option>
-              <option value="users">Creators 👤</option>
+              <option value="projects">Projects </option>
+              <option value="users">Users </option>
             </select>
 
             <div className="relative flex-1 min-w-0" ref={mobileSearchRef}>
               <input
                 autoFocus
                 type="text"
-                placeholder={searchMode === "users" ? "Search creators..." : "Search drops..."}
+                placeholder={searchMode === "users" ? "Search users..." : "Search projects..."}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 onKeyDown={handleSearch}
@@ -314,136 +326,22 @@ const Navbar = () => {
               </Link>
             </div>
 
-            {/* BLOCK 2: Center Search Dock (Desktop View with Live Project & User Suggestions) */}
-            <div className="hidden flex-1 max-w-lg md:flex justify-center" ref={desktopSearchRef}>
-              <form 
-                onSubmit={(e) => {
-                  e.preventDefault();
-                  if (searchQuery.trim()) {
-                    const clean = searchQuery.trim().replace(/^@/, "");
-                    if (searchMode === "users") {
-                      navigate(`/user/userprofile/${clean}`);
-                    } else {
-                      navigate(`/search?q=${encodeURIComponent(clean)}`);
-                    }
-                    setSearchQuery("");
-                    setShowSuggestions(false);
-                  }
-                }}
-                className="w-full relative"
+            {/* BLOCK 2: Center Search Dock (Triggers SearchModal on Desktop & Mobile) */}
+            <div className="hidden flex-1 max-w-lg md:flex justify-center">
+              <div 
+                onClick={() => setIsSearchModalOpen(true)}
+                className="w-full relative cursor-pointer group"
               >
-                <div className="relative flex items-center gap-1 rounded-2xl border border-slate-200/80 bg-white/90 p-1.5 shadow-lg shadow-slate-200/50 backdrop-blur-xl transition-all focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-100">
-                  <select
-                    value={searchMode}
-                    onChange={(e) => setSearchMode(e.target.value)}
-                    className="ml-1 bg-slate-100 text-slate-700 font-extrabold text-[10px] uppercase px-2 py-1.5 rounded-xl border border-slate-200/80 outline-none cursor-pointer hover:bg-slate-200/60 transition shrink-0"
-                  >
-                    <option value="projects">Projects 🚀</option>
-                    <option value="users">Creators 👤</option>
-                  </select>
-
-                  <input
-                    type="text"
-                    placeholder={
-                      searchMode === "users"
-                        ? "Search creators by HotDrop ID..."
-                        : "Search drops by title or #tag..."
-                    }
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    onKeyDown={handleSearch}
-                    onFocus={() => {
-                      if (searchQuery.trim()) setShowSuggestions(true);
-                    }}
-                    className="w-full bg-transparent px-2.5 py-1 text-xs font-semibold text-slate-800 placeholder-slate-400 outline-none"
-                  />
-
-                  <button
-                    type="submit"
-                    className="mr-0.5 px-3 py-1.5 text-[10px] font-black uppercase tracking-wider text-white bg-blue-600 hover:bg-blue-700 rounded-xl transition shadow-md shadow-blue-500/20 cursor-pointer shrink-0"
-                  >
-                    Search
-                  </button>
+                <div className="relative flex items-center gap-2.5 rounded-2xl border border-slate-200/80 bg-white/90 p-2 px-3.5 shadow-lg shadow-slate-200/50 backdrop-blur-xl transition-all group-hover:border-blue-400 group-hover:bg-white">
+                  <Search className="w-4 h-4 text-slate-400 group-hover:text-blue-600 transition shrink-0" />
+                  <span className="flex-1 text-xs font-semibold text-slate-400 select-none group-hover:text-slate-600 transition">
+                    Search Users by HotDrop ID or project ...
+                  </span>
+                  <span className="text-[10px] font-mono font-extrabold text-slate-500 bg-slate-100 px-2 py-0.5 rounded-lg border border-slate-200/80 hidden sm:inline-block shadow-2xs">
+                    ⌘K / Search
+                  </span>
                 </div>
-
-                {/* DESKTOP LIVE SUGGESTIONS DROPDOWN */}
-                {showSuggestions && (
-                  <div className="absolute left-0 right-0 top-full z-[100] mt-2 overflow-hidden rounded-2xl border border-slate-100 bg-white p-1.5 shadow-2xl animate-in fade-in zoom-in-95 duration-150">
-                    {suggestions.length > 0 ? (
-                      searchMode === "projects" ? (
-                        suggestions.map((p, index) => {
-                          const pTitle = p.title || "Project Drop";
-                          const pOwner = p.creator || p.user || {};
-                          const pHandle = pOwner.hotdropId || pOwner.username || "dev";
-                          return (
-                            <button
-                              key={p.id || p._id || index}
-                              type="button"
-                              onClick={() => handleSuggestionClick(pTitle, "projects")}
-                              className="flex w-full items-center gap-3 rounded-xl px-3 py-2 text-left transition hover:bg-blue-50/80 cursor-pointer"
-                            >
-                              <div className="w-7 h-7 bg-blue-100 text-blue-600 rounded-lg flex items-center justify-center shrink-0">
-                                <Globe size={14} />
-                              </div>
-                              <div className="flex flex-col min-w-0 flex-1">
-                                <span className="truncate text-xs font-black uppercase text-slate-900">
-                                  {pTitle}
-                                </span>
-                                <span className="truncate text-[10px] text-slate-400 font-semibold">
-                                  by @{pHandle}
-                                </span>
-                              </div>
-                              <ArrowRight size={14} className="text-slate-400 shrink-0" />
-                            </button>
-                          );
-                        })
-                      ) : (
-                        suggestions.map((s, index) => (
-                          <button
-                            key={s._id || s.id || index}
-                            type="button"
-                            onClick={() => handleSuggestionClick(s.hotdropId || s.username, "users")}
-                            className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left transition hover:bg-blue-50/80 cursor-pointer"
-                          >
-                            <img
-                              src={s.profilePicture || s.profileImageUrl || s.avatar || dp}
-                              alt={s.hotdropId}
-                              className="h-8 w-8 rounded-full object-cover ring-1 ring-slate-200 shrink-0"
-                            />
-                            <div className="flex flex-col min-w-0 flex-1">
-                              <span className="truncate text-xs font-bold text-slate-900">
-                                @{s.hotdropId || s.username}
-                              </span>
-                              <span className="truncate text-[10px] text-slate-400 font-medium">
-                                {[s.firstName, s.lastName].filter(Boolean).join(" ") || "Creator Profile"}
-                              </span>
-                            </div>
-                            <ArrowRight size={14} className="text-slate-400 shrink-0" />
-                          </button>
-                        ))
-                      )
-                    ) : (
-                      <button
-                        type="button"
-                        onClick={() => {
-                          const clean = searchQuery.trim().replace(/^@/, "");
-                          if (searchMode === "users") {
-                            navigate(`/user/userprofile/${clean}`);
-                          } else {
-                            navigate(`/search?q=${encodeURIComponent(clean)}`);
-                          }
-                          setSearchQuery("");
-                          setShowSuggestions(false);
-                        }}
-                        className="flex w-full items-center justify-between px-3 py-2.5 text-xs font-bold text-blue-600 hover:bg-blue-50 rounded-xl transition cursor-pointer"
-                      >
-                        <span>{searchMode === "users" ? `Go to profile @${searchQuery.replace(/^@/, "")}` : `Search drops for "${searchQuery}"`}</span>
-                        <ArrowRight size={14} />
-                      </button>
-                    )}
-                  </div>
-                )}
-              </form>
+              </div>
             </div>
 
             {/* BLOCK 3: Right Actions Dock */}
@@ -559,7 +457,7 @@ const Navbar = () => {
 
             <h3 className="mb-1 text-xl font-bold text-slate-900">Sign in required</h3>
             <p className="mb-6 text-xs text-slate-500 leading-relaxed">
-              Please sign in to search and view creator profiles.
+              Please sign in to search and view user profiles.
             </p>
 
             <div className="flex gap-2.5">

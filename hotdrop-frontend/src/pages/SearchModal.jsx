@@ -157,7 +157,7 @@ function SearchModal({ isOpen, onClose, initialMode = "users" }) {
                   : "text-slate-500 hover:text-slate-900"
               }`}
             >
-              Creators (HotDrop ID)
+               HotDrop ID
             </button>
             <button
               onClick={() => setSearchMode("projects")}
@@ -211,8 +211,8 @@ function SearchModal({ isOpen, onClose, initialMode = "users" }) {
             <div className="flex flex-col items-center justify-center py-8 text-center text-slate-400 space-y-1">
               <span className="text-xs font-medium text-slate-500">
                 {searchMode === "users"
-                  ? "Type any HotDrop ID or name to search creators"
-                  : "Type title keywords or #tags to search drops"}
+                  ? "Type any HotDrop ID or name to search users"
+                  : "Type title keywords or #tags to search projects"}
               </span>
             </div>
           ) : loading ? (

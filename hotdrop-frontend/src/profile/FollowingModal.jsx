@@ -1,11 +1,11 @@
 import { X, UserCheck, Loader2, UserMinus, UserPlus } from "lucide-react";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "../api/Api";
 import dp from "../assets/dp.jpg";
 import { useAuthStore } from "../store/useAuthStore";
 
-function FollowingModal({ isOpen, onClose, userId, onFollowStatusChange }) {
+function FollowingModal({ isOpen, onClose, userId, onFollowStatusChange, onUnfollowSuccess }) {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(false);
   const [togglingId, setTogglingId] = useState(null);
@@ -14,20 +14,17 @@ function FollowingModal({ isOpen, onClose, userId, onFollowStatusChange }) {
   const { user: currentUser } = useAuthStore();
   const currentUserId = currentUser?.id || currentUser?._id || currentUser?.userId;
 
-  const fetchedRef = useRef(false);
-
   useEffect(() => {
-    if (!isOpen) {
-      fetchedRef.current = false;
+    if (!isOpen || !userId || userId === "undefined") {
+      setUsers([]);
       return;
     }
 
-    if (!userId || userId === "undefined" || fetchedRef.current) return;
+    let isMounted = true;
 
     const fetchFollowing = async () => {
       try {
         setLoading(true);
-        fetchedRef.current = true;
 
         // 1. Fetch following list for target profile directly from GET /users/{userId}/get-all-following
         const res = await axios.get(`/users/${userId}/get-all-following`);
@@ -57,12 +54,14 @@ function FollowingModal({ isOpen, onClose, userId, onFollowStatusChange }) {
           }
         }
 
+        if (!isMounted) return;
+
         const annotatedUsers = listData.map((u) => {
           const uId = String(u.id || u._id || u.userId || u.targetUserId || "");
           const uHandle = (u.hotdropId || u.username || "").toLowerCase();
 
           let isFollowing = true;
-          if (currentUserId && currentUserId !== userId) {
+          if (currentUserId && String(currentUserId) !== String(userId)) {
             isFollowing = myFollowingIds.has(uId) || (uHandle && myFollowingIds.has(uHandle));
           }
 
@@ -77,12 +76,17 @@ function FollowingModal({ isOpen, onClose, userId, onFollowStatusChange }) {
         setUsers(annotatedUsers);
       } catch (err) {
         console.error("Failed to load following list:", err);
+        if (isMounted) setUsers([]);
       } finally {
-        setLoading(false);
+        if (isMounted) setLoading(false);
       }
     };
 
     fetchFollowing();
+
+    return () => {
+      isMounted = false;
+    };
   }, [isOpen, userId, currentUserId]);
 
   const handleUserClick = (targetHotdrop) => {
@@ -123,6 +127,9 @@ function FollowingModal({ isOpen, onClose, userId, onFollowStatusChange }) {
 
       const res = await axios.post("/users/follow", {
         userIdToFollow: targetUserId,
+        targetUserId: targetUserId,
+        userId: targetUserId,
+        id: targetUserId,
       });
 
       const resData = res.data?.data || res.data;
@@ -150,6 +157,9 @@ function FollowingModal({ isOpen, onClose, userId, onFollowStatusChange }) {
 
       if (onFollowStatusChange) {
         onFollowStatusChange(targetUserId, isNowFollowing);
+      }
+      if (onUnfollowSuccess) {
+        onUnfollowSuccess(targetUserId, isNowFollowing);
       }
     } catch (err) {
       console.error("Follow error in FollowingModal:", err);

@@ -1,9 +1,25 @@
 import { useState, useEffect } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import axios from "../api/Api";
-import { Globe, Edit, Loader2, Award, X, Share2, Mail, UserPlus, UserMinus } from "lucide-react";
+import { 
+  Globe, 
+  Edit, 
+  Loader2, 
+  Award, 
+  X, 
+  Share2, 
+  Mail, 
+  UserPlus, 
+  UserMinus,
+  Calendar,
+  CheckCircle2,
+  Flame,
+  ExternalLink,
+  Users,
+  AppWindowMac,
+  AudioWaveform
+} from "lucide-react";
 import { useAuthStore } from "../store/useAuthStore";
-
 import { showErrorToast, showProfileUpdatedToast } from "../toast/Toast";
 
 import EmailModal from "./EmailModal";
@@ -14,7 +30,7 @@ import ShareProfileModal from "./ShareProfileModal";
 import UserPost from "./post/UserPost";
 import dp from "../assets/dp.jpg";
 
-const Github = ({ size = 20, className = "" }) => (
+const Github = ({ size = 13, className = "" }) => (
   <svg
     width={size}
     height={size}
@@ -31,7 +47,7 @@ const Github = ({ size = 20, className = "" }) => (
   </svg>
 );
 
-const Linkedin = ({ size = 20, className = "" }) => (
+const Linkedin = ({ size = 13, className = "" }) => (
   <svg
     width={size}
     height={size}
@@ -49,7 +65,7 @@ const Linkedin = ({ size = 20, className = "" }) => (
   </svg>
 );
 
-const Leetcode = ({ size = 20, className = "" }) => (
+const Leetcode = ({ size = 13, className = "" }) => (
   <svg
     width={size}
     height={size}
@@ -247,7 +263,7 @@ function EditUserProfile() {
 
   const handleFollowToggle = async () => {
     if (!isLoggedIn) {
-      showErrorToast("Please login to follow creators");
+      showErrorToast("Please login to follow user");
       return;
     }
     if (isOwnProfile) return;
@@ -403,38 +419,41 @@ function EditUserProfile() {
 
   if (isCheckingAuth || (!isOwnProfile && fetchingUser)) {
     return (
-      <div className="flex justify-center items-center h-60">
-        <Loader2 className="animate-spin text-blue-600" size={28} />
+      <div className="flex flex-col justify-center items-center h-80 gap-3">
+        <Loader2 className="animate-spin text-blue-600" size={32} />
+        <span className="text-xs font-black uppercase tracking-wider text-slate-400">Loading Creator Profile...</span>
       </div>
     );
   }
 
   if (!isOwnProfile && fetchError) {
     return (
-      <div className="flex flex-col items-center justify-center h-60 gap-4">
-        <p className="text-slate-500 text-sm font-medium">{fetchError}</p>
-        <button
-          onClick={() => navigate("/")}
-          className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-semibold hover:bg-blue-700 transition"
-        >
-          Go to Home
-        </button>
+      <div className="flex flex-col items-center justify-center min-h-[40vh] p-4 text-center">
+        <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm max-w-xs w-full space-y-3">
+          <p className="text-slate-500 text-xs font-semibold">{fetchError}</p>
+          <button
+            onClick={() => navigate("/")}
+            className="w-full py-2 bg-blue-600 text-white rounded-xl text-xs font-bold hover:bg-blue-700 transition cursor-pointer"
+          >
+            Go to Feed
+          </button>
+        </div>
       </div>
     );
   }
 
   if (isOwnProfile && !loggedInUser && !isLoggedIn) {
     return (
-      <div className="flex flex-col items-center justify-center h-60 gap-4">
-        <p className="text-slate-500 text-sm font-medium">
-          Please login to view profile
-        </p>
-        <Link
-          to="/login"
-          className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-semibold hover:bg-blue-700 transition"
-        >
-          Login
-        </Link>
+      <div className="flex flex-col items-center justify-center min-h-[40vh] p-4 text-center">
+        <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm max-w-xs w-full space-y-3">
+          <p className="text-slate-500 text-xs font-semibold">Please sign in to view profile</p>
+          <Link
+            to="/login"
+            className="block w-full py-2 bg-blue-600 text-white rounded-xl text-xs font-bold hover:bg-blue-700 transition text-center"
+          >
+            Login
+          </Link>
+        </div>
       </div>
     );
   }
@@ -452,305 +471,284 @@ function EditUserProfile() {
 
   const fullName = displayUser?.firstName
     ? `${displayUser.firstName} ${displayUser.lastName || ""}`.trim()
-    : displayUser?.username || "HotDrop Creator";
+    : displayUser?.username || displayUser?.hotdropId || "HotDrop Creator";
+
+
+  const formattedJoinedDate = displayUser?.createdAt
+    ? new Date(displayUser.createdAt).toLocaleDateString("en-US", { month: "short", year: "numeric" })
+    : "Recently";
+
+  const creatorPosts = displayUser?.posts || [];
+
+  const stats = [
+    {
+      label: "projects",
+      count: displayUser?.postCount ?? creatorPosts.length ?? 0,
+      action: null,
+      icon: Flame,
+      color: "text-orange-500 bg-orange-50"
+    },
+    {
+      label: "followers",
+      count: displayUser?.followerCount ?? displayUser?.followers?.length ?? 0,
+      action: () => setShowFollowers(true),
+      icon: Users,
+      color: "text-blue-600 bg-blue-50"
+    },
+    {
+      label: "following",
+      count: displayUser?.followingCount ?? displayUser?.following?.length ?? 0,
+      action: () => setShowFollowing(true),
+      icon: UserCheckIcon,
+      color: "text-indigo-600 bg-indigo-50"
+    },
+  ];
 
   return (
-    <div className="w-full flex flex-col items-center p-2 sm:px-2 sm:py-4 bg-white sm:bg-[#F9FAFB]">
-      {/* 📱 MOBILE DESIGN */}
-      <div className="block sm:hidden w-full max-w-lg bg-white border border-gray-200 rounded-2xl p-5 shadow-sm relative">
-        {/* HEADER ROW */}
-        <div className="flex justify-between items-center pb-3.5 mb-4 border-b border-gray-100 gap-2">
-          <div className="flex items-center gap-2 select-none shrink-0">
-            <div className="w-2.5 h-2.5 bg-orange-500 rounded-full animate-pulse"></div>
-            <span className="text-sm font-black tracking-tight flex items-center">
-              <span className="text-orange-500">HOT</span>
-              <span className="text-blue-600">DROP</span>
-            </span>
-          </div>
+    <div className="w-full min-h-screen bg-[#f8fafc] px-2 sm:px-4 py-3 sm:py-5 select-none font-sans space-y-6">
+      
+      {/* 👤 1. USER PROFILE CARD (INDEPENDENT COMPACT CONTAINER: max-w-4xl) */}
+      <div className="max-w-4xl mx-auto w-full">
+        <div className="bg-white rounded-3xl border border-slate-200/80 shadow-sm hover:shadow-md transition-all overflow-hidden relative">
+          
+          {/* COMPACT VERCEL / DRIBBBLE STYLE GRADIENT BANNER */}
+          <div className="h-20 sm:h-32 bg-gradient-to-r from-slate-950 via-indigo-950 to-slate-900 relative p-3 sm:p-4 flex justify-between items-start overflow-hidden">
+            <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-blue-600/30 via-indigo-500/10 to-transparent opacity-70" />
+            <div className="absolute -right-16 -bottom-16 w-44 h-44 bg-orange-500/15 rounded-full blur-3xl pointer-events-none" />
 
-          <span className="text-xs font-bold lowercase text-slate-600 px-2">
-            @{displayUser?.hotdropId || "hotdrop"}
-          </span>
-
-          <div className="flex items-center gap-1.5 shrink-0">
-            <button
-              onClick={() => setShowShareModal(true)}
-              className="p-2 rounded-full text-white bg-emerald-500 hover:bg-emerald-600 transition"
-              title="Share"
-            >
-              <Share2 size={14} />
-            </button>
-          </div>
-        </div>
-
-        {/* Stats Row */}
-        <div className="flex items-center justify-between gap-4">
-          <div
-            className="shrink-0 cursor-pointer group"
-            onClick={() => setShowFullImage(true)}
-          >
-            <div className="w-16 h-16 rounded-full border border-gray-200 overflow-hidden bg-gray-50">
-              <img
-                src={profileAvatar}
-                alt="Profile Avatar"
-                className="w-full h-full object-cover"
-              />
+            {/* BRAND BADGE */}
+            <div className="relative z-10 flex items-center gap-1.5 select-none">
+              <span className="w-2 h-2 rounded-full bg-orange-500 animate-pulse" />
+              <span className="text-xs font-black uppercase tracking-tight text-white flex items-center gap-1">
+                <span className="text-orange-400">HOT</span>
+                <span className="text-blue-400">DROP</span>
+                  </span>
             </div>
-          </div>
 
-          <div className="flex-1 flex justify-around items-center text-center">
-            {[
-              {
-                label: "posts",
-                count: displayUser?.postCount ?? displayUser?.posts?.length ?? 0,
-                action: null,
-              },
-              {
-                label: "followers",
-                count:
-                  displayUser?.followerCount ??
-                  displayUser?.followers?.length ??
-                  0,
-                action: () => setShowFollowers(true),
-              },
-              {
-                label: "following",
-                count:
-                  displayUser?.followingCount ??
-                  displayUser?.following?.length ??
-                  0,
-                action: () => setShowFollowing(true),
-              },
-            ].map((stat, i) => (
+            {/* SHARE BUTTON */}
+            <div className="relative z-10">
               <button
-                key={i}
-                onClick={stat.action}
-                disabled={!stat.action}
-                className="flex flex-col items-center"
+                onClick={() => setShowShareModal(true)}
+                className="flex items-center gap-1 px-2.5 py-1 rounded-xl text-xs font-bold text-white bg-white/10 hover:bg-white/20 backdrop-blur-md border border-white/20 transition active:scale-95 cursor-pointer shadow-sm"
+                title="Share Profile"
               >
-                <span className="text-base font-bold text-gray-900 leading-none">
-                  {stat.count}
-                </span>
-                <span className="text-xs text-gray-500 font-medium mt-1">
-                  {stat.label}
-                </span>
+                <Share2 size={13} />
+                <span className="hidden sm:inline-block">Share</span>
               </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Details */}
-        <div className="mt-3.5 flex flex-col">
-          <h1 className="text-sm font-bold text-gray-900 leading-tight">
-            {fullName}
-          </h1>
-
-          <p className="text-xs text-gray-700 leading-relaxed font-normal whitespace-pre-line pt-1">
-            {displayUser?.bio || "Digital Creator & Developer 🚀"}
-          </p>
-        </div>
-
-        {/* Action Row: Follow/Edit + Contact */}
-        <div className="flex items-center gap-2 mt-4 pt-3 border-t border-gray-100">
-          {isOwnProfile ? (
-            <button
-              onClick={() => setShowEditModal(true)}
-              className="flex-1 flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 shadow-sm transition active:scale-95"
-            >
-              <Edit size={14} />
-              <span>Edit Profile</span>
-            </button>
-          ) : (
-            <button
-              onClick={handleFollowToggle}
-              disabled={followLoading}
-              className={`flex-1 flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl text-xs font-bold transition shadow-sm active:scale-95 ${
-                isFollowing
-                  ? "bg-slate-100 text-slate-700 hover:bg-red-50 hover:text-red-600 border border-slate-200"
-                  : "bg-blue-600 hover:bg-blue-700 text-white"
-              }`}
-            >
-              {followLoading ? (
-                <Loader2 size={14} className="animate-spin" />
-              ) : isFollowing ? (
-                <>
-                  <UserMinus size={14} />
-                  <span>Following</span>
-                </>
-              ) : (
-                <>
-                  <UserPlus size={14} />
-                  <span>Follow</span>
-                </>
-              )}
-            </button>
-          )}
-
-          <button
-            onClick={() => setShowEmailModal(true)}
-            className="flex-1 flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl text-xs font-bold text-blue-600 bg-blue-50 hover:bg-blue-100 border border-blue-100 transition active:scale-95"
-          >
-            <Mail size={14} />
-            <span>Contact</span>
-          </button>
-        </div>
-      </div>
-
-      {/* 💻 DESKTOP DESIGN */}
-      <div className="hidden sm:flex w-full max-w-full py-4 bg-white rounded-[2rem] shadow-[0_15px_35px_-10px_rgba(0,0,0,0.05)] border border-slate-100 overflow-hidden relative flex-col">
-        {/* HEADER ROW */}
-        <div className="flex justify-between items-center px-8 py-3 border-b border-slate-50 bg-slate-50/30 shrink-0">
-          <div className="flex items-center gap-2.5 select-none shrink-0">
-            <div className="w-3 h-3 bg-orange-500 rounded-full animate-pulse"></div>
-            <span className="text-sm font-extrabold tracking-widest uppercase flex items-center gap-0.5">
-              <span className="text-orange-600">HOT</span>
-              <span className="text-blue-600">DROP</span>
-            </span>
-          </div>
-
-          <span className="text-sm font-bold lowercase text-slate-600 px-3">
-            @{displayUser?.hotdropId || "hotdrop"}
-          </span>
-
-          <div className="flex items-center gap-2.5 shrink-0">
-            <button
-              onClick={() => setShowShareModal(true)}
-              className="flex items-center justify-center p-2.5 rounded-full text-white bg-emerald-500 hover:bg-emerald-600 shadow-sm transition-all hover:scale-105"
-              title="Share"
-            >
-              <Share2 size={14} />
-            </button>
-          </div>
-        </div>
-
-        {/* Content Body */}
-        <div className="p-8 flex flex-row items-start gap-8">
-          <div
-            className="relative shrink-0 cursor-pointer group"
-            onClick={() => setShowFullImage(true)}
-          >
-            <div className="absolute -inset-1 bg-gradient-to-tr from-orange-500 to-blue-500 rounded-full blur-[1px] opacity-20 group-hover:opacity-40 transition"></div>
-            <div className="relative w-28 h-28 rounded-full p-0.5 bg-white shadow-md overflow-hidden ring-1 ring-slate-100">
-              <img
-                src={profileAvatar}
-                alt="Profile Avatar"
-                className="w-full h-full object-cover rounded-full group-hover:scale-105 transition"
-              />
-            </div>
-            <div className="absolute bottom-0 right-0 bg-white p-1.5 rounded-full shadow-sm border border-slate-100">
-              <Award size={14} className="text-orange-500" />
             </div>
           </div>
 
-          <div className="flex-1 text-left">
-            <div className="flex flex-col mb-2">
-              <h1 className="text-2xl font-bold text-slate-900 tracking-tight leading-snug">
-                {fullName}
-              </h1>
-            </div>
+          {/* PROFILE DETAILS */}
+          <div className="px-4 sm:px-6 pb-4 sm:pb-5 relative">
+            
+            {/* TOP ROW: AVATAR + DESKTOP ACTION BUTTONS */}
+            <div className="flex flex-col sm:flex-row items-center sm:items-end justify-between gap-3 -mt-14 sm:-mt-18 mb-3">
+              
+              {/* AVATAR (MOBILE: 100-120px, DESKTOP: 140-160px) */}
+              <div 
+                className="relative shrink-0 cursor-pointer group z-20"
+                onClick={() => setShowFullImage(true)}
+                title="Click to view avatar full size"
+              >
+                <div className="absolute -inset-1 bg-gradient-to-tr from-orange-500 via-indigo-500 to-blue-600 rounded-full blur-md opacity-40 group-hover:opacity-80 transition duration-500 animate-pulse" />
+                <div className="relative w-28 h-28 sm:w-36 sm:h-36 rounded-full p-1 bg-white ring-4 ring-white shadow-xl overflow-hidden group-hover:scale-105 transition duration-300">
+                  <img
+                    src={profileAvatar}
+                    alt={fullName}
+                    className="w-full h-full object-cover rounded-full group-hover:scale-110 transition duration-500"
+                  />
+                </div>
+                <div className="absolute bottom-1 right-1 bg-gradient-to-tr from-blue-600 to-indigo-600 text-white p-1 rounded-full shadow-lg border-2 border-white" title="Verified Creator">
+                  <CheckCircle2 size={14} className="fill-white text-blue-600" />
+                </div>
+              </div>
 
-            {/* Stats Row */}
-            <div className="flex gap-8 my-3">
-              {[
-                {
-                  label: "posts",
-                  count: displayUser?.postCount ?? displayUser?.posts?.length ?? 0,
-                  action: null,
-                },
-                {
-                  label: "followers",
-                  count:
-                    displayUser?.followerCount ??
-                    displayUser?.followers?.length ??
-                    0,
-                  action: () => setShowFollowers(true),
-                },
-                {
-                  label: "following",
-                  count:
-                    displayUser?.followingCount ??
-                    displayUser?.following?.length ??
-                    0,
-                  action: () => setShowFollowing(true),
-                },
-              ].map((stat, i) => (
+              {/* 💻 DESKTOP ACTION BUTTONS (hidden on mobile) */}
+              <div className="hidden sm:flex items-center gap-2">
+                {isOwnProfile ? (
+                  <button
+                    onClick={() => setShowEditModal(true)}
+                    className="flex items-center gap-1.5 px-4 py-1.5 rounded-xl text-xs font-black uppercase tracking-wider text-white bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 hover:from-blue-700 hover:to-indigo-700 shadow-sm shadow-blue-500/20 transition hover:scale-[1.02] active:scale-95 cursor-pointer"
+                  >
+                    <Edit size={13} />
+                    <span>Edit Profile</span>
+                  </button>
+                ) : (
+                  <button
+                    onClick={handleFollowToggle}
+                    disabled={followLoading}
+                    className={`flex items-center gap-1.5 px-4 py-1.5 rounded-xl text-xs font-black uppercase tracking-wider transition shadow-sm active:scale-95 cursor-pointer ${
+                      isFollowing
+                        ? "bg-slate-100 text-slate-700 hover:bg-rose-50 hover:text-rose-600 border border-slate-200"
+                        : "bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-blue-500/20 hover:scale-[1.02]"
+                    }`}
+                  >
+                    {followLoading ? (
+                      <Loader2 size={13} className="animate-spin" />
+                    ) : isFollowing ? (
+                      <>
+                        <UserMinus size={13} />
+                        <span>Following</span>
+                      </>
+                    ) : (
+                      <>
+                        <UserPlus size={13} />
+                        <span>Follow Creator</span>
+                      </>
+                    )}
+                  </button>
+                )}
+
                 <button
-                  key={i}
-                  onClick={stat.action}
-                  disabled={!stat.action}
-                  className={`flex items-baseline gap-1.5 ${
-                    stat.action
-                      ? "cursor-pointer hover:opacity-75"
-                      : "cursor-default"
-                  }`}
+                  onClick={() => setShowEmailModal(true)}
+                  className="flex items-center gap-1.5 px-4 py-1.5 rounded-xl text-xs font-extrabold uppercase tracking-wider text-blue-600 bg-blue-50 hover:bg-blue-600 hover:text-white border border-blue-200/80 transition hover:scale-[1.02] active:scale-95 cursor-pointer shadow-2xs"
                 >
-                  <span className="text-base font-bold text-slate-900">
-                    {stat.count}
-                  </span>
-                  <span className="text-xs font-medium lowercase text-slate-500">
-                    {stat.label}
-                  </span>
+                  <Mail size={13} />
+                  <span>Contact</span>
                 </button>
-              ))}
+              </div>
+
             </div>
 
-            {/* Bio */}
-            <p className="text-slate-600 text-sm leading-relaxed font-normal mb-4 line-clamp-2">
-              {displayUser?.bio || "Minimalist Creator | Tech Enthusiast 🚀"}
-            </p>
+            {/* NAME, BIO & SOCIALS */}
+            <div className="space-y-2 text-center sm:text-left">
+              <div>
+                <div className="flex flex-col sm:flex-row sm:items-center gap-1.5">
+                  <h1 className="text-lg sm:text-xl font-black text-slate-900 tracking-tight">
+                    {fullName}
+                  </h1>
+                  
+                </div>
 
-            {/* Action Row: Follow/Edit + Contact + Share */}
-            <div className="flex items-center gap-3 mt-5">
-              {isOwnProfile ? (
-                <button
-                  onClick={() => setShowEditModal(true)}
-                  className="flex items-center gap-2 px-5 py-2 rounded-xl text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 shadow-sm transition hover:scale-[1.02] active:scale-95"
-                >
-                  <Edit size={14} />
-                  <span>Edit Profile</span>
-                </button>
-              ) : (
-                <button
-                  onClick={handleFollowToggle}
-                  disabled={followLoading}
-                  className={`flex items-center gap-2 px-5 py-2 rounded-xl text-xs font-bold transition shadow-sm hover:scale-[1.02] active:scale-95 ${
-                    isFollowing
-                      ? "bg-slate-100 text-slate-700 hover:bg-red-50 hover:text-red-600 border border-slate-200"
-                      : "bg-blue-600 hover:bg-blue-700 text-white"
-                  }`}
-                >
-                  {followLoading ? (
-                    <Loader2 size={14} className="animate-spin" />
-                  ) : isFollowing ? (
-                    <>
-                      <UserMinus size={14} />
-                      <span>Following</span>
-                    </>
-                  ) : (
-                    <>
-                      <UserPlus size={14} />
-                      <span>Follow</span>
-                    </>
-                  )}
-                </button>
+                <div  className="self-center sm:self-auto inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[13px] font-black lowercase tracking-wider">
+                  <span className="text-blue-600 lowercase">@{displayUser?.hotdropId || "hotdrop"}</span>
+                  
+                  
+                </div>
+              </div>
+
+              {/* BIO */}
+              {displayUser?.bio && (
+                <p className="text-xs text-slate-600 leading-relaxed font-bold max-w-xl whitespace-pre-line">
+                  {displayUser.bio}
+                </p>
               )}
 
-              <button
-                onClick={() => setShowEmailModal(true)}
-                className="flex items-center gap-2 px-5 py-2 rounded-xl text-xs font-bold text-blue-600 bg-blue-50 hover:bg-blue-100 border border-blue-200/60 transition hover:scale-[1.02] active:scale-95"
-              >
-                <Mail size={14} />
-                <span>Contact</span>
-              </button>
-
+             
               
             </div>
+
+            {/* BOTTOM ROW: DESKTOP STATS PILLS / MOBILE STATS PILLS & ACTION BUTTONS & LOCATION/JOINED */}
+            <div className="pt-2.5 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-2.5">
+              
+              {/* 💻 DESKTOP COMPACT STATS PILLS (hidden on mobile) */}
+              <div className="hidden sm:grid grid-cols-3 gap-2 max-w-xs">
+                {stats.map((stat, i) => (
+                  <button
+                    key={i}
+                    onClick={stat.action}
+                    disabled={!stat.action}
+                    className={`flex items-center justify-center gap-1.5 px-2.5 py-1 rounded-xl transition border ${
+                      stat.action
+                        ? "bg-slate-50 hover:bg-blue-50 border-slate-200/80 cursor-pointer active:scale-95"
+                        : "bg-slate-50 border-slate-200/80 cursor-default"
+                    }`}
+                  >
+                    <span className="text-xs font-black text-slate-900">{stat.count}</span>
+                    <span className="text-[10px] font-extrabold text-slate-400 uppercase">{stat.label}</span>
+                  </button>
+                ))}
+              </div>
+
+              {/* 📱 MOBILE BLOCK: STATS PILLS JUST ABOVE EDIT PROFILE & CONTACT BUTTONS */}
+              <div className="flex sm:hidden flex-col gap-2 w-full pt-1">
+                
+                {/* STATS PILLS (JUST ABOVE!) */}
+                <div className="flex items-center justify-center gap-1.5 w-full">
+                  {stats.map((stat, i) => (
+                    <button
+                      key={i}
+                      onClick={stat.action}
+                      disabled={!stat.action}
+                      className={`flex-1 flex items-center justify-center gap-1 py-1.5 px-2 rounded-xl border transition ${
+                        stat.action
+                          ? "bg-slate-50 hover:bg-blue-50 border-slate-200/80 cursor-pointer active:scale-95"
+                          : "bg-slate-50 border-slate-200/80 cursor-default"
+                      }`}
+                    >
+                      <span className="text-xs font-black text-slate-900 leading-none">{stat.count}</span>
+                      <span className="text-[10px] font-extrabold uppercase text-slate-400">{stat.label}</span>
+                    </button>
+                  ))}
+                </div>
+
+                {/* EDIT PROFILE & CONTACT BUTTONS (JUST BELOW STATS PILLS!) */}
+                <div className="flex items-center gap-2 w-full">
+                  {isOwnProfile ? (
+                    <button
+                      onClick={() => setShowEditModal(true)}
+                      className="flex-1 flex items-center justify-center gap-1 px-3 py-1.5 rounded-xl text-xs font-black uppercase tracking-wider text-white bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 shadow-sm active:scale-95 transition cursor-pointer"
+                    >
+                      <Edit size={13} />
+                      <span>Edit Profile</span>
+                    </button>
+                  ) : (
+                    <button
+                      onClick={handleFollowToggle}
+                      disabled={followLoading}
+                      className={`flex-1 flex items-center justify-center gap-1 px-3 py-1.5 rounded-xl text-xs font-black uppercase tracking-wider transition shadow-sm active:scale-95 cursor-pointer ${
+                        isFollowing
+                          ? "bg-slate-100 text-slate-700 hover:bg-rose-50 border border-slate-200"
+                          : "bg-gradient-to-r from-blue-600 to-indigo-600 text-white"
+                      }`}
+                    >
+                      {followLoading ? (
+                        <Loader2 size={13} className="animate-spin" />
+                      ) : isFollowing ? (
+                        <>
+                          <UserMinus size={13} />
+                          <span>Following</span>
+                        </>
+                      ) : (
+                        <>
+                          <UserPlus size={13} />
+                          <span>Follow</span>
+                        </>
+                      )}
+                    </button>
+                  )}
+
+                  <button
+                    onClick={() => setShowEmailModal(true)}
+                    className="flex-1 flex items-center justify-center gap-1 px-3 py-1.5 rounded-xl text-xs font-extrabold uppercase tracking-wider text-blue-600 bg-blue-50 border border-blue-200/80 hover:bg-blue-100 transition active:scale-95 cursor-pointer"
+                  >
+                    <Mail size={13} />
+                    <span>Contact</span>
+                  </button>
+                </div>
+
+              </div>
+
+              {/* 📍 RIGHT-SIDE BOTTOM LOCATION & JOINED DATE */}
+              <div className="flex items-center justify-center sm:justify-end gap-2 text-xs font-bold text-slate-600 shrink-0 w-full sm:w-auto pt-1 sm:pt-0">
+                <span className="flex items-center gap-1 bg-slate-50 px-2.5 py-1 rounded-xl border border-slate-200/80">
+                  📍 India
+                </span>
+                <span className="flex items-center gap-1 bg-slate-50 px-2.5 py-1 rounded-xl border border-slate-200/80">
+                  <Calendar size={13} className="text-blue-600" /> Joined {formattedJoinedDate}
+                </span>
+              </div>
+
+            </div>
+
           </div>
         </div>
       </div>
 
-      {/* 📦 USER POSTS SECTION */}
-      <div className="w-full max-w-full mt-6 sm:mt-8">
+      {/* 📦 2. USER PROJECT DROPS SECTION (INDEPENDENT FULL-WIDTH CONTAINER: max-w-7xl) */}
+      <div className="max-w-7xl mx-auto w-full space-y-4">
+        
+
         <UserPost
           postsOverride={displayUser?.posts}
           hideOptions={!isOwnProfile}
@@ -758,28 +756,28 @@ function EditUserProfile() {
         />
       </div>
 
-      {/* Full Image Modal */}
+      {/* FULL IMAGE PREVIEW MODAL */}
       {showFullImage && (
         <div
-          className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-950/90 backdrop-blur-md"
+          className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-950/90 backdrop-blur-md animate-in fade-in duration-200"
           onClick={() => setShowFullImage(false)}
         >
           <button
             onClick={() => setShowFullImage(false)}
-            className="absolute top-6 right-6 text-white/70 hover:text-white p-2"
+            className="absolute top-6 right-6 text-white/70 hover:text-white p-2 rounded-full hover:bg-white/10 transition cursor-pointer"
           >
             <X size={24} />
           </button>
           <img
             src={profileAvatar}
-            className="max-w-full max-h-[85vh] rounded-2xl shadow-2xl object-contain"
+            className="max-w-full max-h-[85vh] rounded-3xl shadow-2xl object-contain ring-4 ring-white/20 animate-in zoom-in-95 duration-200"
             alt="Profile Preview"
             onClick={(e) => e.stopPropagation()}
           />
         </div>
       )}
 
-      {/* Modals */}
+      {/* BACKEND INTEGRATION MODALS (PRESERVED 100%) */}
       {isOwnProfile && (
         <EditProfileModal
           key={showEditModal ? "open" : "closed"}
@@ -838,7 +836,7 @@ function EditUserProfile() {
         isOpen={showFollowing}
         onClose={() => setShowFollowing(false)}
         userId={getEntityId(displayUser)}
-        onUnfollowSuccess={(targetUserId) => {
+        onFollowStatusChange={(targetUserId, isNowFollowing) => {
           useAuthStore.setState((prev) => {
             if (!prev.user) return prev;
             const currentCount =
@@ -846,7 +844,9 @@ function EditUserProfile() {
             return {
               user: {
                 ...prev.user,
-                followingCount: Math.max(0, currentCount - 1),
+                followingCount: isNowFollowing
+                  ? currentCount + 1
+                  : Math.max(0, currentCount - 1),
               },
             };
           });
@@ -857,19 +857,36 @@ function EditUserProfile() {
             pageUserId &&
             String(targetUserId) === String(pageUserId)
           ) {
-            setIsFollowing(false);
+            setIsFollowing(isNowFollowing);
             setSearchedUser((prev) => {
               if (!prev) return prev;
               const currentCount =
                 prev.followerCount ?? prev.followers?.length ?? 0;
               return {
                 ...prev,
-                isFollowing: false,
-                isFollowedByMe: false,
-                followerCount: Math.max(0, currentCount - 1),
+                isFollowing: isNowFollowing,
+                isFollowedByMe: isNowFollowing,
+                followerCount: isNowFollowing
+                  ? currentCount + 1
+                  : Math.max(0, currentCount - 1),
               };
             });
           }
+        }}
+        onUnfollowSuccess={(targetUserId, isNowFollowing) => {
+          useAuthStore.setState((prev) => {
+            if (!prev.user) return prev;
+            const currentCount =
+              prev.user?.followingCount ?? prev.user?.following?.length ?? 0;
+            return {
+              user: {
+                ...prev.user,
+                followingCount: isNowFollowing === true
+                  ? currentCount + 1
+                  : Math.max(0, currentCount - 1),
+              },
+            };
+          });
         }}
       />
 
@@ -886,6 +903,17 @@ function EditUserProfile() {
         user={displayUser}
       />
     </div>
+  );
+}
+
+// Helper icon component for stats
+function UserCheckIcon({ size = 14, className = "" }) {
+  return (
+    <svg className={className} width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+      <circle cx="9" cy="7" r="4" />
+      <polyline points="16 11 18 13 22 9" />
+    </svg>
   );
 }
 

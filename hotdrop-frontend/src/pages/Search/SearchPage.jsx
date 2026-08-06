@@ -17,7 +17,9 @@ import {
   Flame,
   X,
   Tag,
-  ArrowLeft
+  ArrowLeft,
+  SlidersHorizontal,
+  Boxes
 } from "lucide-react";
 import Sidebar from "../AllPost/Sidebar";
 import Sponser from "../AllPost/Sponser";
@@ -53,6 +55,40 @@ function SearchPage() {
   const [currentImage, setCurrentImage] = useState({});
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [doubleTapHeartMap, setDoubleTapHeartMap] = useState({});
+  const [showFilterModal, setShowFilterModal] = useState(false);
+
+  const quickTopics = [
+    "React", "NextJS", "MERN", "SpringBoot", "NodeJS", "TailwindCSS", "AI", "Python", "Java", "PostgreSQL"
+  ];
+
+  const allFilterCategories = [
+    {
+      id: "frontend",
+      category: "⚡ Frontend & Fullstack",
+      tags: ["React 19", "NextJS", "MERN", "TailwindCSS", "VueJS", "Angular", "TypeScript", "Svelte"]
+    },
+    {
+      id: "backend",
+      category: "🛡️ Backend & Frameworks",
+      tags: ["SpringBoot", "NodeJS", "Express", "Django", "FastAPI", "Java 21", "Python", "Go", "GraphQL"]
+    },
+    {
+      id: "database",
+      category: "🗄️ Database & Cloud",
+      tags: ["PostgreSQL", "MongoDB", "Redis", "Supabase", "Docker", "AWS", "Firebase"]
+    },
+    {
+      id: "ai",
+      category: "🤖 AI & Emerging Tech",
+      tags: ["OpenAI API", "LangChain", "PyTorch", "Agentic AI", "WebSockets", "Web3"]
+    }
+  ];
+
+  const handleFilterTopic = (tag) => {
+    const cleanTag = tag.replace(/[^a-zA-Z0-9]/g, "");
+    setSearchInput(cleanTag);
+    navigate(`/search?q=${encodeURIComponent(cleanTag)}`);
+  };
 
   // Pagination states
   const [fetchingMore, setFetchingMore] = useState(false);
@@ -291,6 +327,7 @@ function SearchPage() {
       }
 
       setCommentText(""); 
+    // eslint-disable-next-line no-unused-vars
     } catch (error) {
       toast.error("Failed to post comment");
     }
@@ -305,16 +342,16 @@ function SearchPage() {
   const popularTags = ["React", "NextJS", "TailwindCSS", "NodeJS", "FullStack", "AI"];
 
   return (
-    <div className="min-h-screen bg-[#f8fafc] pt-2 sm:pt-4 pb-8 px-2 sm:px-4">
-      <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-4 gap-6 lg:gap-8">
+    <div className="h-[calc(100vh-4.25rem)] bg-[#f8fafc] px-2 sm:px-4 overflow-hidden">
+      <div className="max-w-7xl mx-auto h-full grid grid-cols-1 lg:grid-cols-4 gap-6 lg:gap-8 items-start">
         
-        {/* LEFT SIDEBAR (Desktop) */}
-        <div className="hidden lg:block">
+        {/* LEFT SIDEBAR (100% Independent Scroll Column) */}
+        <div className="hidden lg:block h-full overflow-y-auto pt-2 pb-6 pr-1 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
           <Sidebar />
         </div>
 
-        {/* CENTER SEARCH RESULTS CONTENT */}
-        <div className="col-span-1 lg:col-span-2 space-y-6 sm:space-y-8">
+        {/* CENTER SEARCH RESULTS CONTENT (100% Independent Scroll Column) */}
+        <div className="col-span-1 lg:col-span-2 h-full overflow-y-auto pt-2 pb-6 space-y-6 sm:space-y-8 pr-1 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
           
           {/* SEARCH HEADER CARD */}
           <div className="bg-white rounded-3xl p-4 sm:p-6 border border-slate-200/80 shadow-sm space-y-4">
@@ -346,6 +383,42 @@ function SearchPage() {
                 Search
               </button>
             </form>
+
+            {/* TOP FILTER & QUICK TOPICS BAR */}
+            <div className="pt-2 border-t border-slate-100 flex items-center justify-between gap-2.5">
+              <div className="flex items-center gap-2 overflow-x-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden py-0.5 flex-1 min-w-0">
+                <button
+                  type="button"
+                  onClick={() => setShowFilterModal(true)}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-900 hover:bg-blue-600 text-white text-xs font-black uppercase tracking-wider shrink-0 shadow-sm transition cursor-pointer"
+                >
+                  <SlidersHorizontal size={14} />
+                  <span>Filter</span>
+                </button>
+
+                <div className="h-4 w-[1px] bg-slate-200 shrink-0" />
+
+                {quickTopics.map((topic) => (
+                  <button
+                    key={topic}
+                    type="button"
+                    onClick={() => handleFilterTopic(topic)}
+                    className="px-2.5 py-1 rounded-xl bg-slate-50 hover:bg-blue-50 hover:text-blue-600 text-slate-700 text-[11px] font-extrabold whitespace-nowrap transition cursor-pointer shrink-0 border border-slate-200/70"
+                  >
+                    #{topic}
+                  </button>
+                ))}
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setShowFilterModal(true)}
+                className="p-2 rounded-xl bg-slate-100 text-slate-700 hover:bg-blue-600 hover:text-white transition cursor-pointer shrink-0"
+                title="All Tech Topics Filter"
+              >
+                <Boxes size={16} />
+              </button>
+            </div>
 
             {query && (
               <div className="flex items-center justify-between pt-1 border-t border-slate-100">
@@ -551,7 +624,7 @@ function SearchPage() {
                               <Globe size={15} strokeWidth={2.5} />
                             </div>
                             <div className={`flex flex-col truncate transition-all ${!user ? "blur-[4px] select-none" : ""}`}>
-                              <span className="text-xs font-bold text-slate-800 truncate tracking-tight group-hover/link:text-blue-600 transition-colors font-mono">
+                              <span className="text-xs font-bold text-slate-700 truncate tracking-tight group-hover/link:text-blue-600 transition-colors">
                                 {user ? projectLink?.replace("https://", "").replace("www.", "") : "hidden-project-url-protected"}
                               </span>
                             </div>
@@ -634,8 +707,8 @@ function SearchPage() {
 
         </div>
 
-        {/* RIGHT SPONSOR (Desktop) */}
-        <div className="hidden lg:block">
+        {/* RIGHT SPONSOR (100% Independent Scroll Column) */}
+        <div className="hidden lg:block h-full overflow-y-auto pt-2 pb-6 pr-1 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
           <Sponser />
         </div>
 
@@ -705,8 +778,70 @@ function SearchPage() {
         />
       )}
 
-      {sharePost && <ShareModal post={sharePost} onClose={() => setSharePost(null)} />}
-      {likePost && <LikeModal post={likePost} onClose={() => setLikePost(null)} />}
+      {/* TECH TOPICS FILTER POPUP MODAL */}
+      {showFilterModal && (
+        <div 
+          className="fixed inset-0 z-[9999] bg-slate-950/60 backdrop-blur-md flex items-center justify-center p-3 sm:p-6 animate-in fade-in duration-200 select-none"
+          onClick={() => setShowFilterModal(false)}
+        >
+          <div 
+            className="bg-white w-full max-w-lg rounded-3xl overflow-hidden shadow-2xl border border-slate-100 animate-in zoom-in-95 duration-150 flex flex-col max-h-[85vh]"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="p-4 px-5 border-b border-slate-100 flex justify-between items-center bg-slate-50/60">
+              <div className="flex items-center gap-2 text-slate-900">
+                <Boxes size={18} className="text-blue-600" />
+                <h3 className="font-extrabold text-sm uppercase tracking-wider text-slate-900">
+                  Filter Drops by Tech Stack
+                </h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowFilterModal(false)}
+                className="p-1.5 text-slate-400 hover:bg-slate-200/60 hover:text-slate-700 rounded-full transition cursor-pointer"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            <div className="p-4 bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-900 text-white flex items-center justify-between gap-3">
+              <div className="space-y-0.5">
+                <div className="flex items-center gap-1.5 text-amber-400 text-[10px] font-black uppercase">
+                  <Sparkles size={12} /> HotDrop Stack Filter
+                </div>
+                <p className="text-xs font-bold text-slate-200">
+                  Select any tech stack to discover matching live project drops! 🚀
+                </p>
+              </div>
+            </div>
+
+            <div className="p-4 overflow-y-auto space-y-4 max-h-[60vh]">
+              {allFilterCategories.map((cat) => (
+                <div key={cat.id} className="space-y-2">
+                  <span className="text-[11px] font-black text-slate-500 uppercase tracking-tight block">
+                    {cat.category}
+                  </span>
+                  <div className="flex flex-wrap gap-2">
+                    {cat.tags.map((tag) => (
+                      <button
+                        key={tag}
+                        type="button"
+                        onClick={() => {
+                          setShowFilterModal(false);
+                          handleFilterTopic(tag);
+                        }}
+                        className="bg-slate-50 hover:bg-blue-600 hover:text-white border border-slate-200/80 text-slate-800 text-xs font-extrabold px-3 py-1.5 rounded-xl transition-all duration-200 cursor-pointer shadow-2xs hover:scale-105 active:scale-95"
+                      >
+                        #{tag}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
 
     </div>
   );

@@ -21,7 +21,7 @@ import PreviewModal from "./PreviewModal";
 import { Link } from "react-router-dom";
 import API from "../../api/Api";
 import { toast } from "react-toastify";
-import { showLikeToast } from "../../toast/Toast";
+import { showLikeToast, showProjectDeletedToast } from "../../toast/Toast";
 
 function ImageModal({
   post,
@@ -157,12 +157,8 @@ function ImageModal({
     try {
       const res = await API.delete(`/posts/delete-post/${targetId}`);
       if (res.status === 200 || res.data?.success || res.data?.statusCode === 200) {
-        toast.update(loadingToast, {
-          render: "Drop deleted! 🗑️",
-          type: "success",
-          isLoading: false,
-          autoClose: 2000,
-        });
+        toast.dismiss(loadingToast);
+        showProjectDeletedToast("Project");
 
         useAuthStore.setState((state) => {
           const filterFn = (p) => (p.id || p._id) !== targetId;
@@ -459,7 +455,7 @@ function ImageModal({
               </div>
 
               <div className="relative">
-                <p className="text-xs text-slate-600 leading-relaxed font-normal">
+                <p className="text-xs text-slate-900 font-bold leading-relaxed ">
                   {livePost.description && livePost.description.length > maxLength && !isExpanded
                     ? `${livePost.description.slice(0, maxLength)}...`
                     : livePost.description}

@@ -16,11 +16,11 @@ function PostDescription({ description }) {
 
   return (
     <div className="relative pb-3">
-      <p className="text-[12px] text-slate-800 font-medium leading-relaxed">
+      <p className="text-[12px] text-slate-900 font-bold leading-relaxed">
         {isExpanded ? description : `${description.slice(0, maxLength)}...`}
         <button
           onClick={() => setIsExpanded(!isExpanded)}
-          className="ml-1 text-[11px] text-blue-600 hover:text-indigo-600 font-bold transition-colors cursor-pointer inline-block"
+          className="ml-1 text-[12px] text-blue-600 hover:text-indigo-400 font-bold transition-colors cursor-pointer inline-block"
         >
           {isExpanded ? " Show Less" : " Read More"}
         </button>
