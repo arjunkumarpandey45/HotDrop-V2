@@ -89,7 +89,12 @@ export const useAuthStore = create((set, get) => ({
     const currentPath = window.location.pathname;
 
     // 💡 GUARD 1: Prevent loop on auth pages
-    if (currentPath.startsWith("/login") || currentPath.startsWith("/signup")) {
+    if (
+      currentPath.startsWith("/login") ||
+      currentPath.startsWith("/signup") ||
+      currentPath.startsWith("/forgot-password") ||
+      currentPath.startsWith("/auth/forgot-password")
+    ) {
       set({ user: null, userPosts: [], isLoggedIn: false, isCheckingAuth: false });
       return;
     }

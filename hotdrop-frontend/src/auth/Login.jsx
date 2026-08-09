@@ -144,7 +144,7 @@ navigate("/", { replace: true });
                     Password
                   </label>
                   <Link
-                    to="/forgot-password"
+                    to="/auth/forgot-password"
                     className="text-[11px] font-semibold text-blue-600 hover:underline"
                   >
                     Forgot Password?

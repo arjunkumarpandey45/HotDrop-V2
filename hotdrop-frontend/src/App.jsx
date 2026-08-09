@@ -6,6 +6,7 @@ import Signup from './auth/Signup';
 import Verify from './auth/Verify';
 import VerifyLink from './auth/VerifyLink';
 import Login from './auth/Login';
+import ForgotPassword from './auth/ForgotPassword';
 import Navbar from './pages/Navbar';
 import CreatePost from './pages/createPost/CreatePost';
 import EditUserProfile from './profile/EditUserProfile';
@@ -89,6 +90,14 @@ function App() {
         {
           path: '/auth/verify-email',
           element: <VerifyLink />,
+        },
+        {
+          path: '/auth/forgot-password',
+          element: <ForgotPassword />,
+        },
+        {
+          path: '/forgot-password',
+          element: <ForgotPassword />,
         },
         {
           path: '/verify',
