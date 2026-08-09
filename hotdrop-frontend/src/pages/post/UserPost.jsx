@@ -355,7 +355,7 @@ function UserPost({ postsOverride, hideOptions, ownerOverride }) {
       <div className="flex flex-col items-center justify-center py-24">
         <Share2 className="text-slate-300 mb-3" size={24} />
         <div className="text-slate-400 text-[12px] font-semibold uppercase tracking-wider">
-          No Drops Yet
+          No Projects Yet
         </div>
       </div>
     );

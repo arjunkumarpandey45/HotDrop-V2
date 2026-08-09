@@ -16,10 +16,10 @@ const SPONSORS = [
     id: "openai",
     brand: "OpenAI",
     badge: "Official Ad Partner",
-    badgeBg: "bg-emerald-100/80 text-emerald-800 border-emerald-300/80",
-    gradient: "from-emerald-50/90 via-teal-50/40 to-white border-emerald-200/90",
-    iconBg: "bg-emerald-500 text-white shadow-emerald-500/30",
-    accentBtn: "bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white shadow-emerald-600/20",
+    badgeBg: "bg-blue-100 text-blue-800 border-blue-200",
+    gradient: "from-blue-50 via-sky-50/50 to-white border-blue-200/90",
+    iconBg: "bg-blue-600 text-white shadow-blue-500/30",
+    accentBtn: "bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 hover:from-blue-700 hover:to-indigo-700 text-white shadow-blue-500/25",
     title: "OpenAI GPT-4o & Sora 🤖",
     description: "Build next-gen multi-modal AI apps with vision, real-time speech & reasoning APIs.",
     ctaText: "Claim OpenAI API Credits",
@@ -31,10 +31,10 @@ const SPONSORS = [
     id: "antigravity",
     brand: "Google Antigravity",
     badge: "Featured AI Partner",
-    badgeBg: "bg-indigo-100/80 text-indigo-800 border-indigo-300/80",
-    gradient: "from-indigo-50/90 via-purple-50/40 to-white border-indigo-200/90",
-    iconBg: "bg-indigo-600 text-white shadow-indigo-600/30",
-    accentBtn: "bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white shadow-indigo-600/20",
+    badgeBg: "bg-indigo-100 text-indigo-800 border-indigo-200",
+    gradient: "from-indigo-50/90 via-blue-50/50 to-white border-indigo-200/90",
+    iconBg: "bg-indigo-600 text-white shadow-indigo-500/30",
+    accentBtn: "bg-gradient-to-r from-indigo-600 via-blue-600 to-indigo-700 hover:from-indigo-700 hover:to-blue-700 text-white shadow-indigo-500/25",
     title: "Google Antigravity 2.0 🌌",
     description: "Autonomous agentic coding assistant & AI IDE built by Google DeepMind engineers.",
     ctaText: "Explore Antigravity",
@@ -46,10 +46,10 @@ const SPONSORS = [
     id: "grok",
     brand: "xAI / Grok",
     badge: "Sponsored Ad",
-    badgeBg: "bg-amber-100/80 text-amber-900 border-amber-300/80",
-    gradient: "from-amber-50/90 via-orange-50/40 to-white border-amber-200/90",
+    badgeBg: "bg-amber-100 text-amber-900 border-amber-200",
+    gradient: "from-amber-50/80 via-blue-50/30 to-white border-amber-200/80",
     iconBg: "bg-amber-500 text-white shadow-amber-500/30",
-    accentBtn: "bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-700 hover:to-orange-700 text-white shadow-amber-600/20",
+    accentBtn: "bg-gradient-to-r from-amber-500 to-blue-600 hover:from-amber-600 hover:to-blue-700 text-white shadow-amber-500/25",
     title: "Grok 3 xAI Engine ⚡",
     description: "Unfiltered real-time search, cosmic reasoning & ultra-low latency inference API.",
     ctaText: "Access Grok API",
@@ -61,10 +61,10 @@ const SPONSORS = [
     id: "meta",
     brand: "Meta AI",
     badge: "Official Partner",
-    badgeBg: "bg-blue-100/80 text-blue-800 border-blue-300/80",
-    gradient: "from-blue-50/90 via-cyan-50/40 to-white border-blue-200/90",
-    iconBg: "bg-blue-600 text-white shadow-blue-600/30",
-    accentBtn: "bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white shadow-blue-600/20",
+    badgeBg: "bg-sky-100 text-sky-800 border-sky-200",
+    gradient: "from-sky-50/90 via-blue-50/40 to-white border-sky-200/90",
+    iconBg: "bg-sky-600 text-white shadow-sky-500/30",
+    accentBtn: "bg-gradient-to-r from-sky-600 to-blue-600 hover:from-sky-700 hover:to-blue-700 text-white shadow-sky-500/25",
     title: "Meta Llama 3.3 Open AI 🦙",
     description: "Open source frontier AI models powering social experiences & developer platforms.",
     ctaText: "Download Llama 3.3",
@@ -112,7 +112,7 @@ const Sponser = () => {
           </span>
         </div>
 
-        {/* BRAND PILLS */}
+        {/* BRAND PILLS - SLEEK LIGHT BLUE ACTIVE ACCENT */}
         <div className="grid grid-cols-4 gap-1">
           {SPONSORS.map((s, idx) => {
             const isActive = idx === activeIndex;
@@ -122,14 +122,14 @@ const Sponser = () => {
                 onClick={() => setActiveIndex(idx)}
                 className={`py-1.5 px-1 rounded-xl text-[10px] font-extrabold transition-all duration-300 flex flex-col items-center justify-center gap-0.5 cursor-pointer border ${
                   isActive
-                    ? "bg-slate-900 text-white border-slate-900 shadow-md scale-[1.03]"
-                    : "bg-slate-50 text-slate-600 border-slate-200/70 hover:bg-slate-100 hover:text-slate-900"
+                    ? "bg-blue-600 text-white border-blue-600 shadow-md shadow-blue-500/25 scale-[1.03]"
+                    : "bg-slate-50 text-slate-600 border-slate-200/70 hover:bg-blue-50 hover:text-blue-600 hover:border-blue-200"
                 }`}
               >
                 <span className="truncate max-w-full">{s.brand.split(" ")[0]}</span>
                 <div
                   className={`h-1 rounded-full transition-all ${
-                    isActive ? "bg-blue-400 w-3" : "bg-transparent w-1"
+                    isActive ? "bg-white w-3" : "bg-transparent w-1"
                   }`}
                 />
               </button>
@@ -142,16 +142,16 @@ const Sponser = () => {
       <div
         onMouseEnter={() => setIsPaused(true)}
         onMouseLeave={() => setIsPaused(false)}
-        className={`relative overflow-hidden bg-gradient-to-br ${activeSponsor.gradient} rounded-3xl p-5 border shadow-md hover:shadow-xl transition-all duration-500 group`}
+        className={`relative overflow-hidden bg-gradient-to-br ${activeSponsor.gradient} rounded-3xl p-5 border shadow-sm hover:shadow-lg transition-all duration-500 group`}
       >
         {/* Soft pastel backdrop glow */}
-        <div className="absolute top-0 right-0 -mr-10 -mt-10 w-36 h-36 bg-blue-400/10 rounded-full blur-3xl group-hover:scale-125 transition-all duration-700" />
+        <div className="absolute top-0 right-0 -mr-10 -mt-10 w-36 h-36 bg-blue-400/15 rounded-full blur-3xl group-hover:scale-125 transition-all duration-700" />
 
         {/* Top Badges & Controls */}
         <div className="flex items-center justify-between gap-2 mb-3 relative z-10">
           <div className="flex items-center gap-1.5">
             <span
-              className={`text-[9px] font-black uppercase px-2.5 py-0.5 rounded-full tracking-wider border shadow-sm ${activeSponsor.badgeBg}`}
+              className={`text-[9px] font-black uppercase px-2.5 py-0.5 rounded-full tracking-wider border shadow-2xs ${activeSponsor.badgeBg}`}
             >
               {activeSponsor.badge}
             </span>
@@ -161,14 +161,14 @@ const Sponser = () => {
           <div className="flex items-center gap-1">
             <button
               onClick={handlePrev}
-              className="p-1 rounded-lg bg-white/80 border border-slate-200/80 text-slate-500 hover:text-slate-900 hover:bg-white transition cursor-pointer shadow-sm"
+              className="p-1 rounded-lg bg-white/90 border border-blue-100 text-slate-600 hover:text-blue-600 hover:bg-blue-50 transition cursor-pointer shadow-2xs"
               title="Previous Ad"
             >
               <ChevronLeft size={13} />
             </button>
             <button
               onClick={handleNext}
-              className="p-1 rounded-lg bg-white/80 border border-slate-200/80 text-slate-500 hover:text-slate-900 hover:bg-white transition cursor-pointer shadow-sm"
+              className="p-1 rounded-lg bg-white/90 border border-blue-100 text-slate-600 hover:text-blue-600 hover:bg-blue-50 transition cursor-pointer shadow-2xs"
               title="Next Ad"
             >
               <ChevronRight size={13} />
@@ -187,7 +187,7 @@ const Sponser = () => {
         </p>
 
         {/* Ad Feature Box */}
-        <div className="bg-white/90 backdrop-blur-md rounded-2xl p-3 border border-slate-200/80 mb-4 flex items-center justify-between relative z-10 shadow-sm">
+        <div className="bg-white/95 backdrop-blur-md rounded-2xl p-3 border border-blue-100 mb-4 flex items-center justify-between relative z-10 shadow-sm">
           <div className="flex items-center gap-2.5">
             <div className={`w-8 h-8 ${activeSponsor.iconBg} rounded-xl flex items-center justify-center shadow-md`}>
               <Bot size={17} />
@@ -196,7 +196,7 @@ const Sponser = () => {
               <span className="text-xs font-black text-slate-900 leading-tight">
                 {activeSponsor.brand} Cloud
               </span>
-              <span className="text-[9px] font-bold text-slate-400 font-mono">
+              <span className="text-[9px] font-bold text-blue-600 font-mono">
                 Verified API Partner
               </span>
             </div>
@@ -225,7 +225,7 @@ const Sponser = () => {
               key={idx}
               onClick={() => setActiveIndex(idx)}
               className={`h-1 rounded-full transition-all duration-300 cursor-pointer ${
-                idx === activeIndex ? "w-5 bg-slate-900" : "w-1.5 bg-slate-300 hover:bg-slate-400"
+                idx === activeIndex ? "w-5 bg-blue-600" : "w-1.5 bg-blue-200 hover:bg-blue-400"
               }`}
             />
           ))}
@@ -250,8 +250,8 @@ const Sponser = () => {
               onClick={() => setActiveIndex(idx)}
               className={`flex items-center justify-between p-2 rounded-2xl transition-all cursor-pointer ${
                 idx === activeIndex
-                  ? "bg-blue-50/80 border border-blue-200/80"
-                  : "bg-slate-50 hover:bg-slate-100 border border-slate-100"
+                  ? "bg-blue-50 text-blue-900 border border-blue-200 font-bold"
+                  : "bg-slate-50 hover:bg-blue-50/50 text-slate-700 border border-slate-100"
               }`}
             >
               <div className="flex items-center gap-2">
@@ -260,11 +260,11 @@ const Sponser = () => {
                     idx === activeIndex ? "bg-blue-600 animate-pulse" : "bg-slate-300"
                   }`}
                 />
-                <span className="text-xs font-bold text-slate-900">
+                <span className="text-xs font-bold">
                   {sp.brand}
                 </span>
               </div>
-              <span className="text-[9px] font-bold text-slate-400 font-mono">
+              <span className="text-[9px] font-bold text-blue-600 font-mono">
                 {sp.tag}
               </span>
             </div>

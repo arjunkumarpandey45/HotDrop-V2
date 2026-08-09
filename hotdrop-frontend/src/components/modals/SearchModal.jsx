@@ -296,7 +296,7 @@ function SearchModal({ isOpen, onClose, initialMode = "users" }) {
                 })}
                 <button
                   onClick={() => handleSelectProject(activeCleanQuery)}
-                  className="w-full mt-2 py-2 bg-slate-900 text-white rounded-xl text-xs font-bold hover:bg-slate-800 transition flex items-center justify-center gap-1.5 cursor-pointer"
+                  className="w-full mt-2 py-2.5 bg-blue-600 text-white rounded-xl text-xs font-black uppercase tracking-wider hover:bg-blue-700 transition flex items-center justify-center gap-1.5 cursor-pointer shadow-md shadow-blue-500/20"
                 >
                   View All Matching Drops <ArrowRight size={14} />
                 </button>

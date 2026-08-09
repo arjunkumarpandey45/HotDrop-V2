@@ -16,14 +16,15 @@ import {
   Flame,
   X,
   SlidersHorizontal,
-  Boxes
+  Boxes,
+  Search
 } from "lucide-react";
 import Sidebar from "../../components/layout/Sidebar";
 import Sponser from "../../components/post/Sponser";
 import PostDescription from "../../components/post/PostDescription";
 import PostTags from "../../components/post/PostTags";
 import { toast } from "react-toastify";
-import { showLikeToast } from "../../toast/Toast";
+import { showLikeToast, showCommentToast, showErrorToast } from "../../toast/Toast";
 import CommentModal from "../../components/modals/CommentModal";
 import LikeModal from "../../components/modals/LikeModal";
 import ShareModal from "../../components/modals/ShareModal";
@@ -82,6 +83,13 @@ function AllPost() {
   const handleFilterTopic = (tag) => {
     const cleanTag = tag.replace(/[^a-zA-Z0-9]/g, "");
     navigate(`/search?q=${encodeURIComponent(cleanTag)}`);
+  };
+
+  const handleSearchSubmit = (e) => {
+    e.preventDefault();
+    if (searchQuery.trim()) {
+      navigate(`/search?q=${encodeURIComponent(searchQuery.trim())}`);
+    }
   };
 
   // States for Infinite Scroll (Spring Boot 0-indexed page)
@@ -297,7 +305,7 @@ function AllPost() {
     try {
       const res = await API.post(`/posts/comment-to-post/${targetPostId}`, { text: finalCommentText });
       
-      toast.success("Comment added! ✅");
+      showCommentToast(finalCommentText ? `"${finalCommentText}"` : "Comment added!");
       const newPopulatedComment = res.data?.data || res.data;
 
       const updatedPostObj = { 
@@ -319,7 +327,7 @@ function AllPost() {
       setCommentText(""); 
     } catch (error) {
       console.error("Comment error:", error);
-      toast.error("Failed to post comment");
+      showErrorToast("Failed to post comment");
     }
   };
 
@@ -352,9 +360,6 @@ function AllPost() {
               </div>
             ))}
           </div>
-          <div className="hidden lg:block">
-            <div className="bg-white rounded-3xl p-6 h-64 animate-pulse border border-slate-200" />
-          </div>
         </div>
       </div>
     );
@@ -369,18 +374,16 @@ function AllPost() {
           <Sidebar />
         </div>
 
-        {/* CENTER FEED AREA (100% Independent Scroll Column) */}
-        <div 
-          ref={feedContainerRef}
-          className="col-span-1 lg:col-span-2 h-full overflow-y-auto pt-2 pb-6 space-y-6 sm:space-y-8 pr-1 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
-        >
+        {/* CENTER FEED CONTENT (100% Independent Scroll Column) */}
+        <div className="col-span-1 lg:col-span-2 h-full overflow-y-auto pt-2 pb-6 space-y-6 sm:space-y-8 pr-1 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+          
           {/* TOP FILTER & QUICK TOPICS BAR */}
           <div className="bg-white rounded-3xl p-3 px-3.5 border border-slate-200/80 shadow-sm flex items-center justify-between gap-2.5">
             <div className="flex items-center gap-2 overflow-x-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden py-0.5 flex-1 min-w-0">
               <button
                 type="button"
                 onClick={() => setShowFilterModal(true)}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-900 hover:bg-blue-600 text-white text-xs font-black uppercase tracking-wider shrink-0 shadow-sm transition cursor-pointer"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-black uppercase tracking-wider shrink-0 shadow-md shadow-blue-500/20 transition cursor-pointer"
               >
                 <SlidersHorizontal size={14} />
                 <span>Filter</span>
@@ -410,15 +413,35 @@ function AllPost() {
             </button>
           </div>
 
-          {posts.length === 0 ? (
-            <div className="bg-white rounded-3xl p-12 text-center border border-slate-200/80 shadow-sm">
-              <div className="w-16 h-16 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center mx-auto mb-4">
+          {/* LOADING SHIMMER */}
+          {loading ? (
+            <div className="space-y-6">
+              {[1, 2].map((n) => (
+                <div key={n} className="bg-white rounded-3xl p-6 border border-slate-100 shadow-sm animate-pulse space-y-4">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-slate-200 rounded-full" />
+                    <div className="space-y-2 flex-1">
+                      <div className="h-3 bg-slate-200 rounded w-1/3" />
+                      <div className="h-2 bg-slate-200 rounded w-1/4" />
+                    </div>
+                  </div>
+                  <div className="w-full aspect-[16/9] bg-slate-200 rounded-2xl" />
+                </div>
+              ))}
+            </div>
+          ) : posts.length === 0 ? (
+            /* EMPTY FEED STATE */
+            <div className="bg-white rounded-3xl p-10 text-center border border-slate-200/80 shadow-sm space-y-4">
+              <div className="w-16 h-16 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center mx-auto">
                 <Flame size={32} />
               </div>
-              <h3 className="text-lg font-black text-slate-900 uppercase tracking-tight">No Drops Found</h3>
-              <p className="text-xs text-slate-500 mt-1 max-w-sm mx-auto">Be the first to publish a live project drop on HotDrop!</p>
+              <h3 className="text-base font-black text-slate-900 uppercase tracking-tight">No Drops Found</h3>
+              <p className="text-xs text-slate-500 max-w-sm mx-auto">
+                Be the first developer to drop a live project on HotDrop today!
+              </p>
             </div>
           ) : (
+            /* POSTS LIST */
             posts.map((post) => {
               const pId = post.id || post._id;
               const imgIndex = currentImage[pId] || 0;
@@ -457,17 +480,9 @@ function AllPost() {
                         </div>
                       </div>
                     </div>
-
-                    <button
-                      onClick={() => setSharePost(post)}
-                      className="p-2 rounded-xl text-slate-400 hover:text-blue-600 hover:bg-slate-50 transition-all cursor-pointer"
-                      title="Share Drop"
-                    >
-                      <Share2 size={18} />
-                    </button>
                   </div>
 
-                  {/* POST IMAGE AREA (Responsive Carousel with Double Tap Heart & Auth Blur) */}
+                  {/* POST IMAGE AREA */}
                   {images.length > 0 && (
                     <div 
                       className="relative mx-2 sm:mx-4 mt-2 sm:mt-3 bg-slate-950 rounded-2xl aspect-[16/9] flex items-center justify-center overflow-hidden border border-slate-900 cursor-pointer group/img"
@@ -640,6 +655,7 @@ function AllPost() {
                         <Share2 size={20} className="text-slate-400 group-hover/share:text-blue-600 transition-colors" />
                         <span className="text-[11px] font-bold text-slate-500 group-hover/share:text-blue-600 hidden sm:inline">Share</span>
                       </div>
+
                     </div>
 
                   </div>
@@ -734,12 +750,12 @@ function AllPost() {
               </button>
             </div>
 
-            <div className="p-4 bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-900 text-white flex items-center justify-between gap-3">
+            <div className="p-4 bg-gradient-to-br from-blue-600 via-indigo-600 to-blue-700 text-white flex items-center justify-between gap-3 shadow-sm">
               <div className="space-y-0.5">
-                <div className="flex items-center gap-1.5 text-amber-400 text-[10px] font-black uppercase">
+                <div className="flex items-center gap-1.5 text-amber-300 text-[10px] font-black uppercase">
                   <Sparkles size={12} /> HotDrop Stack Filter
                 </div>
-                <p className="text-xs font-bold text-slate-200">
+                <p className="text-xs font-bold text-blue-100">
                   Select any tech stack to discover matching live project drops! 🚀
                 </p>
               </div>
@@ -801,10 +817,18 @@ function AllPost() {
           submitComment={submitComment} 
           onClose={() => setCommentPost(null)} 
           setCommentPost={(upd) => {
-            const updId = upd.id || upd._id;
-            setPosts((prev) => prev.map((p) => (p.id || p._id) === updId ? upd : p));
-            setCommentPost(upd);
-            if (imagePost && (imagePost.id || imagePost._id) === updId) setImagePost(upd);
+            setCommentPost((prevPost) => {
+              const nextVal = typeof upd === "function" ? upd(prevPost) : upd;
+              if (!nextVal) return null;
+              const updId = nextVal.id || nextVal._id;
+              setPosts((prevPosts) =>
+                prevPosts.map((p) => ((p.id || p._id) === updId ? nextVal : p))
+              );
+              if (imagePost && (imagePost.id || imagePost._id) === updId) {
+                setImagePost(nextVal);
+              }
+              return nextVal;
+            });
           }} 
         />
       )}

@@ -1,5 +1,5 @@
-import React from "react";
-import { Link } from "react-router-dom";
+
+import { Link, useLocation } from "react-router-dom";
 import { useAuthStore } from "../../store/useAuthStore";
 import { 
   Sparkles, 
@@ -13,6 +13,9 @@ import {
 
 const Sidebar = () => {
   const { user, isLoggedIn } = useAuthStore();
+  const location = useLocation();
+  const isHome = location.pathname === "/";
+  const isMyProfile = user && location.pathname === `/user/userprofile/${user?.hotdropId}`;
 
   return (
     <aside className="space-y-4 select-none">
@@ -24,14 +27,22 @@ const Sidebar = () => {
         <nav className="space-y-1">
           <Link
             to="/"
-            className="flex items-center gap-3 px-3 py-2.5 rounded-2xl bg-blue-50 text-blue-600 font-bold text-xs transition-colors"
+            className={`flex items-center gap-3 px-3 py-2.5 rounded-2xl font-bold text-xs transition-colors ${
+              isHome
+                ? "bg-blue-50 text-blue-600"
+                : "hover:bg-slate-50 text-slate-600"
+            }`}
           >
             <Flame size={18} /> Global Feed
           </Link>
           {isLoggedIn && user && (
             <Link
               to={`/user/userprofile/${user?.hotdropId}`}
-              className="flex items-center gap-3 px-3 py-2.5 rounded-2xl hover:bg-slate-50 text-slate-600 font-bold text-xs transition-colors"
+              className={`flex items-center gap-3 px-3 py-2.5 rounded-2xl font-bold text-xs transition-colors ${
+                isMyProfile
+                  ? "bg-blue-50 text-blue-600"
+                  : "hover:bg-slate-50 text-slate-600"
+              }`}
             >
               <UserCheck size={18} /> My Profile
             </Link>
@@ -64,14 +75,14 @@ const Sidebar = () => {
         </div>
 
         {/* HERO MISSION STATEMENT */}
-        <div className="bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-900 text-white rounded-2xl p-4 border border-slate-800 space-y-2 relative overflow-hidden">
-          <div className="flex items-center gap-1.5 text-amber-400 text-[10px] font-black uppercase tracking-wider">
+        <div className="bg-gradient-to-br from-blue-600 via-indigo-600 to-blue-700 text-white rounded-2xl p-4 shadow-md shadow-blue-500/20 space-y-2 relative overflow-hidden">
+          <div className="flex items-center gap-1.5 text-amber-300 text-[10px] font-black uppercase tracking-wider">
             <Sparkles size={12} /> Creator Ecosystem
           </div>
           <h4 className="text-xs font-extrabold text-white leading-snug">
             Where Developers Drop Live Projects, Get Instant Feedback & Connect. 🚀
           </h4>
-          <p className="text-[11px] font-medium text-slate-300 leading-relaxed pt-0.5">
+          <p className="text-[11px] font-medium text-blue-100 leading-relaxed pt-0.5">
             HotDrop is the dedicated launchpad for engineers to showcase real-world fullstack apps, AI models & web products.
           </p>
         </div>

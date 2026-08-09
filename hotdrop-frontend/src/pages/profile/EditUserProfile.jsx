@@ -131,6 +131,7 @@ function EditUserProfile() {
   const [fetchingUser, setFetchingUser] = useState(false);
   const [fetchError, setFetchError] = useState(null);
   const [isFollowing, setIsFollowing] = useState(false);
+  const [isFollower, setIsFollower] = useState(false);
   const [followLoading, setFollowLoading] = useState(false);
 
   const myUserId = getEntityId(loggedInUser);
@@ -220,6 +221,7 @@ function EditUserProfile() {
         setSearchedUser(userData);
 
         let initialFollowing = checkIsFollowing(userData, loggedInUser);
+        let initialIsFollower = userData?.isFollower ?? userData?.isFollowingMe ?? userData?.followsMe ?? false;
 
         const myUserId = getEntityId(loggedInUser);
         if (myUserId && targetUserId) {
@@ -244,9 +246,32 @@ function EditUserProfile() {
           } catch (followingErr) {
             console.warn("Could not verify following list:", followingErr);
           }
+
+          try {
+            const followersRes = await axios.get(`/users/${myUserId}/get-all-followers`);
+            const followersList = Array.isArray(followersRes.data)
+              ? followersRes.data
+              : followersRes.data?.data || followersRes.data?.followers || [];
+
+            const isFoundInFollowers = followersList.some((u) => {
+              const uId = getEntityId(u);
+              const uHandle = (u.hotdropId || u.username || "").toLowerCase();
+              return (
+                (uId && uId === targetUserId) ||
+                (uHandle && uHandle === (userData.hotdropId || hotdropId).toLowerCase())
+              );
+            });
+
+            if (isFoundInFollowers) {
+              initialIsFollower = true;
+            }
+          } catch (followersErr) {
+            console.warn("Could not verify followers list:", followersErr);
+          }
         }
 
         setIsFollowing(initialFollowing);
+        setIsFollower(initialIsFollower);
       } catch (err) {
         console.error("Failed to fetch user profile:", err);
         setFetchError(err.response?.data?.message || "User profile not found");
@@ -473,9 +498,30 @@ function EditUserProfile() {
     ? `${displayUser.firstName} ${displayUser.lastName || ""}`.trim()
     : displayUser?.username || displayUser?.hotdropId || "HotDrop Creator";
 
-  const formattedJoinedDate = displayUser?.createdAt
-    ? new Date(displayUser.createdAt).toLocaleDateString("en-US", { month: "short", year: "numeric" })
-    : "Recently";
+  const rawDate =
+    displayUser?.createdAt ||
+    displayUser?.created_at ||
+    displayUser?.registeredAt ||
+    displayUser?.createdDate ||
+    displayUser?.joinDate ||
+    displayUser?.userResponseDto?.createdAt;
+
+  const getFormattedJoinedDate = (dateVal) => {
+    if (!dateVal) {
+      return new Date().toLocaleDateString("en-US", { month: "short", year: "numeric" });
+    }
+    try {
+      const d = new Date(dateVal);
+      if (isNaN(d.getTime())) {
+        return new Date().toLocaleDateString("en-US", { month: "short", year: "numeric" });
+      }
+      return d.toLocaleDateString("en-US", { month: "short", year: "numeric" });
+    } catch {
+      return new Date().toLocaleDateString("en-US", { month: "short", year: "numeric" });
+    }
+  };
+
+  const formattedJoinedDate = getFormattedJoinedDate(rawDate);
 
   const creatorPosts = displayUser?.posts || [];
 
@@ -588,6 +634,11 @@ function EditUserProfile() {
                       <>
                         <UserMinus size={13} />
                         <span>Following</span>
+                      </>
+                    ) : isFollower ? (
+                      <>
+                        <UserPlus size={13} />
+                        <span>Follow Back</span>
                       </>
                     ) : (
                       <>
@@ -702,6 +753,11 @@ function EditUserProfile() {
                           <UserMinus size={13} />
                           <span>Following</span>
                         </>
+                      ) : isFollower ? (
+                        <>
+                          <UserPlus size={13} />
+                          <span>Follow Back</span>
+                        </>
                       ) : (
                         <>
                           <UserPlus size={13} />
@@ -784,39 +840,42 @@ function EditUserProfile() {
         isOpen={showFollowers}
         onClose={() => setShowFollowers(false)}
         userId={getEntityId(displayUser)}
+        followersList={displayUser?.followers}
         onFollowStatusChange={(targetUserId, isNowFollowing) => {
           useAuthStore.setState((prev) => {
             if (!prev.user) return prev;
-            const currentCount =
-              prev.user?.followingCount ?? prev.user?.following?.length ?? 0;
+            const currentList = Array.isArray(prev.user.following) ? prev.user.following : [];
+            let updatedList;
+            if (isNowFollowing) {
+              updatedList = currentList.some((f) => getEntityId(f) === String(targetUserId))
+                ? currentList
+                : [...currentList, targetUserId];
+            } else {
+              updatedList = currentList.filter((f) => getEntityId(f) !== String(targetUserId));
+            }
+            const prevCount = prev.user.followingCount ?? currentList.length;
+            const nextCount = isNowFollowing ? prevCount + 1 : Math.max(0, prevCount - 1);
             return {
               user: {
                 ...prev.user,
-                followingCount: isNowFollowing
-                  ? currentCount + 1
-                  : Math.max(0, currentCount - 1),
+                following: updatedList,
+                followingCount: nextCount,
               },
             };
           });
 
           const pageUserId = getEntityId(displayUser);
-          if (
-            targetUserId &&
-            pageUserId &&
-            String(targetUserId) === String(pageUserId)
-          ) {
+          if (targetUserId && pageUserId && String(targetUserId) === String(pageUserId)) {
             setIsFollowing(isNowFollowing);
             setSearchedUser((prev) => {
               if (!prev) return prev;
-              const currentCount =
-                prev.followerCount ?? prev.followers?.length ?? 0;
+              const prevFollowersCount = prev.followerCount ?? (Array.isArray(prev.followers) ? prev.followers.length : 0);
+              const nextFollowersCount = isNowFollowing ? prevFollowersCount + 1 : Math.max(0, prevFollowersCount - 1);
               return {
                 ...prev,
                 isFollowing: isNowFollowing,
                 isFollowedByMe: isNowFollowing,
-                followerCount: isNowFollowing
-                  ? currentCount + 1
-                  : Math.max(0, currentCount - 1),
+                followerCount: nextFollowersCount,
               };
             });
           }
@@ -827,56 +886,66 @@ function EditUserProfile() {
         isOpen={showFollowing}
         onClose={() => setShowFollowing(false)}
         userId={getEntityId(displayUser)}
+        followingList={displayUser?.following}
         onFollowStatusChange={(targetUserId, isNowFollowing) => {
           useAuthStore.setState((prev) => {
             if (!prev.user) return prev;
-            const currentCount =
-              prev.user?.followingCount ?? prev.user?.following?.length ?? 0;
+            const currentList = Array.isArray(prev.user.following) ? prev.user.following : [];
+            let updatedList;
+            if (isNowFollowing) {
+              updatedList = currentList.some((f) => getEntityId(f) === String(targetUserId))
+                ? currentList
+                : [...currentList, targetUserId];
+            } else {
+              updatedList = currentList.filter((f) => getEntityId(f) !== String(targetUserId));
+            }
+            const prevCount = prev.user.followingCount ?? currentList.length;
+            const nextCount = isNowFollowing ? prevCount + 1 : Math.max(0, prevCount - 1);
             return {
               user: {
                 ...prev.user,
-                followingCount: isNowFollowing
-                  ? currentCount + 1
-                  : Math.max(0, currentCount - 1),
+                following: updatedList,
+                followingCount: nextCount,
               },
             };
           });
 
-          const pageUserId = getEntityId(displayUser);
-          if (
-            targetUserId &&
-            pageUserId &&
-            String(targetUserId) === String(pageUserId)
-          ) {
-            setIsFollowing(isNowFollowing);
-            setSearchedUser((prev) => {
-              if (!prev) return prev;
-              const currentCount =
-                prev.followerCount ?? prev.followers?.length ?? 0;
+          setSearchedUser((prev) => {
+            if (!prev) return prev;
+            const pageUserId = getEntityId(prev);
+            const myUserId = getEntityId(loggedInUser);
+
+            if (pageUserId && String(pageUserId) === String(targetUserId)) {
+              const prevFollowersCount = prev.followerCount ?? (Array.isArray(prev.followers) ? prev.followers.length : 0);
+              const nextFollowersCount = isNowFollowing ? prevFollowersCount + 1 : Math.max(0, prevFollowersCount - 1);
               return {
                 ...prev,
                 isFollowing: isNowFollowing,
                 isFollowedByMe: isNowFollowing,
-                followerCount: isNowFollowing
-                  ? currentCount + 1
-                  : Math.max(0, currentCount - 1),
+                followerCount: nextFollowersCount,
               };
-            });
-          }
-        }}
-        onUnfollowSuccess={(targetUserId, isNowFollowing) => {
-          useAuthStore.setState((prev) => {
-            if (!prev.user) return prev;
-            const currentCount =
-              prev.user?.followingCount ?? prev.user?.following?.length ?? 0;
-            return {
-              user: {
-                ...prev.user,
-                followingCount: isNowFollowing === true
-                  ? currentCount + 1
-                  : Math.max(0, currentCount - 1),
-              },
-            };
+            }
+
+            if (myUserId && String(pageUserId) === String(myUserId)) {
+              const currentList = Array.isArray(prev.following) ? prev.following : [];
+              let updatedList;
+              if (isNowFollowing) {
+                updatedList = currentList.some((f) => getEntityId(f) === String(targetUserId))
+                  ? currentList
+                  : [...currentList, targetUserId];
+              } else {
+                updatedList = currentList.filter((f) => getEntityId(f) !== String(targetUserId));
+              }
+              const prevCount = prev.followingCount ?? currentList.length;
+              const nextCount = isNowFollowing ? prevCount + 1 : Math.max(0, prevCount - 1);
+              return {
+                ...prev,
+                following: updatedList,
+                followingCount: nextCount,
+              };
+            }
+
+            return prev;
           });
         }}
       />

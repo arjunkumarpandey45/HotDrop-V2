@@ -25,10 +25,16 @@ function LikeModal({ post, onClose }) {
         // GET /posts/{postId}/get-who-likes-post -> returns ApiResponse<List<UserSummaryDto>>
         const res = await API.get(`/posts/${postId}/get-who-likes-post`);
         const payload = res.data?.data;
-        const list = Array.isArray(payload) ? payload : res.data?.data?.likes || [];
+        const list = Array.isArray(payload)
+          ? payload
+          : payload?.likes || payload?.users || payload?.content || (Array.isArray(res.data) ? res.data : []);
 
         if (isMounted) {
-          setLikesList(list);
+          if ((!list || list.length === 0) && Array.isArray(post?.likes) && post.likes.length > 0) {
+            setLikesList(post.likes);
+          } else {
+            setLikesList(list);
+          }
         }
       } catch (err) {
         console.warn("Fetch likes error:", err);
@@ -42,7 +48,7 @@ function LikeModal({ post, onClose }) {
     return () => {
       isMounted = false;
     };
-  }, [postId]);
+  }, [postId, post?.likes]);
 
   const handleProfileClick = (hotdropId) => {
     if (!hotdropId || hotdropId === "user") return;
@@ -50,8 +56,8 @@ function LikeModal({ post, onClose }) {
     navigate(`/user/userprofile/${hotdropId}`);
   };
 
-  // Accurate Count: Use fetched likes list length when loaded, otherwise fallback to post.likeCount
-  const count = !loading ? likesList.length : (post?.likeCount ?? likesList.length);
+  // Accurate Count: Keep count synced with live post likeCount or likesList
+  const count = Math.max(post?.likeCount ?? 0, likesList.length);
 
   return (
     <div

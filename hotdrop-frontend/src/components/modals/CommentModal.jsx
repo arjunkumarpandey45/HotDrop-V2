@@ -73,20 +73,20 @@ function CommentModal({
     setIsDeleting(true);
 
     const previousComments = [...localComments];
-    setLocalComments((prev) =>
-      prev.filter((c) => String(c.id || c._id || c) !== String(commentId))
+    const updatedComments = localComments.filter(
+      (c) => String(c.id || c._id || c) !== String(commentId)
     );
+
+    setLocalComments(updatedComments);
 
     if (setCommentPost) {
       setCommentPost((prev) => {
-        if (!prev) return null;
-        const filtered = (prev.comments || []).filter(
-          (c) => String(c.id || c._id || c) !== String(commentId)
-        );
+        const targetPost = typeof prev === "object" && prev ? prev : post;
+        if (!targetPost) return null;
         return {
-          ...prev,
-          comments: filtered,
-          commentCount: Math.max(0, (prev.commentCount ?? (prev.comments || []).length) - 1),
+          ...targetPost,
+          comments: updatedComments,
+          commentCount: Math.max(0, (targetPost.commentCount ?? (updatedComments.length + 1)) - 1),
         };
       });
     }
@@ -129,11 +129,12 @@ function CommentModal({
       await submitComment(e, commentText.trim());
     } catch (error) {
       console.error("Error submitting comment:", error);
-    } font-medium;
+    } finally {
       setIsSubmitting(false);
+    }
   };
 
-  const totalCount = Math.max(post?.commentCount || 0, localComments.length);
+  const totalCount = localComments.length;
 
   return (
     <div 

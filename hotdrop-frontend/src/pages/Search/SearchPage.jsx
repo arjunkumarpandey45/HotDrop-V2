@@ -24,7 +24,7 @@ import Sponser from "../../components/post/Sponser";
 import PostDescription from "../../components/post/PostDescription";
 import PostTags from "../../components/post/PostTags";
 import { toast } from "react-toastify";
-import { showLikeToast } from "../../toast/Toast";
+import { showLikeToast, showCommentToast, showErrorToast } from "../../toast/Toast";
 import CommentModal from "../../components/modals/CommentModal";
 import LikeModal from "../../components/modals/LikeModal";
 import ShareModal from "../../components/modals/ShareModal";
@@ -306,7 +306,7 @@ function SearchPage() {
     try {
       const res = await API.post(`/posts/comment-to-post/${targetPostId}`, { text: commentText });
       
-      toast.success("Comment added! ✅");
+      showCommentToast(commentText ? `"${commentText}"` : "Comment added!");
       const newPopulatedComment = res.data?.data || res.data;
 
       const updatedPostObj = { 
@@ -328,7 +328,7 @@ function SearchPage() {
       setCommentText(""); 
     // eslint-disable-next-line no-unused-vars
     } catch (error) {
-      toast.error("Failed to post comment");
+      showErrorToast("Failed to post comment");
     }
   };
 
@@ -389,7 +389,7 @@ function SearchPage() {
                 <button
                   type="button"
                   onClick={() => setShowFilterModal(true)}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-900 hover:bg-blue-600 text-white text-xs font-black uppercase tracking-wider shrink-0 shadow-sm transition cursor-pointer"
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-black uppercase tracking-wider shrink-0 shadow-md shadow-blue-500/20 transition cursor-pointer"
                 >
                   <SlidersHorizontal size={14} />
                   <span>Filter</span>
@@ -773,10 +773,18 @@ function SearchPage() {
           submitComment={submitComment} 
           onClose={() => setCommentPost(null)} 
           setCommentPost={(upd) => {
-            const updId = upd.id || upd._id;
-            setPosts((prev) => prev.map((p) => (p.id || p._id) === updId ? upd : p));
-            setCommentPost(upd);
-            if (imagePost && (imagePost.id || imagePost._id) === updId) setImagePost(upd);
+            setCommentPost((prevPost) => {
+              const nextVal = typeof upd === "function" ? upd(prevPost) : upd;
+              if (!nextVal) return null;
+              const updId = nextVal.id || nextVal._id;
+              setPosts((prevPosts) =>
+                prevPosts.map((p) => ((p.id || p._id) === updId ? nextVal : p))
+              );
+              if (imagePost && (imagePost.id || imagePost._id) === updId) {
+                setImagePost(nextVal);
+              }
+              return nextVal;
+            });
           }} 
         />
       )}
@@ -807,12 +815,12 @@ function SearchPage() {
               </button>
             </div>
 
-            <div className="p-4 bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-900 text-white flex items-center justify-between gap-3">
+            <div className="p-4 bg-gradient-to-br from-blue-600 via-indigo-600 to-blue-700 text-white flex items-center justify-between gap-3 shadow-sm">
               <div className="space-y-0.5">
-                <div className="flex items-center gap-1.5 text-amber-400 text-[10px] font-black uppercase">
+                <div className="flex items-center gap-1.5 text-amber-300 text-[10px] font-black uppercase">
                   <Sparkles size={12} /> HotDrop Stack Filter
                 </div>
-                <p className="text-xs font-bold text-slate-200">
+                <p className="text-xs font-bold text-blue-100">
                   Select any tech stack to discover matching live project drops! 🚀
                 </p>
               </div>

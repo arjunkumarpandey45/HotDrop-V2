@@ -5,7 +5,7 @@ import axios from "../../api/Api";
 import dp from "../../assets/dp.jpg";
 import { useAuthStore } from "../../store/useAuthStore";
 
-function FollowersModal({ isOpen, onClose, userId, onFollowStatusChange }) {
+function FollowersModal({ isOpen, onClose, userId, followersList, onFollowStatusChange }) {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(false);
   const [togglingId, setTogglingId] = useState(null);
@@ -26,12 +26,22 @@ function FollowersModal({ isOpen, onClose, userId, onFollowStatusChange }) {
       try {
         setLoading(true);
 
-        // 1. Fetch followers list directly from /users/{userId}/get-all-followers
-        const res = await axios.get(`/users/${userId}/get-all-followers`);
-        const payload = res.data?.data || res.data;
-        const listData = Array.isArray(payload)
-          ? payload
-          : payload?.followers || payload?.users || payload?.list || [];
+        let listData = [];
+        try {
+          // 1. Fetch followers list directly from GET /users/{userId}/get-all-followers
+          const res = await axios.get(`/users/${userId}/get-all-followers`);
+          const payload = res.data?.data || res.data;
+          listData = Array.isArray(payload)
+            ? payload
+            : payload?.followers || payload?.users || payload?.list || payload?.content || payload?.data || [];
+        } catch (err) {
+          console.warn("Could not fetch followers from API, using fallback if available:", err);
+        }
+
+        // Fallback to followersList prop if listData is empty
+        if ((!listData || listData.length === 0) && Array.isArray(followersList) && followersList.length > 0) {
+          listData = followersList;
+        }
 
         // 2. Fetch logged in user's following list to accurately verify who currentUser follows
         let myFollowingIds = new Set();
@@ -56,8 +66,9 @@ function FollowersModal({ isOpen, onClose, userId, onFollowStatusChange }) {
 
         if (!isMounted) return;
 
-        // 3. Annotate user list with accurate follow status
-        const annotatedUsers = listData.map((u) => {
+        // 3. Normalize & Annotate user list with accurate follow status
+        const annotatedUsers = listData.map((rawItem) => {
+          const u = typeof rawItem === "object" && rawItem !== null ? rawItem : { id: String(rawItem), hotdropId: String(rawItem) };
           const uId = String(u.id || u._id || u.userId || u.targetUserId || "");
           const uHandle = (u.hotdropId || u.username || "").toLowerCase();
 
@@ -82,8 +93,9 @@ function FollowersModal({ isOpen, onClose, userId, onFollowStatusChange }) {
       } catch (err) {
         console.error("Failed to load followers list:", err);
         if (isMounted) setUsers([]);
-      } font-medium;
-      if (isMounted) setLoading(false);
+      } finally {
+        if (isMounted) setLoading(false);
+      }
     };
 
     fetchFollowers();
@@ -91,7 +103,7 @@ function FollowersModal({ isOpen, onClose, userId, onFollowStatusChange }) {
     return () => {
       isMounted = false;
     };
-  }, [isOpen, userId, currentUserId]);
+  }, [isOpen, userId, currentUserId, followersList]);
 
   const handleUserClick = (targetHotdrop) => {
     if (!targetHotdrop) return;
@@ -137,12 +149,17 @@ function FollowersModal({ isOpen, onClose, userId, onFollowStatusChange }) {
       });
 
       const resData = res.data?.data || res.data;
-      const isNowFollowing =
-        resData?.following !== undefined
-          ? resData.following
-          : resData?.isFollowing !== undefined
-          ? resData.isFollowing
-          : true;
+      let isNowFollowing;
+      if (typeof resData?.following === "boolean") {
+        isNowFollowing = resData.following;
+      } else if (typeof resData?.isFollowing === "boolean") {
+        isNowFollowing = resData.isFollowing;
+      } else if (typeof resData?.isFollowed === "boolean") {
+        isNowFollowing = resData.isFollowed;
+      } else {
+        const prevStatus = userObj.isFollowing ?? userObj.following ?? userObj.isFollowedByMe ?? false;
+        isNowFollowing = !prevStatus;
+      }
 
       setUsers((prev) =>
         prev.map((u) => {
@@ -210,6 +227,12 @@ function FollowersModal({ isOpen, onClose, userId, onFollowStatusChange }) {
               const isSelf = String(uId) === String(currentUserId);
               const isUserFollowing =
                 u.isFollowing ?? u.following ?? u.isFollowedByMe ?? false;
+              const isFollower =
+                (userId && currentUserId && String(userId) === String(currentUserId)) ||
+                u.isFollower ||
+                u.isFollowingMe ||
+                u.followsMe ||
+                false;
               const isPending = String(togglingId) === String(uId);
 
               return (
@@ -254,6 +277,11 @@ function FollowersModal({ isOpen, onClose, userId, onFollowStatusChange }) {
                         <>
                           <UserCheck size={13} />
                           <span>Following</span>
+                        </>
+                      ) : isFollower ? (
+                        <>
+                          <UserPlus size={13} />
+                          <span>Follow Back</span>
                         </>
                       ) : (
                         <>

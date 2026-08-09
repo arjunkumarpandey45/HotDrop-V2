@@ -45,7 +45,7 @@ function PostTags({ tags, postTitle }) {
               e.stopPropagation();
               setShowModal(true);
             }}
-            className="inline-flex items-center justify-center px-2 py-0.5 rounded-lg bg-slate-900 hover:bg-blue-600 text-white text-[10px] font-black tracking-wider transition-all duration-200 cursor-pointer shadow-sm active:scale-95 shrink-0"
+            className="inline-flex items-center justify-center px-2 py-0.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-[10px] font-black tracking-wider transition-all duration-200 cursor-pointer shadow-sm active:scale-95 shrink-0"
             title={`View all ${tagList.length} tags`}
           >
             +{remainingCount}
@@ -108,7 +108,7 @@ function PostTags({ tags, postTitle }) {
                       e.stopPropagation();
                       setShowModal(false);
                     }}
-                    className="w-full py-2 bg-slate-900 hover:bg-blue-600 text-white text-xs font-bold rounded-xl transition cursor-pointer"
+                    className="w-full py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-black uppercase tracking-wider rounded-xl transition cursor-pointer shadow-md shadow-blue-500/20"
                   >
                     Close
                   </button>
