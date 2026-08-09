@@ -24,7 +24,7 @@ import PreviewModal from "../../components/modals/PreviewModal";
 import PostTags from "../../components/post/PostTags";
 import API from "../../api/Api";
 import { toast } from "react-toastify";
-import { showLikeToast, showCommentToast, showProjectDeletedToast } from "../../toast/Toast";
+import { showLikeToast, showCommentToast, showProjectDeletedToast, showErrorToast } from "../../toast/Toast";
 import { AnimatePresence, motion } from "framer-motion";
 import { Link, useNavigate } from "react-router-dom";
 import dp from "../../assets/dp.jpg";

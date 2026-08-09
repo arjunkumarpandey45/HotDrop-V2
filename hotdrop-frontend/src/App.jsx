@@ -13,6 +13,7 @@ import EditUserProfile from './pages/profile/EditUserProfile';
 import FromShare from './pages/post/FromShare';
 import AllPost from './pages/feed/AllPost';
 import SearchPage from './pages/search/SearchPage';
+import NotFoundPage from './pages/error/NotFoundPage';
 import { useAuthStore, useUIStore } from './store/useAuthStore';
 import { Slide, ToastContainer } from 'react-toastify';
 
@@ -101,6 +102,10 @@ function App() {
         {
           path: '/verify',
           element: <Verify />,
+        },
+        {
+          path: '*',
+          element: <NotFoundPage />,
         },
       ],
     },
