@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { ArrowRight, BadgeCheck, Loader2, MailX, Sparkles, TriangleAlert } from "lucide-react";
-import API from "../api/Api";
+import API from "../../api/Api";
 
 export default function VerifyLink() {
   const navigate = useNavigate();

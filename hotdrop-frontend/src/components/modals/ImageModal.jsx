@@ -7,7 +7,6 @@ import {
   Heart,
   MessageCircle,
   Share2,
-  Tag,
   Trash2,
   MoreVertical,
   Loader2,
@@ -18,10 +17,11 @@ import dp from "../../assets/dp.jpg";
 import { AnimatePresence, motion } from "framer-motion";
 import { useState, useEffect } from "react";
 import PreviewModal from "./PreviewModal";
+import PostTags from "../post/PostTags";
 import { Link } from "react-router-dom";
 import API from "../../api/Api";
 import { toast } from "react-toastify";
-import { showLikeToast, showProjectDeletedToast } from "../../toast/Toast";
+import { showProjectDeletedToast } from "../../toast/Toast";
 
 function ImageModal({
   post,
@@ -434,24 +434,12 @@ function ImageModal({
 
             {/* MAIN CONTENT AREA */}
             <div className="p-5 space-y-4 flex-1 overflow-y-auto">
-              <div>
-                <h2 className="font-extrabold text-base text-slate-900 mb-2 leading-snug">
+              {/* TITLE & TAGS */}
+              <div className="flex items-start justify-between gap-3 mb-2 flex-wrap sm:flex-nowrap">
+                <h2 className="font-extrabold text-base text-slate-900 leading-snug min-w-0 flex-1">
                   {livePost.title}
                 </h2>
-
-                {livePost.tags && livePost.tags.length > 0 && (
-                  <div className="flex flex-wrap gap-1.5">
-                    {livePost.tags.map((tag, i) => (
-                      <span
-                        key={i}
-                        className="inline-flex items-center gap-1 text-[10px] font-bold bg-slate-100 text-slate-600 px-2 py-0.5 rounded-md"
-                      >
-                        <Tag size={10} />
-                        {tag}
-                      </span>
-                    ))}
-                  </div>
-                )}
+                <PostTags tags={livePost.tags || livePost.tagsList || livePost.tag} postTitle={livePost.title} />
               </div>
 
               <div className="relative">

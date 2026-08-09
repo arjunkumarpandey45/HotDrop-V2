@@ -14,22 +14,21 @@ import {
   ShieldCheck, 
   Sparkles,
   Flame,
-  Search,
   X,
   SlidersHorizontal,
-  Boxes,
-  Tag
+  Boxes
 } from "lucide-react";
-import Sidebar from "./Sidebar";
-import Sponser from "./Sponser";
-import PostDescription from "./PostDescription";
+import Sidebar from "../../components/layout/Sidebar";
+import Sponser from "../../components/post/Sponser";
+import PostDescription from "../../components/post/PostDescription";
+import PostTags from "../../components/post/PostTags";
 import { toast } from "react-toastify";
 import { showLikeToast } from "../../toast/Toast";
-import CommentModal from "../../profile/post/CommentModal";
-import LikeModal from "../../profile/post/LikeModal";
-import ShareModal from "../../profile/post/ShareModal";
-import ImageModal from "../../profile/post/ImageModal"; 
-import PreviewModal from "../../profile/post/PreviewModal";
+import CommentModal from "../../components/modals/CommentModal";
+import LikeModal from "../../components/modals/LikeModal";
+import ShareModal from "../../components/modals/ShareModal";
+import ImageModal from "../../components/modals/ImageModal"; 
+import PreviewModal from "../../components/modals/PreviewModal";
 import API from "../../api/Api";
 import dp from "../../assets/dp.jpg";
 import { AnimatePresence } from "framer-motion";
@@ -410,8 +409,6 @@ function AllPost() {
               <Boxes size={16} />
             </button>
           </div>
-          
-
 
           {posts.length === 0 ? (
             <div className="bg-white rounded-3xl p-12 text-center border border-slate-200/80 shadow-sm">
@@ -540,11 +537,14 @@ function AllPost() {
                   {/* POST CONTENT BODY */}
                   <div className="p-4 sm:p-5 flex flex-col">
                     
-                    {/* TITLE */}
-                    <h3 className="group/title text-sm sm:text-base font-black uppercase text-slate-900 mb-3 tracking-tight leading-snug">
-                      {post.title}
-                      <div className="h-[2.5px] w-8 bg-blue-600 mt-1.5 transition-all duration-300 group-hover/title:w-16 shadow-[0_0_10px_rgba(37,99,235,0.5)]" />
-                    </h3>
+                    {/* TITLE & TAGS */}
+                    <div className="flex items-start justify-between gap-3 mb-3 flex-wrap sm:flex-nowrap">
+                      <h3 className="group/title text-sm sm:text-base font-black uppercase text-slate-900 tracking-tight leading-snug min-w-0 flex-1">
+                        {post.title}
+                        <div className="h-[2.5px] w-8 bg-blue-600 mt-1.5 transition-all duration-300 group-hover/title:w-16 shadow-[0_0_10px_rgba(37,99,235,0.5)]" />
+                      </h3>
+                      <PostTags tags={post.tags || post.tagsList || post.tag} postTitle={post.title} />
+                    </div>
 
                     {/* PROJECT LINK BANNER */}
                     {projectLink && (

@@ -14,8 +14,8 @@ import {
 } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import api from "../api/Api";
-import { showErrorToast, showSuccessToast } from "../toast/Toast";
+import api from "../../api/Api";
+import { showErrorToast, showSuccessToast } from "../../toast/Toast";
 
 const ForgotPassword = () => {
   const navigate = useNavigate();

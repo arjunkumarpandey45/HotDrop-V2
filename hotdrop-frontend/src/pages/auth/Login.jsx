@@ -9,8 +9,8 @@ import {
 } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { useAuthStore } from "../store/useAuthStore";
-import { showErrorToast, showSuccessToast } from "../toast/Toast";
+import { useAuthStore } from "../../store/useAuthStore";
+import { showErrorToast, showSuccessToast } from "../../toast/Toast";
 
 const Login = () => {
   const navigate = useNavigate();

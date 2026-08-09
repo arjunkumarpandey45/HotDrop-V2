@@ -4,10 +4,8 @@ import {
   Globe,
   X,
   Loader2,
-  
   AlertCircle,
   ArrowUpRight,
-  
   Zap,
 } from "lucide-react";
 

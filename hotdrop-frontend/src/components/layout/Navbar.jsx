@@ -13,11 +13,11 @@ import {
 } from "lucide-react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 
-import API from "../api/Api";
-import dp from "../assets/dp.jpg";
-import { useAuthStore, useUIStore } from "../store/useAuthStore";
-import { showSuccessToastForLogout } from "../toast/Toast";
-import SearchModal from "./SearchModal";
+import API from "../../api/Api";
+import dp from "../../assets/dp.jpg";
+import { useAuthStore, useUIStore } from "../../store/useAuthStore";
+import { showSuccessToastForLogout } from "../../toast/Toast";
+import SearchModal from "../modals/SearchModal";
 
 const Navbar = () => {
   const [isProfileOpen, setIsProfileOpen] = useState(false);

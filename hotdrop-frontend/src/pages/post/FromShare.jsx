@@ -11,16 +11,15 @@ import {
   ExternalLink,
   ArrowLeft,
   Clock,
-  Lock,
   ShieldCheck,
-  Tag,
 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
-import CommentModal from "./CommentModal";
-import LikeModal from "./LikeModal";
-import ShareModal from "./ShareModal";
-import ImageModal from "./ImageModal";
-import PreviewModal from "./PreviewModal";
+import CommentModal from "../../components/modals/CommentModal";
+import LikeModal from "../../components/modals/LikeModal";
+import ShareModal from "../../components/modals/ShareModal";
+import ImageModal from "../../components/modals/ImageModal";
+import PreviewModal from "../../components/modals/PreviewModal";
+import PostTags from "../../components/post/PostTags";
 import API from "../../api/Api";
 import { showCommentToast, showErrorToast } from "../../toast/Toast";
 import dp from "../../assets/dp.jpg";
@@ -283,23 +282,13 @@ function FromShare() {
 
           {/* CONTENT */}
           <div className="flex flex-col">
-            <h3 className="text-base font-extrabold uppercase text-slate-900 mb-2 leading-snug">
-              {post.title}
-            </h3>
-
-            {post.tags && post.tags.length > 0 && (
-              <div className="flex flex-wrap gap-1.5 mb-3">
-                {post.tags.map((tag, i) => (
-                  <span
-                    key={i}
-                    className="inline-flex items-center gap-1 text-[10px] font-bold bg-slate-100 text-slate-600 px-2.5 py-1 rounded-md"
-                  >
-                    <Tag size={10} />
-                    {tag}
-                  </span>
-                ))}
-              </div>
-            )}
+            {/* TITLE & TAGS */}
+            <div className="flex items-start justify-between gap-3 mb-2 flex-wrap sm:flex-nowrap">
+              <h3 className="text-base font-extrabold uppercase text-slate-900 leading-snug min-w-0 flex-1">
+                {post.title}
+              </h3>
+              <PostTags tags={post.tags || post.tagsList || post.tag} postTitle={post.title} />
+            </div>
 
             {/* LINK SECTION */}
             <div

@@ -11,7 +11,7 @@ import {
   User,
   AlertCircle,
 } from "lucide-react";
-import API from "../api/Api";
+import API from "../../api/Api";
 
 export default function Signup() {
   const navigate = useNavigate();

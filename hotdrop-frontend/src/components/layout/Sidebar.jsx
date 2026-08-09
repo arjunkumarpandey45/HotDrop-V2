@@ -1,6 +1,6 @@
 import React from "react";
 import { Link } from "react-router-dom";
-import { useAuthStore, } from "../../store/useAuthStore";
+import { useAuthStore } from "../../store/useAuthStore";
 import { 
   Sparkles, 
   Flame, 
@@ -8,19 +8,14 @@ import {
   Rocket,
   Globe,
   Zap,
-  
   ShieldCheck
 } from "lucide-react";
 
 const Sidebar = () => {
   const { user, isLoggedIn } = useAuthStore();
- 
 
   return (
     <aside className="space-y-4 select-none">
-      
-      
-
       {/* QUICK NAVIGATION */}
       <div className="bg-white rounded-3xl border border-slate-200/80 p-3.5 shadow-sm space-y-1">
         <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-2 mb-1">

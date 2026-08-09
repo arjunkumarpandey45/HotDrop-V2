@@ -16,11 +16,12 @@ import {
 
 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
-import ImageModal from "./ImageModal";
-import CommentModal from "./CommentModal";
-import LikeModal from "./LikeModal";
-import ShareModal from "./ShareModal";
-import PreviewModal from "./PreviewModal";
+import ImageModal from "../../components/modals/ImageModal";
+import CommentModal from "../../components/modals/CommentModal";
+import LikeModal from "../../components/modals/LikeModal";
+import ShareModal from "../../components/modals/ShareModal";
+import PreviewModal from "../../components/modals/PreviewModal";
+import PostTags from "../../components/post/PostTags";
 import API from "../../api/Api";
 import { toast } from "react-toastify";
 import { showLikeToast, showCommentToast, showProjectDeletedToast } from "../../toast/Toast";
@@ -553,12 +554,15 @@ function UserPost({ postsOverride, hideOptions, ownerOverride }) {
 
                 {/* CONTENT */}
                 <div className="p-4 flex flex-col flex-1">
-                  {/* TITLE */}
-                  <div className="relative mb-3 group/title">
-                    <h3 className="text-[13px] font-black uppercase tracking-[0.15em] text-slate-800 leading-none">
-                      {post.title}
-                    </h3>
-                    <div className="h-[2px] w-8 bg-blue-600 mt-1.5 transition-all duration-300 group-hover/title:w-12" />
+                  {/* TITLE & TAGS */}
+                  <div className="flex items-start justify-between gap-3 mb-3 flex-wrap sm:flex-nowrap">
+                    <div className="relative group/title min-w-0 flex-1">
+                      <h3 className="text-[13px] font-black uppercase tracking-[0.15em] text-slate-800 leading-none">
+                        {post.title}
+                      </h3>
+                      <div className="h-[2px] w-8 bg-blue-600 mt-1.5 transition-all duration-300 group-hover/title:w-12" />
+                    </div>
+                    <PostTags tags={post.tags || post.tagsList || post.tag} postTitle={post.title} />
                   </div>
 
                   {/* PROJECT LINK */}

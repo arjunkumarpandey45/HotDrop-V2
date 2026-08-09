@@ -129,9 +129,8 @@ function CommentModal({
       await submitComment(e, commentText.trim());
     } catch (error) {
       console.error("Error submitting comment:", error);
-    } finally {
+    } font-medium;
       setIsSubmitting(false);
-    }
   };
 
   const totalCount = Math.max(post?.commentCount || 0, localComments.length);

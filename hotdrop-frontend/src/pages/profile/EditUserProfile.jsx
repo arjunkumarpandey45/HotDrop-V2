@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
-import axios from "../api/Api";
+import axios from "../../api/Api";
 import { 
   Globe, 
   Edit, 
@@ -19,16 +19,16 @@ import {
   AppWindowMac,
   AudioWaveform
 } from "lucide-react";
-import { useAuthStore } from "../store/useAuthStore";
-import { showErrorToast, showProfileUpdatedToast } from "../toast/Toast";
+import { useAuthStore } from "../../store/useAuthStore";
+import { showErrorToast, showProfileUpdatedToast } from "../../toast/Toast";
 
-import EmailModal from "./EmailModal";
-import EditProfileModal from "./EditProfileModal";
-import FollowersModal from "./FollowersModal";
-import FollowingModal from "./FollowingModal";
-import ShareProfileModal from "./ShareProfileModal";
-import UserPost from "./post/UserPost";
-import dp from "../assets/dp.jpg";
+import EmailModal from "../../components/modals/EmailModal";
+import EditProfileModal from "../../components/modals/EditProfileModal";
+import FollowersModal from "../../components/modals/FollowersModal";
+import FollowingModal from "../../components/modals/FollowingModal";
+import ShareProfileModal from "../../components/modals/ShareProfileModal";
+import UserPost from "../post/UserPost";
+import dp from "../../assets/dp.jpg";
 
 const Github = ({ size = 13, className = "" }) => (
   <svg
@@ -473,7 +473,6 @@ function EditUserProfile() {
     ? `${displayUser.firstName} ${displayUser.lastName || ""}`.trim()
     : displayUser?.username || displayUser?.hotdropId || "HotDrop Creator";
 
-
   const formattedJoinedDate = displayUser?.createdAt
     ? new Date(displayUser.createdAt).toLocaleDateString("en-US", { month: "short", year: "numeric" })
     : "Recently";
@@ -522,7 +521,7 @@ function EditUserProfile() {
               <span className="text-xs font-black uppercase tracking-tight text-white flex items-center gap-1">
                 <span className="text-orange-400">HOT</span>
                 <span className="text-blue-400">DROP</span>
-                  </span>
+              </span>
             </div>
 
             {/* SHARE BUTTON */}
@@ -617,13 +616,10 @@ function EditUserProfile() {
                   <h1 className="text-lg sm:text-xl font-black text-slate-900 tracking-tight">
                     {fullName}
                   </h1>
-                  
                 </div>
 
-                <div  className="self-center sm:self-auto inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[13px] font-black lowercase tracking-wider">
+                <div className="self-center sm:self-auto inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[13px] font-black lowercase tracking-wider">
                   <span className="text-blue-600 lowercase">@{displayUser?.hotdropId || "hotdrop"}</span>
-                  
-                  
                 </div>
               </div>
 
@@ -633,9 +629,6 @@ function EditUserProfile() {
                   {displayUser.bio}
                 </p>
               )}
-
-             
-              
             </div>
 
             {/* BOTTOM ROW: DESKTOP STATS PILLS / MOBILE STATS PILLS & ACTION BUTTONS & LOCATION/JOINED */}
@@ -747,8 +740,6 @@ function EditUserProfile() {
 
       {/* 📦 2. USER PROJECT DROPS SECTION (INDEPENDENT FULL-WIDTH CONTAINER: max-w-7xl) */}
       <div className="max-w-7xl mx-auto w-full space-y-4">
-        
-
         <UserPost
           postsOverride={displayUser?.posts}
           hideOptions={!isOwnProfile}

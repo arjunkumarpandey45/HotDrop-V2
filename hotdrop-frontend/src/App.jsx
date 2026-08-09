@@ -2,20 +2,19 @@ import './App.css';
 import 'react-toastify/dist/ReactToastify.css';
 import { createBrowserRouter, Outlet, RouterProvider, useLocation } from 'react-router-dom';
 import { useEffect } from 'react';
-import Signup from './auth/Signup';
-import Verify from './auth/Verify';
-import VerifyLink from './auth/VerifyLink';
-import Login from './auth/Login';
-import ForgotPassword from './auth/ForgotPassword';
-import Navbar from './pages/Navbar';
-import CreatePost from './pages/createPost/CreatePost';
-import EditUserProfile from './profile/EditUserProfile';
-import FromShare from './profile/post/FromShare';
+import Signup from './pages/auth/Signup';
+import Verify from './pages/auth/Verify';
+import VerifyLink from './pages/auth/VerifyLink';
+import Login from './pages/auth/Login';
+import ForgotPassword from './pages/auth/ForgotPassword';
+import Navbar from './components/layout/Navbar';
+import CreatePost from './pages/post/CreatePost';
+import EditUserProfile from './pages/profile/EditUserProfile';
+import FromShare from './pages/post/FromShare';
+import AllPost from './pages/feed/AllPost';
+import SearchPage from './pages/search/SearchPage';
 import { useAuthStore, useUIStore } from './store/useAuthStore';
 import { Slide, ToastContainer } from 'react-toastify';
-
-import AllPost from './pages/AllPost/AllPost';
-import SearchPage from './pages/Search/SearchPage';
 
 function HomePage() {
   return <AllPost />;

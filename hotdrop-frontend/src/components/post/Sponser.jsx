@@ -4,12 +4,10 @@ import {
   Sparkles, 
   Bot, 
   Cpu, 
-  Zap, 
   CheckCircle2, 
   ChevronRight,
   ChevronLeft,
   Heart,
-  Globe,
   Star
 } from "lucide-react";
 

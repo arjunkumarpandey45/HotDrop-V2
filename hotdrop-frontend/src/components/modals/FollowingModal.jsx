@@ -1,11 +1,11 @@
-import { X, UserCheck, Loader2, UserMinus, UserPlus } from "lucide-react";
+import { X, UserCheck, Loader2, UserPlus } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import axios from "../api/Api";
-import dp from "../assets/dp.jpg";
-import { useAuthStore } from "../store/useAuthStore";
+import axios from "../../api/Api";
+import dp from "../../assets/dp.jpg";
+import { useAuthStore } from "../../store/useAuthStore";
 
-function FollowersModal({ isOpen, onClose, userId, onFollowStatusChange }) {
+function FollowingModal({ isOpen, onClose, userId, onFollowStatusChange, onUnfollowSuccess }) {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(false);
   const [togglingId, setTogglingId] = useState(null);
@@ -22,18 +22,18 @@ function FollowersModal({ isOpen, onClose, userId, onFollowStatusChange }) {
 
     let isMounted = true;
 
-    const fetchFollowers = async () => {
+    const fetchFollowing = async () => {
       try {
         setLoading(true);
 
-        // 1. Fetch followers list directly from /users/{userId}/get-all-followers
-        const res = await axios.get(`/users/${userId}/get-all-followers`);
+        // 1. Fetch following list for target profile directly from GET /users/{userId}/get-all-following
+        const res = await axios.get(`/users/${userId}/get-all-following`);
         const payload = res.data?.data || res.data;
         const listData = Array.isArray(payload)
           ? payload
-          : payload?.followers || payload?.users || payload?.list || [];
+          : payload?.following || payload?.users || payload?.list || [];
 
-        // 2. Fetch logged in user's following list to accurately verify who currentUser follows
+        // 2. Fetch logged in user's following list to know who currentUser is following
         let myFollowingIds = new Set();
         if (currentUserId) {
           try {
@@ -50,24 +50,19 @@ function FollowersModal({ isOpen, onClose, userId, onFollowStatusChange }) {
               if (itemHandle) myFollowingIds.add(itemHandle);
             });
           } catch (myFollowErr) {
-            console.warn("Could not fetch my following list in FollowersModal:", myFollowErr);
+            console.warn("Could not fetch my following list in FollowingModal:", myFollowErr);
           }
         }
 
         if (!isMounted) return;
 
-        // 3. Annotate user list with accurate follow status
         const annotatedUsers = listData.map((u) => {
           const uId = String(u.id || u._id || u.userId || u.targetUserId || "");
           const uHandle = (u.hotdropId || u.username || "").toLowerCase();
 
-          let isFollowing = false;
-          if (myFollowingIds.has(uId) || (uHandle && myFollowingIds.has(uHandle))) {
-            isFollowing = true;
-          } else if (typeof u.isFollowing === "boolean") {
-            isFollowing = u.isFollowing;
-          } else if (typeof u.isFollowedByMe === "boolean") {
-            isFollowing = u.isFollowedByMe;
+          let isFollowing = true;
+          if (currentUserId && String(currentUserId) !== String(userId)) {
+            isFollowing = myFollowingIds.has(uId) || (uHandle && myFollowingIds.has(uHandle));
           }
 
           return {
@@ -80,14 +75,14 @@ function FollowersModal({ isOpen, onClose, userId, onFollowStatusChange }) {
 
         setUsers(annotatedUsers);
       } catch (err) {
-        console.error("Failed to load followers list:", err);
+        console.error("Failed to load following list:", err);
         if (isMounted) setUsers([]);
       } finally {
         if (isMounted) setLoading(false);
       }
     };
 
-    fetchFollowers();
+    fetchFollowing();
 
     return () => {
       isMounted = false;
@@ -163,8 +158,11 @@ function FollowersModal({ isOpen, onClose, userId, onFollowStatusChange }) {
       if (onFollowStatusChange) {
         onFollowStatusChange(targetUserId, isNowFollowing);
       }
+      if (onUnfollowSuccess) {
+        onUnfollowSuccess(targetUserId, isNowFollowing);
+      }
     } catch (err) {
-      console.error("Follow error in FollowersModal:", err);
+      console.error("Follow error in FollowingModal:", err);
       setUsers(previousUsers);
     } finally {
       setTogglingId(null);
@@ -184,7 +182,7 @@ function FollowersModal({ isOpen, onClose, userId, onFollowStatusChange }) {
       >
         {/* Modal Header */}
         <div className="p-4 px-5 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
-          <h3 className="font-extrabold text-sm text-slate-900">Followers</h3>
+          <h3 className="font-extrabold text-sm text-slate-900">Following</h3>
           <button
             onClick={onClose}
             className="p-1.5 text-slate-400 hover:bg-slate-200/60 hover:text-slate-700 rounded-full transition cursor-pointer"
@@ -269,7 +267,7 @@ function FollowersModal({ isOpen, onClose, userId, onFollowStatusChange }) {
             })
           ) : (
             <div className="text-center py-10 text-slate-400 text-xs font-medium">
-              No followers found
+              Not following anyone yet
             </div>
           )}
         </div>
@@ -278,4 +276,4 @@ function FollowersModal({ isOpen, onClose, userId, onFollowStatusChange }) {
   );
 }
 
-export default FollowersModal;
+export default FollowingModal;

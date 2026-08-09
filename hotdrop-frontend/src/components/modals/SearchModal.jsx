@@ -1,8 +1,8 @@
 import { useEffect, useState, useRef } from "react";
-import { Search, X, ArrowRight, Sparkles, User, Flame, Globe } from "lucide-react";
+import { Search, X, ArrowRight, Globe } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import API from "../api/Api";
-import dp from "../assets/dp.jpg";
+import API from "../../api/Api";
+import dp from "../../assets/dp.jpg";
 
 function SearchModal({ isOpen, onClose, initialMode = "users" }) {
   const [searchMode, setSearchMode] = useState(initialMode); // 'users' | 'projects'
