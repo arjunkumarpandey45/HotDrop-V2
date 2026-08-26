@@ -1,6 +1,5 @@
 package com.arjun.hotdrop_backend.mapper;
 
-
 import com.arjun.hotdrop_backend.dto.PostResponseDto;
 import com.arjun.hotdrop_backend.entity.Post;
 import com.arjun.hotdrop_backend.entity.PostImage;
@@ -9,8 +8,6 @@ import org.springframework.stereotype.Component;
 import java.util.ArrayList;
 
 import java.util.List;
-
-
 
 @Component
 

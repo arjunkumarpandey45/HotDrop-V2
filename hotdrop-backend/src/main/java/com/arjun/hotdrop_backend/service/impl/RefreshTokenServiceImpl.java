@@ -27,7 +27,6 @@ public class RefreshTokenServiceImpl implements RefreshTokenService {
         var user = userRepo.findByHotdropId(hotdropId)
                 .orElseThrow(() -> new RuntimeException("User not found: " + hotdropId));
 
-
         refreshTokenRepo.deleteByUser(user);
 
         RefreshToken refreshToken = RefreshToken.builder()

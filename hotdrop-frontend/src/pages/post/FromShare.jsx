@@ -52,10 +52,20 @@ function FromShare() {
         setLoading(true);
         const shareUrl = postId;
 
-        // 🎯 Official Backend Endpoint: GET /posts/share-post/{shareUrl}
-        const res = await API.get(`/posts/share-post/${shareUrl}`);
-        const payload = res.data?.data || res.data;
-        const postData = payload?.post || payload;
+        let postData = null;
+        try {
+          const res = await API.get(`/posts/share-post/${shareUrl}`);
+          const payload = res.data?.data || res.data;
+          postData = payload?.post || payload;
+        } catch {
+          try {
+            const res2 = await API.get(`/posts/get-post-by-postId/${shareUrl}`);
+            const payload2 = res2.data?.data || res2.data;
+            postData = payload2?.post || payload2;
+          } catch (err2) {
+            console.error("Fetch single post fallback error:", err2);
+          }
+        }
         setPost(postData);
       } catch (error) {
         console.error("Fetch single post error:", error);
@@ -92,6 +102,7 @@ function FromShare() {
 
         toast.success(newLikedState ? "Drop liked! ❤️" : "Unliked");
       }
+
     // eslint-disable-next-line no-unused-vars
     } catch (error) {
       toast.error("Action failed");
@@ -175,9 +186,9 @@ function FromShare() {
 
   return (
     <div className="min-h-screen bg-slate-50 pt-2.5 pb-6 px-3 flex flex-col items-center justify-start sm:justify-center">
-      {/* UNIVERSAL COMPACT DETAILED CARD FOR BOTH MOBILE & DESKTOP */}
+
       <div className="w-full max-w-sm mx-auto space-y-2.5">
-        {/* TOP BAR WITH BACK BUTTON & HOTDROP BRAND */}
+
         <div className="flex justify-between items-center px-1">
           <button
             onClick={() => navigate(-1)}
@@ -192,7 +203,7 @@ function FromShare() {
         </div>
 
         <div className="bg-white rounded-3xl p-3.5 border border-slate-200/80 shadow-2xl overflow-hidden flex flex-col">
-          {/* PROFILE HEADER */}
+
           <div className="pb-3 flex items-center justify-between border-b border-slate-100 mb-3">
             <div
               className="flex items-center gap-2.5 cursor-pointer group"
@@ -216,10 +227,8 @@ function FromShare() {
               </div>
             </div>
 
-           
           </div>
 
-          {/* IMAGE PREVIEW AREA */}
           <div
             className="relative bg-slate-50 border border-slate-200/70 group aspect-video w-full rounded-2xl flex items-center justify-center overflow-hidden cursor-pointer mb-3 shadow-inner"
             onClick={() => {
@@ -263,7 +272,6 @@ function FromShare() {
                   </button>
                 </div>
 
-                {/* COMPACT WHITE DOTS WITH BLACK BORDER */}
                 <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex items-center gap-1.5 pointer-events-none z-20">
                   {images.map((_, i) => (
                     <div
@@ -280,9 +288,8 @@ function FromShare() {
             )}
           </div>
 
-          {/* CONTENT */}
           <div className="flex flex-col">
-            {/* TITLE & TAGS */}
+
             <div className="flex items-start justify-between gap-3 mb-2 flex-wrap sm:flex-nowrap">
               <h3 className="text-base font-extrabold uppercase text-slate-900 leading-snug min-w-0 flex-1">
                 {post.title}
@@ -290,7 +297,6 @@ function FromShare() {
               <PostTags tags={post.tags || post.tagsList || post.tag} postTitle={post.title} />
             </div>
 
-            {/* LINK SECTION */}
             <div
               onClick={() => {
                 if (!isLinkDead && projectUrl) {
@@ -320,7 +326,7 @@ function FromShare() {
                     <Globe size={14} strokeWidth={2.5} />
                   </div>
                   <span className="text-xs font-bold text-slate-700 truncate">
-                    {projectUrl ? projectUrl.replace(/^https?:\/\//i, "").replace(/^www\./i, "") : "No Link"}
+                    {projectUrl ? projectUrl.replace(/^https?:\/\//, "") : "Project Link"}
                   </span>
                 </div>
 
@@ -344,7 +350,6 @@ function FromShare() {
               </div>
             </div>
 
-            {/* DESCRIPTION */}
             <p className="text-xs text-slate-600 leading-relaxed font-normal mb-4">
               {isExpanded ? post.description : `${post.description?.slice(0, maxLength)}`}
 
@@ -358,7 +363,6 @@ function FromShare() {
               )}
             </p>
 
-            {/* ACTION BAR */}
             <div className="flex justify-between items-center border-t border-slate-100 pt-3">
               <div className="flex gap-6">
                 <button
@@ -406,7 +410,6 @@ function FromShare() {
         </div>
       </div>
 
-      {/* AUTH REQUIRED MODAL */}
       {showAuthModal && (
         <div className="fixed inset-0 z-[999] flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-slate-950/60 backdrop-blur-sm" onClick={() => setShowAuthModal(false)} />
@@ -452,7 +455,6 @@ function FromShare() {
         )}
       </AnimatePresence>
 
-      {/* IMAGE MODAL */}
       {imagePost && (
         <ImageModal
           post={post}

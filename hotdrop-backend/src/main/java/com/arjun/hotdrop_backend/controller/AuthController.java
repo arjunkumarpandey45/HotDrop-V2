@@ -41,14 +41,11 @@ public class AuthController {
         LoginResponseDto responseDto = authService.getLoginResponseDetails(loginRequestDto.getHotdropIdOrEmail());
         var refreshToken = refreshTokenService.createRefreshToken(responseDto.getHotdropId());
 
-
         ResponseCookie accessCookie = ResponseCookie.from("accessToken", jwtToken)
                 .httpOnly(true).secure(false).path("/").maxAge(15 * 60).sameSite("Strict").build();
 
-
         ResponseCookie refreshCookie = ResponseCookie.from("refreshToken", refreshToken.getToken())
                 .httpOnly(true).secure(false).path("/").maxAge(30 * 24 * 60 * 60).sameSite("Strict").build();
-
 
         return ResponseEntity.ok()
                 .header(HttpHeaders.SET_COOKIE, accessCookie.toString())
@@ -59,7 +56,6 @@ public class AuthController {
     @PostMapping("/refresh")
     public ResponseEntity<?> refreshToken(HttpServletRequest request) {
         String refreshTokenFromCookie = null;
-
 
         if (request.getCookies() != null) {
             for (var cookie : request.getCookies()) {
@@ -73,7 +69,6 @@ public class AuthController {
         if (refreshTokenFromCookie == null || refreshTokenFromCookie.isEmpty()) {
             return ResponseEntity.badRequest().body("Refresh Token is missing!");
         }
-
 
         return refreshTokenRepo.findByToken(refreshTokenFromCookie)
                 .map(refreshTokenService::verifyExpiration)
@@ -115,7 +110,6 @@ public class AuthController {
                 }
             }
         }
-
 
     authService.logout(refreshTokenFromCookie);
 ResponseCookie clearAccessCookie=ResponseCookie.from("accessToken","")

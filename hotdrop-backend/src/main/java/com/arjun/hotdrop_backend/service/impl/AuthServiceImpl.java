@@ -82,7 +82,6 @@ public class AuthServiceImpl implements AuthService {
                 .firstName(registerRequestDto.getFirstName())
                 .lastName(registerRequestDto.getLastName()).build());
 
-
         String token = jwtUtils.generateEmailVerificationToken(user.getEmail());
         String verificationLink = frontendURL+"/auth/verify-email?token=" + token;
         emailService.sendVerificationEmail(user.getEmail(), user.getFirstName(), verificationLink);
@@ -129,7 +128,6 @@ public class AuthServiceImpl implements AuthService {
         user.setLastLoginAt(LocalDateTime.now());
         userRepo.save(user);
 
-
         return jwtUtils.generateToken(authentication);
     }
 
@@ -161,17 +159,13 @@ public class AuthServiceImpl implements AuthService {
             throw new RuntimeException("Account is restricted.");
         }
 
-
         java.security.SecureRandom random = new java.security.SecureRandom();
         int otpNum = 100000 + random.nextInt(900000);
         String otp = String.valueOf(otpNum);
 
-
         String hashedOtp = passwordEncoder.encode(otp);
 
-
         LocalDateTime expiry = LocalDateTime.now().plusMinutes(5);
-
 
         otpVerificationRepo.deleteByEmail(user.getEmail());
         otpVerificationRepo.flush();
@@ -180,8 +174,6 @@ public class AuthServiceImpl implements AuthService {
                 .otpHash(hashedOtp)
                 .expiryDate(expiry)
                 .build());
-
-
 
         emailService.sendOTP(user.getEmail(), user.getFirstName(), otp);
 
@@ -194,24 +186,20 @@ public class AuthServiceImpl implements AuthService {
         OtpVerification otpVerification = otpVerificationRepo.findByEmail(request.getEmail())
                 .orElseThrow(() -> new RuntimeException("OTP session not found or invalid request."));
 
-
         if (otpVerification.getExpiryDate().isBefore(LocalDateTime.now())) {
             otpVerificationRepo.delete(otpVerification);
             throw new RuntimeException("OTP has expired. Please request a new one.");
         }
 
-
         if (!passwordEncoder.matches(request.getOtp(), otpVerification.getOtpHash())) {
             throw new RuntimeException("Invalid OTP entered.");
         }
-
 
         User user = userRepo.findByEmail(request.getEmail())
                 .orElseThrow(() -> new RuntimeException("User not found."));
 
         user.setPassword(passwordEncoder.encode(request.getNewPassword()));
         userRepo.save(user);
-
 
         otpVerificationRepo.delete(otpVerification);
     }

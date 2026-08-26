@@ -23,7 +23,6 @@ public class UserCleanupServiceImpl implements UserCleanupService {
     public void cleanExpiredUnverifiedUsers() {
         log.info("Starting background cleanup for unverified users...");
 
-
         LocalDateTime cutoffTime = LocalDateTime.now().minusMinutes(15);
 
         int deletedCount = userRepo.deleteUnverifiedUsersOlderThan(cutoffTime);

@@ -54,7 +54,6 @@ function ImageModal({
   const currentUserId = String(currentUser?.id || currentUser?._id || "");
   const isOwner = currentUser && (creatorId === currentUserId || creator?.hotdropId === currentUser?.hotdropId);
 
-  // Normalize image URLs
   const rawImages = livePost.imageUrls || livePost.images || [];
   const images = rawImages.map((img) =>
     typeof img === "string" ? img : img?.url || img
@@ -66,7 +65,6 @@ function ImageModal({
   const likeCount = livePost.likeCount ?? livePost.likes?.length ?? 0;
   const commentCount = livePost.commentCount ?? livePost.comments?.length ?? 0;
 
-  // --- POST NAVIGATION (PREV DROP / NEXT DROP) ---
   const currentPostId = String(livePost.id || livePost._id || "");
   const currentPostIndex = (posts || []).findIndex(
     (p) => String(p.id || p._id || "") === currentPostId
@@ -92,7 +90,6 @@ function ImageModal({
     }
   };
 
-  // Keyboard arrow listener for Desktop post & image navigation
   useEffect(() => {
     const handleKeyDown = (e) => {
       if (deleteConfirm || previewUrl) return;
@@ -122,7 +119,6 @@ function ImageModal({
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
-  /* CLOSE 3-DOT MENU ON OUTSIDE CLICK */
   useEffect(() => {
     const closeMenuOnOutsideClick = () => setMenuOpen(false);
     if (menuOpen) {
@@ -256,7 +252,6 @@ function ImageModal({
         <X size={26} />
       </button>
 
-      {/* ⬅️ FLOATING PREVIOUS DROP BUTTON WITH MOTION ANIMATION */}
       {hasPrevPost && (
         <motion.button
           initial={{ opacity: 0, x: -20 }}
@@ -268,11 +263,10 @@ function ImageModal({
           title="Previous Drop (Left Arrow)"
         >
           <ChevronLeft size={22} />
-       
+
         </motion.button>
       )}
 
-      {/* ➡️ FLOATING NEXT DROP BUTTON WITH MOTION ANIMATION */}
       {hasNextPost && (
         <motion.button
           initial={{ opacity: 0, x: 20 }}
@@ -283,12 +277,11 @@ function ImageModal({
           className="hidden md:flex fixed right-5 top-1/2 -translate-y-1/2 bg-slate-900/85 hover:bg-black text-white p-3.5 rounded-2xl backdrop-blur-xl shadow-[0_10px_30px_rgba(0,0,0,0.5)] transition-colors duration-200 items-center gap-2 text-xs font-black uppercase tracking-wider z-[1200] border border-slate-700/60 select-none cursor-pointer"
           title="Next Drop (Right Arrow)"
         >
-          
+
           <ChevronRight size={22} />
         </motion.button>
       )}
 
-      {/* ANIMATED DROP CONTAINER WITH SLIDE & FADE ANIMATION */}
       <AnimatePresence mode="wait" custom={slideDirection}>
         <motion.div
           key={currentPostId}
@@ -302,7 +295,7 @@ function ImageModal({
             if (menuOpen) setMenuOpen(false);
           }}
         >
-          {/* IMAGE AREA */}
+
           <div className="md:w-[65%] w-full bg-slate-950 flex items-center justify-center relative group">
             {images.length > 0 ? (
               <AnimatePresence mode="wait">
@@ -343,7 +336,6 @@ function ImageModal({
                   </button>
                 </div>
 
-                {/* COMPACT WHITE DOTS WITH BLACK BORDER */}
                 <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex items-center gap-1.5 pointer-events-none z-10">
                   {images.map((_, i) => (
                     <div
@@ -360,9 +352,8 @@ function ImageModal({
             )}
           </div>
 
-          {/* DETAILS PANEL */}
           <div className="md:w-[35%] w-full flex flex-col bg-white overflow-hidden">
-            {/* USER HEADER WITH 3-DOT MENU TO LEFT OF HOTDROP LOGO */}
+
             <div className="p-5 border-b border-slate-100 flex items-center justify-between shrink-0">
               <div className="flex items-center gap-3">
                 <img
@@ -387,13 +378,12 @@ function ImageModal({
                 </div>
               </div>
 
-
                 <div className="font-black text-xs tracking-wider uppercase select-none">
                   <span className="text-orange-500">HOT</span>
                   <span className="text-blue-600">DROP</span>
                 </div>
               <div className="flex items-center ">
-                {/* 3-DOT MENU FOR OWNER DELETE (TO THE LEFT OF HOTDROP LOGO) */}
+
                 {isOwner && (
                   <div className="relative">
                     <button
@@ -427,14 +417,11 @@ function ImageModal({
                   </div>
                 )}
 
-                {/* POST / DROP COUNTER BADGE */}
-                
               </div>
             </div>
 
-            {/* MAIN CONTENT AREA */}
             <div className="p-5 space-y-4 flex-1 overflow-y-auto">
-              {/* TITLE & TAGS */}
+
               <div className="flex items-start justify-between gap-3 mb-2 flex-wrap sm:flex-nowrap">
                 <h2 className="font-extrabold text-base text-slate-900 leading-snug min-w-0 flex-1">
                   {livePost.title}
@@ -459,7 +446,6 @@ function ImageModal({
                 </p>
               </div>
 
-              {/* PROJECT LINK CARD */}
               <div className="space-y-1.5 pt-2">
                 <span className="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest">
                   Target Link
@@ -495,7 +481,7 @@ function ImageModal({
                         <Globe size={12} strokeWidth={2.5} />
                       </div>
                       <span className="text-[11px] font-bold text-slate-700 truncate">
-                        {projectUrl ? projectUrl.replace(/^https?:\/\//i, "").replace(/^www\./i, "") : "No Link"}
+                        {projectUrl ? projectUrl.replace(/^https?:\/\//, "") : "Project Link"}
                       </span>
                     </div>
 
@@ -521,7 +507,6 @@ function ImageModal({
               </div>
             </div>
 
-            {/* FOOTER BAR */}
             <div className="flex justify-between items-center p-4 border-t border-slate-100 bg-slate-50/50 mt-auto">
               <div className="flex gap-5 items-center">
                 <button
@@ -579,7 +564,6 @@ function ImageModal({
         </motion.div>
       </AnimatePresence>
 
-      {/* DELETE CONFIRMATION MODAL */}
       {deleteConfirm && (
         <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4 animate-in fade-in duration-200">
           <div

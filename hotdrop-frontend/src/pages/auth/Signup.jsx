@@ -95,8 +95,6 @@ export default function Signup() {
 
         <div className="mb-4 text-center md:mb-5">
 
-          
-
           <h1 className="mt-3 text-2xl font-black text-slate-900 md:text-[2rem]">
             Create your account
           </h1>

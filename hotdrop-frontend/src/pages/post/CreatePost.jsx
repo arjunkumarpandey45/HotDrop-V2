@@ -18,7 +18,6 @@ import API from "../../api/Api";
 import { useAuthStore } from "../../store/useAuthStore";
 import { showPostErrorToast, showPostSuccessToast } from "../../toast/Toast";
 
-// --- SUB-COMPONENT: POST PREVIEW MODAL ---
 const PostPreview = ({ data, isOpen, onConfirm, onClose, loading }) => {
     if (!isOpen) return null;
 
@@ -26,7 +25,6 @@ const PostPreview = ({ data, isOpen, onConfirm, onClose, loading }) => {
         <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-md animate-in fade-in duration-200">
             <div className="w-full max-w-xl rounded-3xl border border-slate-100 bg-white shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
 
-                {/* Modal Header */}
                 <div className="flex justify-between items-center px-6 py-4 border-b border-slate-100 bg-slate-50/50">
                     <div>
                         <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">
@@ -46,9 +44,8 @@ const PostPreview = ({ data, isOpen, onConfirm, onClose, loading }) => {
                     </button>
                 </div>
 
-                {/* Content Section */}
                 <div className="px-6 py-5 overflow-y-auto max-h-[55vh] space-y-5">
-                    {/* Images Grid */}
+
                     <div className="grid grid-cols-3 gap-3">
                         {data.images.length > 0 ? (
                             data.images.slice(0, 3).map((img, i) => (
@@ -70,7 +67,6 @@ const PostPreview = ({ data, isOpen, onConfirm, onClose, loading }) => {
                         )}
                     </div>
 
-                    {/* Text Info */}
                     <div>
                         <h1 className="text-lg font-bold text-slate-900 mb-1 truncate">
                             {data.title || "Untitled Project"}
@@ -80,7 +76,6 @@ const PostPreview = ({ data, isOpen, onConfirm, onClose, loading }) => {
                         </p>
                     </div>
 
-                    {/* Tags */}
                     <div className="flex flex-wrap gap-1.5">
                         {data.tags ? (
                             data.tags.split(",").map((tag, idx) => (
@@ -97,7 +92,6 @@ const PostPreview = ({ data, isOpen, onConfirm, onClose, loading }) => {
                         )}
                     </div>
 
-                    {/* URL & Live Status */}
                     <div className="flex items-center justify-between bg-slate-50 border border-slate-200/80 rounded-2xl px-4 py-3">
                         <div className="flex items-center gap-3 truncate pr-2">
                             <Globe className="h-4 w-4 text-slate-500 shrink-0" />
@@ -127,7 +121,6 @@ const PostPreview = ({ data, isOpen, onConfirm, onClose, loading }) => {
                     </div>
                 </div>
 
-                {/* Modal Actions */}
                 <div className="px-6 py-4 border-t border-slate-100 flex gap-3 bg-slate-50/50">
                     <button
                         onClick={onClose}
@@ -157,7 +150,6 @@ const PostPreview = ({ data, isOpen, onConfirm, onClose, loading }) => {
     );
 };
 
-// --- MAIN COMPONENT: CREATE POST MODAL ---
 const CreatePost = ({ isOpen, onClose }) => {
     const [showPreview, setShowPreview] = useState(false);
     const [loading, setLoading] = useState(false);
@@ -175,7 +167,6 @@ const CreatePost = ({ isOpen, onClose }) => {
 
     const [formData, setFormData] = useState(initialFormState);
 
-    // 🎯 Helper function to completely clear form states
     const resetForm = () => {
         setFormData(initialFormState);
         setIsLinkVerified(false);
@@ -302,10 +293,8 @@ const CreatePost = ({ isOpen, onClose }) => {
                 const createdPost = response.data?.data || response.data;
                 useAuthStore.getState().updatePostCountLocally(createdPost);
 
-                // 🎯 1. Toast Trigger
                 showPostSuccessToast(formData.title);
 
-                // 🎯 2. Form Reset & Close Modal
                 resetForm();
                 onClose();
             }
@@ -325,12 +314,11 @@ const CreatePost = ({ isOpen, onClose }) => {
                 onClick={handleCloseModal}
             />
 
-            {/* Main Dialog Card */}
             <div
                 className="relative w-full max-w-lg bg-white rounded-3xl shadow-2xl border border-slate-100 overflow-hidden animate-in zoom-in-95 duration-200"
                 onClick={(e) => e.stopPropagation()}
             >
-                {/* Header */}
+
                 <div className="bg-gradient-to-r from-blue-600 via-blue-500 to-indigo-600 px-6 py-4 text-white flex justify-between items-center shadow-sm">
                     <div>
                         <h2 className="text-sm font-black uppercase tracking-wider">
@@ -348,9 +336,8 @@ const CreatePost = ({ isOpen, onClose }) => {
                     </button>
                 </div>
 
-                {/* Input Form Fields */}
                 <div className="p-6 space-y-4 max-h-[60vh] overflow-y-auto">
-                    {/* Title */}
+
                     <div className="relative">
                         <Type className="absolute left-3.5 top-3.5 h-4 w-4 text-slate-400" />
                         <input
@@ -364,7 +351,6 @@ const CreatePost = ({ isOpen, onClose }) => {
                         />
                     </div>
 
-                    {/* Description */}
                     <div className="relative">
                         <AlignLeft className="absolute left-3.5 top-3.5 h-4 w-4 text-slate-400" />
                         <textarea
@@ -377,7 +363,6 @@ const CreatePost = ({ isOpen, onClose }) => {
                         />
                     </div>
 
-                    {/* Target URL & Live Verifier Button */}
                     <div className="flex gap-2">
                         <div className="relative flex-1">
                             <LinkIcon className="absolute left-3.5 top-3.5 h-4 w-4 text-slate-400" />
@@ -426,7 +411,6 @@ const CreatePost = ({ isOpen, onClose }) => {
                         </button>
                     </div>
 
-                    {/* Tags */}
                     <div className="relative">
                         <Hash className="absolute left-3.5 top-3.5 h-4 w-4 text-slate-400" />
                         <input
@@ -440,7 +424,6 @@ const CreatePost = ({ isOpen, onClose }) => {
                         />
                     </div>
 
-                    {/* Image Upload Zone */}
                     <div>
                         <div className="flex items-center justify-between mb-2">
                             <label className="text-xs font-bold text-slate-700">
@@ -493,7 +476,6 @@ const CreatePost = ({ isOpen, onClose }) => {
                     </div>
                 </div>
 
-                {/* Modal Footer */}
                 <div className="px-6 py-4 bg-slate-50 border-t border-slate-100 flex gap-3">
                     <button
                         onClick={handleCloseModal}
@@ -514,7 +496,6 @@ const CreatePost = ({ isOpen, onClose }) => {
                 </div>
             </div>
 
-            {/* Preview Confirmation Modal */}
             <PostPreview
                 isOpen={showPreview}
                 data={formData}

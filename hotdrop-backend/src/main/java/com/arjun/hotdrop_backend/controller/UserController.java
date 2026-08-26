@@ -60,9 +60,7 @@ public class UserController {
            @PathVariable UUID userId,
            @AuthenticationPrincipal UserDetails userDetails) {
 
-
       String currentHotdropId = (userDetails != null) ? userDetails.getUsername() : null;
-
 
       List<FollowerUserDto> followers = userService.getUserFollowers(userId, currentHotdropId);
 
@@ -88,7 +86,6 @@ public class UserController {
       System.out.println("====== SYSTEM DEBUG END ======");
       String currentHotdropId = userDetails.getUsername();
 
-
       UserResponseDto updatedProfile = userService.updateProfileDetails(
               userIdFromParams,
               currentHotdropId,
@@ -107,13 +104,11 @@ public class UserController {
          return ResponseHandler.generateResponse(HttpStatus.UNAUTHORIZED, "User session not found or token missing", null);
       }
 
-      // authentication.getName() returns the email/username set in JWT filter
       String hotdropId = authentication.getName();
       MeResponseDto response = userService.getMeByHotdropId(hotdropId);
 
       return ResponseHandler.generateResponse(HttpStatus.OK, "User found successfully", response);
    }
-
 
    @GetMapping("/{userId}/get-all-following")
    public ResponseEntity<List<UserResponseDto>> getFollowing(@PathVariable UUID userId) {

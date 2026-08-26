@@ -20,7 +20,7 @@ import { showErrorToast, showSuccessToast } from "../../toast/Toast";
 const ForgotPassword = () => {
   const navigate = useNavigate();
 
-  const [step, setStep] = useState(1); // 1: Send Email, 2: Verify OTP & Reset Password
+  const [step, setStep] = useState(1); 
   const [email, setEmail] = useState("");
   const [otp, setOtp] = useState("");
   const [newPassword, setNewPassword] = useState("");
@@ -41,7 +41,6 @@ const ForgotPassword = () => {
     newPassword.length > 0 &&
     newPassword === confirmPassword;
 
-  // Step 1: Send OTP to Email (/auth/forgot-password)
   const handleSendOtp = async (e) => {
     e.preventDefault();
     const trimmedEmail = email.trim();
@@ -70,7 +69,6 @@ const ForgotPassword = () => {
     }
   };
 
-  // Resend OTP handler
   const handleResendOtp = async () => {
     if (resending || loading) return;
     try {
@@ -88,7 +86,6 @@ const ForgotPassword = () => {
     }
   };
 
-  // Step 2: Verify OTP and Reset Password (/auth/verify-otp)
   const handleVerifyOtpAndReset = async (e) => {
     e.preventDefault();
     setHasAttemptedSubmit(true);
@@ -144,7 +141,7 @@ const ForgotPassword = () => {
 
   return (
     <div className="relative min-h-screen overflow-hidden bg-slate-50">
-      {/* Background Orbs */}
+
       <div className="absolute -left-32 -top-32 h-96 w-96 rounded-full bg-blue-200 blur-[120px] opacity-50" />
       <div className="absolute right-0 top-0 h-96 w-96 rounded-full bg-cyan-200 blur-[120px] opacity-40" />
       <div className="absolute bottom-0 left-1/3 h-80 w-80 rounded-full bg-indigo-200 blur-[100px] opacity-40" />
@@ -156,7 +153,7 @@ const ForgotPassword = () => {
           transition={{ duration: 0.45 }}
           className="relative z-10 w-full max-w-sm"
         >
-          {/* Logo Header */}
+
           <div className="mb-4 text-center">
             <h1 className="mt-2 text-3xl font-black tracking-tight">
               <span className="text-orange-500">HOT</span>
@@ -167,9 +164,8 @@ const ForgotPassword = () => {
             </p>
           </div>
 
-          {/* Form Card */}
           <div className="relative overflow-hidden rounded-[24px] border border-white/40 bg-white/80 p-5 shadow-[0_20px_50px_rgba(0,0,0,0.08)] backdrop-blur-xl">
-            {/* Smooth Loading Overlay */}
+
             <AnimatePresence>
               {loading && (
                 <motion.div
@@ -189,7 +185,7 @@ const ForgotPassword = () => {
             </AnimatePresence>
 
             {step === 1 ? (
-              /* Step 1: Send OTP */
+
               <form onSubmit={handleSendOtp} className="space-y-4">
                 <div>
                   <label className="mb-1 ml-1 block text-[11px] font-semibold text-slate-700">
@@ -232,9 +228,9 @@ const ForgotPassword = () => {
                 </button>
               </form>
             ) : (
-              /* Step 2: OTP & New Password Form */
+
               <form onSubmit={handleVerifyOtpAndReset} className="space-y-3">
-                {/* Email Display & Edit option */}
+
                 <div className="flex items-center justify-between rounded-xl bg-blue-50/80 px-3 py-2 text-xs border border-blue-100">
                   <div className="flex items-center gap-2 min-w-0">
                     <CheckCircle2 className="h-4 w-4 text-blue-600 shrink-0" />
@@ -252,7 +248,6 @@ const ForgotPassword = () => {
                   </button>
                 </div>
 
-                {/* OTP Code */}
                 <div>
                   <div className="mb-1 flex items-center justify-between">
                     <label className="ml-1 text-[11px] font-semibold text-slate-700">
@@ -286,7 +281,6 @@ const ForgotPassword = () => {
                   </div>
                 </div>
 
-                {/* New Password */}
                 <div>
                   <label className="mb-1 ml-1 block text-[11px] font-semibold text-slate-700">
                     New Password
@@ -330,7 +324,6 @@ const ForgotPassword = () => {
                   </div>
                 </div>
 
-                {/* Confirm Password */}
                 <div>
                   <label className="mb-1 ml-1 block text-[11px] font-semibold text-slate-700">
                     Confirm New Password
@@ -373,7 +366,6 @@ const ForgotPassword = () => {
                     </button>
                   </div>
 
-                  {/* Password match error / success message */}
                   <AnimatePresence>
                     {isPasswordMismatch && (
                       <motion.div
@@ -401,7 +393,6 @@ const ForgotPassword = () => {
                   </AnimatePresence>
                 </div>
 
-                {/* Submit Button */}
                 <button
                   disabled={loading}
                   type="submit"
@@ -428,7 +419,6 @@ const ForgotPassword = () => {
               </form>
             )}
 
-            {/* Divider */}
             <div className="my-4 flex items-center gap-3">
               <div className="h-px flex-1 bg-slate-200" />
               <span className="text-[10px] uppercase tracking-wider text-slate-400">
@@ -437,7 +427,6 @@ const ForgotPassword = () => {
               <div className="h-px flex-1 bg-slate-200" />
             </div>
 
-            {/* Back to Login Link */}
             <p className="text-center text-sm text-slate-500">
               Remember your password?{" "}
               <Link

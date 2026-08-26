@@ -33,7 +33,7 @@ const PreviewModal = ({ url, onClose }) => {
   return (
     <AnimatePresence>
       <div className="fixed inset-0 z-[9999] flex items-center justify-center p-0 sm:p-4 lg:p-6">
-        {/* Backdrop */}
+
         <motion.div
           initial={{ opacity: 0, backdropFilter: "blur(0px)" }}
           animate={{ opacity: 1, backdropFilter: "blur(12px)" }}
@@ -42,14 +42,13 @@ const PreviewModal = ({ url, onClose }) => {
           onClick={onClose}
         />
 
-        {/* Modal Container */}
         <motion.div
           initial={{ scale: 0.95, opacity: 0, y: 20 }}
           animate={{ scale: 1, opacity: 1, y: 0 }}
           exit={{ scale: 0.95, opacity: 0, y: 20 }}
           className="relative w-full h-full max-w-[95%] bg-white shadow-2xl overflow-hidden flex flex-col sm:rounded-[2rem] border border-white/20 mx-auto"
         >
-          {/* Header - Fixed Mobile Button */}
+
           <div className="flex items-center justify-between px-4 sm:px-6 py-2 border-b border-slate-100 bg-white/90 backdrop-blur-md z-[60]">
             <div className="flex items-center gap-3">
               <div className="relative shrink-0">
@@ -77,7 +76,7 @@ const PreviewModal = ({ url, onClose }) => {
             </div>
 
             <div className="flex items-center gap-2">
-              {/* Launch Button - Now Visible on Mobile too */}
+
             <a
   href={url}
   target="_blank"
@@ -85,10 +84,9 @@ const PreviewModal = ({ url, onClose }) => {
   onClick={onClose}
   className="group relative flex items-center gap-1.5 px-4 sm:px-6 py-2 sm:py-2.5 bg-blue-600 text-white rounded-xl text-[9px] sm:text-[10px] font-bold uppercase tracking-widest overflow-hidden transition-all duration-500 shadow-[0_0_15px_rgba(37,99,235,0.3)] hover:shadow-[0_0_25px_rgba(37,99,235,0.6)] active:scale-95"
 >
-  {/* ⚡ Shiny Blue Gradient Flash */}
+
   <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent -translate-x-full group-hover:animate-[shimmer_2s_infinite] transition-transform" />
 
-  {/* Button Content */}
   <span className="relative z-10 flex items-center gap-1.5 drop-shadow-sm">
     Visit Site
     <ArrowUpRight 
@@ -97,7 +95,6 @@ const PreviewModal = ({ url, onClose }) => {
     />
   </span>
 
-  {/* Outer Neon Ring */}
   <div className="absolute inset-0 rounded-xl border border-white/20 group-hover:border-white/40 transition-colors" />
 </a>
               <button
@@ -109,7 +106,6 @@ const PreviewModal = ({ url, onClose }) => {
             </div>
           </div>
 
-          {/* PREVIEW AREA */}
           <div className="flex-1 bg-slate-100 relative flex justify-center items-center overflow-hidden p-1 sm:p-2">
             {showFailSafe && (
               <motion.div
@@ -166,9 +162,8 @@ const PreviewModal = ({ url, onClose }) => {
             </div>
           </div>
 
-          {/* FOOTER - Centered Note */}
           <div className="px-6 py-1 bg-white border-t border-slate-50 flex flex-col items-center justify-center gap-3">
-            {/* Note Centered as requested */}
+
             <p className="text-[10px] text-slate-600 font-medium text-center leading-relaxed">
               "Note : In case the preview is blank, or to experience the all functionality, use the{" "}
               <a

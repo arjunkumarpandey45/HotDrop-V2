@@ -26,7 +26,6 @@ public class EmailServiceImpl implements EmailService {
             helper.setTo(toEmail);
             helper.setSubject("Verify your HotDrop Account ");
 
-
             String htmlContent = String.format(
                     "<h3>Hey %s, welcome to HotDrop!</h3>" +
                             "<p>Please click the link below to verify your developer profile and activate your account:</p>" +

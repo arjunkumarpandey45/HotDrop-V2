@@ -26,7 +26,6 @@ public class CloudinaryServiceImpl implements CloudinaryService {
                 throw new RuntimeException("Cannot upload empty file.");
             }
 
-
             Map<?, ?> uploadResult = cloudinary.uploader().upload(file.getBytes(), ObjectUtils.asMap(
                     "folder", "hotdrop_posts",
                     "resource_type", "image",
@@ -53,7 +52,6 @@ public class CloudinaryServiceImpl implements CloudinaryService {
             if (file.isEmpty()) {
                 throw new RuntimeException("Cannot upload empty file.");
             }
-
 
             Map<?, ?> uploadResult = cloudinary.uploader().upload(file.getBytes(), ObjectUtils.asMap(
                     "folder", "hotdrop_profile_picture",

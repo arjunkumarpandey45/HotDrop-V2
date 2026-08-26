@@ -50,14 +50,13 @@ const Login = () => {
           await checkAuth(true);
         }
 
-        
         setTimeout(() => {
           showSuccessToast(
           "Welcome Back",
           result.username || result.hotdropId || "User"
         );
         }, 100);
-        
+
 navigate("/", { replace: true });
       } else {
         showErrorToast(result.message || "Invalid credentials.");
@@ -73,7 +72,6 @@ navigate("/", { replace: true });
   return (
     <div className="relative min-h-screen overflow-hidden bg-slate-50">
 
-      {/* Background Orbs */}
       <div className="absolute -left-32 -top-32 h-96 w-96 rounded-full bg-blue-200 blur-[120px] opacity-50"></div>
       <div className="absolute right-0 top-0 h-96 w-96 rounded-full bg-cyan-200 blur-[120px] opacity-40"></div>
       <div className="absolute bottom-0 left-1/3 h-80 w-80 rounded-full bg-indigo-200 blur-[100px] opacity-40"></div>
@@ -85,7 +83,7 @@ navigate("/", { replace: true });
           transition={{ duration: 0.45 }}
           className="relative z-10 w-full max-w-sm"
         >
-          {/* Logo Header */}
+
           <div className="mb-4 text-center">
             <h1 className="mt-2 text-3xl font-black tracking-tight">
               <span className="text-orange-500">HOT</span>
@@ -96,9 +94,8 @@ navigate("/", { replace: true });
             </p>
           </div>
 
-          {/* Form Card */}
           <div className="relative overflow-hidden rounded-[24px] border border-white/40 bg-white/80 p-5 shadow-[0_20px_50px_rgba(0,0,0,0.08)] backdrop-blur-xl">
-            {/* Smooth Loading Overlay */}
+
             <AnimatePresence>
               {loading && (
                 <motion.div
@@ -118,7 +115,7 @@ navigate("/", { replace: true });
             </AnimatePresence>
 
             <form onSubmit={handleSubmit} className="space-y-3">
-              {/* Identifier Field */}
+
               <div>
                 <label className="mb-1 ml-1 block text-[11px] font-semibold text-slate-700">
                   Email Address or HotDrop ID
@@ -137,7 +134,6 @@ navigate("/", { replace: true });
                 </div>
               </div>
 
-              {/* Password Field */}
               <div>
                 <div className="mb-1 flex items-center justify-between">
                   <label className="ml-1 text-[11px] font-semibold text-slate-700">
@@ -176,7 +172,6 @@ navigate("/", { replace: true });
                 </div>
               </div>
 
-              {/* Submit Button */}
               <button
                 disabled={loading}
                 type="submit"
@@ -200,7 +195,6 @@ navigate("/", { replace: true });
               </button>
             </form>
 
-            {/* Divider */}
             <div className="my-4 flex items-center gap-3">
               <div className="h-px flex-1 bg-slate-200"></div>
               <span className="text-[10px] uppercase tracking-wider text-slate-400">
@@ -209,7 +203,6 @@ navigate("/", { replace: true });
               <div className="h-px flex-1 bg-slate-200"></div>
             </div>
 
-            {/* Register Link */}
             <p className="text-center text-sm text-slate-500">
               New to HotDrop?{" "}
               <Link

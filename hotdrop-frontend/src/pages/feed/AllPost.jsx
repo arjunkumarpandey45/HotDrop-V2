@@ -92,12 +92,10 @@ function AllPost() {
     }
   };
 
-  // States for Infinite Scroll (Spring Boot 0-indexed page)
   const [fetchingMore, setFetchingMore] = useState(false);
   const [page, setPage] = useState(0);
   const [hasMore, setHasMore] = useState(true);
 
-  // 1. DATA FETCHING MATCHING BACKEND /posts/feed CONTRACT
   const fetchGlobalFeed = useCallback(async (pageNum = 0, search = "") => {
     try {
       if (pageNum === 0) setLoading(true);
@@ -106,7 +104,6 @@ function AllPost() {
       let fetchedPosts = [];
       let isLast = true;
 
-      // GET /posts/feed?page=0&size=10&sortBy=created_at&direction=DESC&search=...
       const res = await API.get("/posts/feed", {
         params: {
           page: pageNum,
@@ -125,7 +122,6 @@ function AllPost() {
         setPosts((prev) => {
           if (pageNum === 0) return fetchedPosts;
 
-          // Deduplicate using a Map, preserving insertion order
           const postMap = new Map(prev.map((p) => [(p.id || p._id), p]));
           fetchedPosts.forEach((p) => {
             const key = p.id || p._id;
@@ -151,12 +147,10 @@ function AllPost() {
     }
   }, []);
 
-  // Initial Load
   useEffect(() => {
     fetchGlobalFeed(0, searchQuery);
   }, [fetchGlobalFeed, searchQuery]);
 
-  // 2. SCROLL LISTENER (Infinite Scroll Logic - 250px trigger)
   useEffect(() => {
     const container = feedContainerRef.current;
 
@@ -206,7 +200,6 @@ function AllPost() {
     return date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
   };
 
-  // 3. LIKE LOGIC (POST /posts/like-post/{postId})
   const handleLike = async (postToLike) => {
     if (!user) return setShowAuthModal(true);
 
@@ -276,7 +269,6 @@ function AllPost() {
     }
   };
 
-  // Double Tap Heart Trigger
   const triggerDoubleTap = (post) => {
     if (!user) return setShowAuthModal(true);
     const pId = post.id || post._id;
@@ -292,7 +284,6 @@ function AllPost() {
     }, 800);
   };
 
-  // 4. COMMENT LOGIC (POST /posts/comment-to-post/{postId})
   const submitComment = async (e, textOverride) => {
     if (e && e.preventDefault) e.preventDefault();
     if (!user) return setShowAuthModal(true);
@@ -304,7 +295,7 @@ function AllPost() {
 
     try {
       const res = await API.post(`/posts/comment-to-post/${targetPostId}`, { text: finalCommentText });
-      
+
       showCommentToast(finalCommentText ? `"${finalCommentText}"` : "Comment added!");
       const newPopulatedComment = res.data?.data || res.data;
 
@@ -337,7 +328,6 @@ function AllPost() {
     setModalIndex(index);
   };
 
-  // Initial Shimmer Loader
   if (loading) {
     return (
       <div className="min-h-screen bg-[#f8fafc] pt-20 px-4">
@@ -368,16 +358,13 @@ function AllPost() {
   return (
     <div className="h-[calc(100vh-4.25rem)] bg-[#f8fafc] px-2 sm:px-4 overflow-hidden">
       <div className="max-w-7xl mx-auto h-full grid grid-cols-1 lg:grid-cols-4 gap-6 lg:gap-8 items-start">
-        
-        {/* LEFT SIDEBAR (100% Independent Scroll Column) */}
+
         <div className="hidden lg:block h-full overflow-y-auto pt-2 pb-6 pr-1 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
           <Sidebar />
         </div>
 
-        {/* CENTER FEED CONTENT (100% Independent Scroll Column) */}
         <div className="col-span-1 lg:col-span-2 h-full overflow-y-auto pt-2 pb-6 space-y-6 sm:space-y-8 pr-1 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
-          
-          {/* TOP FILTER & QUICK TOPICS BAR */}
+
           <div className="bg-white rounded-3xl p-3 px-3.5 border border-slate-200/80 shadow-sm flex items-center justify-between gap-2.5">
             <div className="flex items-center gap-2 overflow-x-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden py-0.5 flex-1 min-w-0">
               <button
@@ -413,7 +400,6 @@ function AllPost() {
             </button>
           </div>
 
-          {/* LOADING SHIMMER */}
           {loading ? (
             <div className="space-y-6">
               {[1, 2].map((n) => (
@@ -430,7 +416,7 @@ function AllPost() {
               ))}
             </div>
           ) : posts.length === 0 ? (
-            /* EMPTY FEED STATE */
+
             <div className="bg-white rounded-3xl p-10 text-center border border-slate-200/80 shadow-sm space-y-4">
               <div className="w-16 h-16 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center mx-auto">
                 <Flame size={32} />
@@ -441,7 +427,7 @@ function AllPost() {
               </p>
             </div>
           ) : (
-            /* POSTS LIST */
+
             posts.map((post) => {
               const pId = post.id || post._id;
               const imgIndex = currentImage[pId] || 0;
@@ -460,7 +446,7 @@ function AllPost() {
                   key={pId}
                   className="bg-white rounded-3xl border border-slate-200/70 shadow-sm hover:shadow-xl transition-all duration-500 overflow-hidden flex flex-col group/card"
                 >
-                  {/* HEADER */}
+
                   <div className="p-4 sm:p-5 flex items-center justify-between border-b border-slate-100/60">
                     <div 
                       className="flex items-center gap-3 cursor-pointer group/user"
@@ -468,11 +454,11 @@ function AllPost() {
                     >
                       <img 
                         src={ownerAvatar} 
-                        className="w-10 h-10 rounded-full object-cover ring-2 ring-slate-100 group-hover/user:ring-blue-500 transition-all shadow-sm" 
+                        className="w-10 h-10 rounded-full object-cover ring-2 ring-slate-100  transition-all shadow-sm" 
                         alt={ownerHandle} 
                       />
                       <div className="flex flex-col">
-                        <span className="text-xs sm:text-[13px] font-black text-slate-900 lowercase leading-tight group-hover/user:text-blue-600 transition-colors">
+                        <span className="text-xs sm:text-[13px] font-black text-slate-900 lowercase leading-tight transition-colors">
                           @{ownerHandle}
                         </span>
                         <div className="flex items-center gap-1.5 text-[10px] font-bold text-slate-400 mt-0.5">
@@ -482,7 +468,6 @@ function AllPost() {
                     </div>
                   </div>
 
-                  {/* POST IMAGE AREA */}
                   {images.length > 0 && (
                     <div 
                       className="relative mx-2 sm:mx-4 mt-2 sm:mt-3 bg-slate-950 rounded-2xl aspect-[16/9] flex items-center justify-center overflow-hidden border border-slate-900 cursor-pointer group/img"
@@ -495,14 +480,12 @@ function AllPost() {
                         alt={post.title || "Post media"} 
                       />
 
-                      {/* DOUBLE TAP HEART POP */}
                       {isHeartActive && (
                         <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-30 animate-in zoom-in-50 fade-out duration-700">
                           <Heart size={80} className="fill-rose-500 text-rose-500 drop-shadow-[0_10px_25px_rgba(244,63,94,0.8)] animate-pulse" />
                         </div>
                       )}
 
-                      {/* GUEST LOCK OVERLAY */}
                       {!user && (
                         <div className="absolute inset-0 bg-slate-950/60 backdrop-blur-[3px] flex items-center justify-center">
                           <div className="bg-white/95 px-4 py-2.5 rounded-2xl flex items-center gap-2 text-xs font-black uppercase tracking-wider text-slate-900 shadow-2xl">
@@ -511,7 +494,6 @@ function AllPost() {
                         </div>
                       )}
 
-                      {/* CAROUSEL ARROWS */}
                       {images.length > 1 && (
                         <div className="absolute inset-x-3 top-1/2 -translate-y-1/2 flex justify-between pointer-events-none">
                           <button 
@@ -535,7 +517,6 @@ function AllPost() {
                         </div>
                       )}
 
-                      {/* CAROUSEL DOTS */}
                       {images.length > 1 && (
                         <div className="absolute bottom-3 flex gap-1.5">
                           {images.map((_, idx) => (
@@ -549,10 +530,8 @@ function AllPost() {
                     </div>
                   )}
 
-                  {/* POST CONTENT BODY */}
                   <div className="p-4 sm:p-5 flex flex-col">
-                    
-                    {/* TITLE & TAGS */}
+
                     <div className="flex items-start justify-between gap-3 mb-3 flex-wrap sm:flex-nowrap">
                       <h3 className="group/title text-sm sm:text-base font-black uppercase text-slate-900 tracking-tight leading-snug min-w-0 flex-1">
                         {post.title}
@@ -561,7 +540,6 @@ function AllPost() {
                       <PostTags tags={post.tags || post.tagsList || post.tag} postTitle={post.title} />
                     </div>
 
-                    {/* PROJECT LINK BANNER */}
                     {projectLink && (
                       <div 
                         onClick={(e) => {
@@ -609,13 +587,10 @@ function AllPost() {
                       </div>
                     )}
 
-                    {/* DESCRIPTION */}
                     <PostDescription description={post.description} />
 
-                    {/* INTERACTIONS BAR */}
                     <div className="flex items-center gap-6 sm:gap-8 border-t border-slate-100 pt-3.5 mt-1">
-                      
-                      {/* LIKE BUTTON */}
+
                       <div className="flex items-center gap-2 cursor-pointer group/like" onClick={() => handleLike(post)}>
                         <Heart 
                           size={22} 
@@ -633,7 +608,6 @@ function AllPost() {
                         </span>
                       </div>
 
-                      {/* COMMENT BUTTON */}
                       <div 
                         className="flex items-center gap-2 cursor-pointer group/comment" 
                         onClick={() => { 
@@ -647,7 +621,6 @@ function AllPost() {
                         </span>
                       </div>
 
-                      {/* SHARE BUTTON */}
                       <div 
                         className="flex items-center gap-2 cursor-pointer group/share ml-auto" 
                         onClick={() => setSharePost(post)}
@@ -664,7 +637,6 @@ function AllPost() {
             })
           )}
 
-          {/* INFINITE SCROLL BOTTOM FETCHING LOADER */}
           {fetchingMore && (
             <div className="py-8 text-center flex flex-col items-center justify-center gap-2">
               <div className="w-6 h-6 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
@@ -674,7 +646,6 @@ function AllPost() {
             </div>
           )}
 
-          {/* END OF FEED INDICATOR */}
           {!hasMore && posts.length > 0 && (
             <div className="py-12 text-center text-slate-400">
               <div className="w-10 h-10 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-2 text-slate-400">

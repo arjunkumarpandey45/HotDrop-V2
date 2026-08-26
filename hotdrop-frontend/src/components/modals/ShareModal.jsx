@@ -33,13 +33,12 @@ function ShareModal({ post, onClose }) {
         className="relative bg-white rounded-3xl w-full max-w-sm shadow-2xl border border-slate-100 p-6 animate-in zoom-in-95 duration-200"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* BRAND */}
+
         <div className="absolute top-4 left-5 text-[10px] font-black tracking-widest uppercase">
           <span className="text-orange-500">HOT</span>
           <span className="text-blue-600">DROP</span>
         </div>
 
-        {/* HEADER */}
         <div className="flex justify-between items-center mb-4 pt-3">
           <h2 className="font-extrabold text-slate-900 text-base tracking-tight">
             Share Drop
@@ -53,18 +52,15 @@ function ShareModal({ post, onClose }) {
           </button>
         </div>
 
-        {/* DIVIDER */}
         <div className="h-[2px] w-full bg-gradient-to-r from-orange-500 via-blue-500 to-emerald-400 mb-4 rounded-full" />
 
-        {/* LINK PREVIEW */}
         <div className="border border-slate-200 rounded-xl p-3 text-xs font-medium text-slate-700 mb-4 truncate bg-slate-50 shadow-inner">
           {postUrl}
         </div>
 
-        {/* ACTIONS */}
         {!showQR ? (
           <div className="flex flex-col gap-2.5">
-            {/* COPY */}
+
             <button
               onClick={copyLink}
               className="flex items-center justify-between border border-slate-200 rounded-xl px-4 py-2.5 hover:bg-slate-50 transition group"
@@ -82,7 +78,6 @@ function ShareModal({ post, onClose }) {
               </div>
             </button>
 
-            {/* QR CODE */}
             <button
               onClick={() => setShowQR(true)}
               className="flex items-center gap-3 border border-slate-200 rounded-xl px-4 py-2.5 text-xs font-bold text-slate-800 bg-white hover:bg-gradient-to-r hover:from-orange-50 hover:to-blue-50 hover:border-blue-200 transition shadow-sm"
@@ -93,7 +88,6 @@ function ShareModal({ post, onClose }) {
               <span>Scan QR Code</span>
             </button>
 
-            {/* WHATSAPP */}
             <a
               href={`https://wa.me/?text=${encodeURIComponent(postUrl)}`}
               target="_blank"
@@ -106,7 +100,6 @@ function ShareModal({ post, onClose }) {
               <span className="text-xs font-bold text-slate-800">Share on WhatsApp</span>
             </a>
 
-            {/* TWITTER / X */}
             <a
               href={`https://twitter.com/intent/tweet?url=${encodeURIComponent(postUrl)}`}
               target="_blank"
@@ -119,7 +112,6 @@ function ShareModal({ post, onClose }) {
               <span className="text-xs font-bold text-slate-800">Share on X / Twitter</span>
             </a>
 
-            {/* LINKEDIN */}
             <a
               href={`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(postUrl)}`}
               target="_blank"

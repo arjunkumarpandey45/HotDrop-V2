@@ -5,7 +5,7 @@ import API from "../../api/Api";
 import dp from "../../assets/dp.jpg";
 
 function SearchModal({ isOpen, onClose, initialMode = "users" }) {
-  const [searchMode, setSearchMode] = useState(initialMode); // 'users' | 'projects'
+  const [searchMode, setSearchMode] = useState(initialMode); 
   const [searchQuery, setSearchQuery] = useState("");
   const [userSuggestions, setUserSuggestions] = useState([]);
   const [projectSuggestions, setProjectSuggestions] = useState([]);
@@ -26,7 +26,6 @@ function SearchModal({ isOpen, onClose, initialMode = "users" }) {
     }
   }, [isOpen, initialMode]);
 
-  // LIVE LETTER-BY-LETTER SUGGESTIONS FETCHING
   useEffect(() => {
     const rawQ = searchQuery.trim();
     if (!rawQ) {
@@ -48,11 +47,10 @@ function SearchModal({ isOpen, onClose, initialMode = "users" }) {
       setLoading(true);
 
       if (searchMode === "users") {
-        // --- 👤 CREATOR SUGGESTIONS (GET /users/suggestions/{query} & /users/search/{hotdropId}) ---
+
         try {
           let userList = [];
 
-          // Primary Spring Boot route: GET /users/suggestions/{query}
           try {
             const res1 = await API.get(`/users/suggestions/${encodeURIComponent(cleanQ)}`);
             const payload1 = res1.data?.data;
@@ -60,7 +58,7 @@ function SearchModal({ isOpen, onClose, initialMode = "users" }) {
               ? payload1
               : payload1?.users || (payload1?.hotdropId ? [payload1] : []);
           } catch {
-            // Secondary Spring Boot route: GET /users/search/{hotdropId}
+
             try {
               const res2 = await API.get(`/users/search/${encodeURIComponent(cleanQ)}`);
               const payload2 = res2.data?.data;
@@ -83,7 +81,7 @@ function SearchModal({ isOpen, onClose, initialMode = "users" }) {
           setLoading(false);
         }
       } else {
-        // --- 🚀 PROJECT DROPS SUGGESTIONS (GET /posts/feed?search={query}) ---
+
         try {
           const res = await API.get("/posts/feed", {
             params: { page: 0, size: 6, search: cleanQ, sortBy: "created_at", direction: "DESC" },
@@ -146,7 +144,7 @@ function SearchModal({ isOpen, onClose, initialMode = "users" }) {
         className="bg-white w-full max-w-lg rounded-3xl shadow-2xl border border-slate-100 overflow-hidden animate-in zoom-in-95 duration-150 flex flex-col"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* MODE TABS */}
+
         <div className="flex items-center justify-between p-3 px-4 border-b border-slate-100 bg-slate-50/60">
           <div className="inline-flex bg-slate-200/70 p-1 rounded-xl">
             <button
@@ -171,15 +169,8 @@ function SearchModal({ isOpen, onClose, initialMode = "users" }) {
             </button>
           </div>
 
-          <button
-            onClick={onClose}
-            className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-200/50 rounded-full transition cursor-pointer"
-          >
-            <X size={18} />
-          </button>
         </div>
 
-        {/* INPUT HEADER */}
         <div className="flex items-center gap-3 p-3.5 px-4 sm:px-5 border-b border-slate-100">
           <Search className="w-4 h-4 text-slate-400 shrink-0" />
           <input
@@ -205,7 +196,6 @@ function SearchModal({ isOpen, onClose, initialMode = "users" }) {
           )}
         </div>
 
-        {/* RESULTS SECTION */}
         <div className="p-3 max-h-[360px] overflow-y-auto">
           {searchQuery.trim().length === 0 ? (
             <div className="flex flex-col items-center justify-center py-8 text-center text-slate-400 space-y-1">
@@ -220,7 +210,7 @@ function SearchModal({ isOpen, onClose, initialMode = "users" }) {
               Searching suggestions...
             </div>
           ) : searchMode === "users" ? (
-            /* USER CREATOR RESULTS */
+
             <div className="space-y-1">
               {userSuggestions.map((s, index) => {
                 const avatar = s.profilePicture || s.profileImageUrl || dp;
@@ -253,7 +243,6 @@ function SearchModal({ isOpen, onClose, initialMode = "users" }) {
                 );
               })}
 
-              {/* DIRECT HOTDROP ID FALLBACK OPTION */}
               <button
                 onClick={() => handleSelectUser(activeCleanQuery)}
                 className="w-full mt-2 p-2.5 px-3 bg-blue-50 hover:bg-blue-100/80 text-blue-600 rounded-2xl text-xs font-bold transition flex items-center justify-between cursor-pointer border border-blue-100"
@@ -263,23 +252,33 @@ function SearchModal({ isOpen, onClose, initialMode = "users" }) {
               </button>
             </div>
           ) : (
-            /* PROJECT DROPS RESULTS */
+
             projectSuggestions.length > 0 ? (
               <div className="space-y-1">
                 {projectSuggestions.map((post, index) => {
                   const pTitle = post.title || "Project Drop";
                   const pOwner = post.creator || post.user || {};
                   const pHandle = pOwner.hotdropId || pOwner.username || "dev";
+                  const rawImages = post.imageUrls || post.images || [];
+                  const firstImg = rawImages.length > 0
+                    ? (typeof rawImages[0] === "string" ? rawImages[0] : rawImages[0]?.url)
+                    : null;
 
                   return (
                     <div
                       key={post.id || post._id || index}
                       onClick={() => handleSelectProject(post.title || activeCleanQuery)}
-                      className="flex items-center justify-between p-2.5 px-3 rounded-2xl cursor-pointer hover:bg-slate-50 transition group"
+                      className="flex items-center justify-between p-2.5 px-3 rounded-2xl cursor-pointer hover:bg-slate-50 transition group border border-transparent hover:border-slate-100"
                     >
                       <div className="flex items-center gap-3 truncate">
-                        <div className="w-8 h-8 bg-blue-50 text-blue-600 rounded-xl flex items-center justify-center shrink-0">
-                          <Globe size={16} />
+                        <div className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0 overflow-hidden bg-slate-100 border border-slate-200 shadow-2xs">
+                          {firstImg ? (
+                            <img src={firstImg} alt={pTitle} className="w-full h-full object-cover group-hover:scale-105 transition" />
+                          ) : (
+                            <div className="w-full h-full bg-blue-50 text-blue-600 flex items-center justify-center">
+                              <Globe size={16} />
+                            </div>
+                          )}
                         </div>
                         <div className="flex flex-col truncate">
                           <span className="text-xs font-extrabold text-slate-900 truncate group-hover:text-blue-600 uppercase">
@@ -298,12 +297,12 @@ function SearchModal({ isOpen, onClose, initialMode = "users" }) {
                   onClick={() => handleSelectProject(activeCleanQuery)}
                   className="w-full mt-2 py-2.5 bg-blue-600 text-white rounded-xl text-xs font-black uppercase tracking-wider hover:bg-blue-700 transition flex items-center justify-center gap-1.5 cursor-pointer shadow-md shadow-blue-500/20"
                 >
-                  View All Matching Drops <ArrowRight size={14} />
+                  View All Matching Projects <ArrowRight size={14} />
                 </button>
               </div>
             ) : (
               <div className="text-center py-8 space-y-3">
-                <p className="text-slate-400 text-xs font-medium">No direct drop match for "{activeCleanQuery}"</p>
+                <p className="text-slate-400 text-xs font-medium">No direct project match for "{activeCleanQuery}"</p>
                 <button
                   onClick={() => handleSelectProject(activeCleanQuery)}
                   className="px-4 py-2 bg-blue-600 text-white rounded-xl text-xs font-bold hover:bg-blue-700 transition cursor-pointer"

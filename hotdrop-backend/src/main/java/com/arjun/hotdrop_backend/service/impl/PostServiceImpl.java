@@ -2,10 +2,12 @@ package com.arjun.hotdrop_backend.service.impl;
 
 import com.arjun.hotdrop_backend.dto.*;
 import com.arjun.hotdrop_backend.entity.*;
+import com.arjun.hotdrop_backend.enums.NotificationType;
 import com.arjun.hotdrop_backend.mapper.PostMapper;
 import com.arjun.hotdrop_backend.mapper.PostMapperWithID;
 import com.arjun.hotdrop_backend.repository.*;
 import com.arjun.hotdrop_backend.service.CloudinaryService;
+import com.arjun.hotdrop_backend.service.NotificationService;
 import com.arjun.hotdrop_backend.service.PostService;
 import com.arjun.hotdrop_backend.utils.SlugifyUtil;
 import lombok.RequiredArgsConstructor;
@@ -35,6 +37,7 @@ public class PostServiceImpl implements PostService {
     private final UserRepo userRepo;
     private final PostRepo postRepo;
     private final CloudinaryService cloudinaryService;
+    private final NotificationService notificationService;
     private final List<String> userAgents;
     private final Random random;
     private final CommentRepo commentRepo;
@@ -63,7 +66,6 @@ public class PostServiceImpl implements PostService {
 
         String randomUA = userAgents.get(random.nextInt(userAgents.size()));
 
-
         try {
             HttpRequest headRequest = HttpRequest.newBuilder()
                     .uri(URI.create(cleanUrl))
@@ -88,7 +90,6 @@ public class PostServiceImpl implements PostService {
         } catch (Exception ignored) {
 
         }
-
 
         try {
             HttpRequest getRequest = HttpRequest.newBuilder()
@@ -118,7 +119,7 @@ public class PostServiceImpl implements PostService {
             Thread.currentThread().interrupt();
             log.warn("GET verification thread context interrupted.");
         } catch (Exception e) {
-            // Handles connection timeouts, handshake failures seamlessly
+
         }
 
         return LinkVerificationResponseDto.builder()
@@ -168,7 +169,6 @@ public class PostServiceImpl implements PostService {
                 .user(authenticatedUser)
                 .build();
 
-
         List<PostImage> postImages = new ArrayList<>();
         for (MultipartFile file : files) {
             Map<String, String> cloudMeta = cloudinaryService.uploadImageForPost(file);
@@ -182,13 +182,10 @@ public class PostServiceImpl implements PostService {
             postImages.add(imageEntity);
         }
 
-
         post.setImages(postImages);
-
 
         Post savedPost = postRepo.save(post);
         log.info("Project dropped successfully! Saved Post ID: {}", savedPost.getId());
-
 
         return postMapper.toResponseDto(savedPost);
     }
@@ -213,7 +210,6 @@ public class PostServiceImpl implements PostService {
             for (PostImage img : post.getImages()) {
                 if (img.getUrl() != null && !img.getUrl().isBlank()) {
 
-
                     String historyPublicId = (img.getPublicId() != null) ? img.getPublicId() : "";
 
                     UserImageHistory historyRecord = UserImageHistory.builder()
@@ -233,7 +229,6 @@ public class PostServiceImpl implements PostService {
             }
         }
 
-        // Cascade delete execution
         postRepo.delete(post);
         log.info("Post ID: {} successfully evicted from core layers.", postId);
     }
@@ -241,22 +236,18 @@ public class PostServiceImpl implements PostService {
     @Override
     public PostListResponseDto getAllPostsCompiledFeed(int page, int size, String sortBy, String direction, String search, String currentHotdropId) {
 
-
         Sort sort = direction.equalsIgnoreCase(Sort.Direction.ASC.name())
                 ? Sort.by(sortBy).ascending()
                 : Sort.by(sortBy).descending();
 
         Pageable pageable = PageRequest.of(page, size, sort);
 
-
         String cleanedKeyword = (search == null || search.isBlank()) ? null : search.trim();
         Page<Post> postPage = postRepo.searchFeedEngine(cleanedKeyword, pageable);
-
 
         List<PostResponseDto> postResponseDto = postPage.getContent().stream()
                 .map(post -> postMapperWithID.toResponseDto(post, currentHotdropId))
                 .toList();
-
 
         return PostListResponseDto.builder()
                 .posts(postResponseDto)
@@ -270,7 +261,6 @@ public class PostServiceImpl implements PostService {
 
     @Override
     public PostResponseDto getPostByPostId(UUID postId) {
-
 
         Post post = postRepo.findById(postId).orElse(null);
         if (post == null) {
@@ -291,13 +281,20 @@ public class PostServiceImpl implements PostService {
         if (existingLike.isPresent()) {
             likeRepo.delete(existingLike.get());
             post.setLikeCount(Math.max(0, post.getLikeCount() - 1));
+
         } else {
             likeRepo.save(Like.builder().user(user).post(post).build());
             post.setLikeCount(post.getLikeCount() + 1);
+            notificationService.sendNotification(
+                    user,
+                    post.getUser(),
+                    NotificationType.LIKE,
+                    "@" + user.getHotdropId() + " liked your post '" + post.getTitle() + "'",
+                    post.getId()
+            );
         }
 
         postRepo.save(post);
-
 
         return postMapperWithID.toResponseDto(post, hotdropId);
     }
@@ -315,7 +312,6 @@ public class PostServiceImpl implements PostService {
         User user = userRepo.findByHotdropId(hotdropId)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
-
         Comment comment = Comment.builder()
                 .text(text.trim())
                 .user(user)
@@ -323,10 +319,16 @@ public class PostServiceImpl implements PostService {
                 .build();
         Comment savedComment = commentRepo.save(comment);
 
-
         post.setCommentCount(post.getCommentCount() + 1);
-        postRepo.save(post);
 
+        notificationService.sendNotification(
+                user,
+                post.getUser(),
+                NotificationType.COMMENT,
+                "@" + user.getHotdropId() + " commented: " + text.trim(),
+                post.getId()
+        );
+        postRepo.save(post);
 
         var userSummary = PostResponseDto.UserSummaryDto.builder()
                 .id(user.getId())
@@ -360,7 +362,6 @@ public class PostServiceImpl implements PostService {
         }
         commentRepo.delete(comment);
 
-
         post.setCommentCount(Math.max(0, post.getCommentCount() - 1));
         postRepo.save(post);
     }
@@ -373,17 +374,13 @@ public class PostServiceImpl implements PostService {
             throw new RuntimeException("Target user not found");
         }
 
-
         Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
 
-
         Page<Post> postPage = postRepo.findByUserId(userId, pageable);
-
 
         List<PostResponseDto> postResponseDtos = postPage.getContent().stream()
                 .map(post -> postMapperWithID.toResponseDto(post, currentHotdropId))
                 .toList();
-
 
         return PostListResponseDto.builder()
                 .posts(postResponseDtos)
@@ -399,7 +396,15 @@ public class PostServiceImpl implements PostService {
     @Transactional(readOnly = true)
     public PostResponseDto getPostByShareUrl(String shareUrl, String hotdropId) {
         Post post = postRepo.findByShareUrl(shareUrl)
-                .orElseThrow(() -> new RuntimeException("Post not found with shareUrl: " + shareUrl));
+                .or(() -> {
+                    try {
+                        UUID uuid = UUID.fromString(shareUrl);
+                        return postRepo.findById(uuid);
+                    } catch (Exception e) {
+                        return java.util.Optional.empty();
+                    }
+                })
+                .orElseThrow(() -> new RuntimeException("Post not found with shareUrl / id: " + shareUrl));
 
         return postMapperWithID
                 .toResponseDto(post, hotdropId);

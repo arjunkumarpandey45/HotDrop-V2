@@ -25,14 +25,12 @@ function CommentModal({
 
   const postId = post?.id || post?._id;
 
-  // 1. Instantly sync with prop updates
   useEffect(() => {
     if (Array.isArray(post?.comments)) {
       setLocalComments(post.comments);
     }
   }, [post?.comments]);
 
-  // 2. Fetch fresh comments from GET /posts/comments/{postId}
   useEffect(() => {
     const fetchComments = async () => {
       if (!postId) {
@@ -41,7 +39,7 @@ function CommentModal({
       }
       try {
         setLoadingComments(true);
-        // GET /posts/get-comment-by-post-id/{postId} -> returns ApiResponse<List<CommentResponseDto>>
+
         const res = await API.get(`/posts/get-comment-by-post-id/${postId}`);
         const commentsList = res.data?.data;
 
@@ -92,7 +90,7 @@ function CommentModal({
     }
 
     try {
-      // DELETE /posts/delete-comment/{commentId}
+
       await API.delete(`/posts/delete-comment/${commentId}`);
       showCommentDeletedToast("Comment deleted!");
     } catch (error) {
@@ -141,7 +139,7 @@ function CommentModal({
       className="fixed inset-0 bg-slate-950/70 backdrop-blur-md z-[1500] flex items-center justify-center p-4 animate-in fade-in duration-200 select-none"
       onClick={onClose}
     >
-      {/* DELETE CONFIRMATION MODAL */}
+
       {deleteConfirm && (
         <div className="fixed inset-0 z-[1600] flex items-center justify-center p-4">
           <div
@@ -176,12 +174,11 @@ function CommentModal({
         </div>
       )}
 
-      {/* DIALOG BOX */}
       <div 
         className="bg-white w-full max-w-md h-[520px] rounded-3xl shadow-2xl flex flex-col overflow-hidden border border-slate-100 animate-in zoom-in-95 duration-200"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* HEADER */}
+
         <div className="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
           <div className="flex items-center gap-2.5">
             <div className="p-2 bg-blue-50 rounded-xl text-blue-600">
@@ -199,7 +196,6 @@ function CommentModal({
           </button>
         </div>
 
-        {/* COMMENTS LIST */}
         <div className="flex-1 overflow-y-auto px-6 py-4 space-y-4">
           {loadingComments && localComments.length === 0 ? (
             <div className="h-full flex flex-col items-center justify-center text-blue-600 py-12">
@@ -268,7 +264,7 @@ function CommentModal({
                               title="Delete comment"
                             >
                               <Trash2 size={13} />
-                              
+
                             </button>
                           )}
                         </div>
@@ -285,7 +281,6 @@ function CommentModal({
           )}
         </div>
 
-        {/* INPUT FOOTER */}
         <form onSubmit={handleSubmit} className="p-4 border-t border-slate-100 bg-white flex items-center gap-2">
           <input
             type="text"

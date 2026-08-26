@@ -1,6 +1,5 @@
 @import "tailwindcss";
 
-/* 🎯 High Priority Override for React Toastify Portal */
 @layer utilities {
   div.Toastify__toast-container {
     z-index: 9999999 !important;
@@ -8,7 +7,7 @@
   }
 
   div.Toastify__toast {
-   
+
     box-shadow: none !important;
     padding: 0 !important;
     min-height: auto !important;
@@ -18,4 +17,16 @@
     padding: 0 !important;
     margin: 0 !important;
   }
+
+  .pb-safe {
+    padding-bottom: max(0.5rem, env(safe-area-inset-bottom, 0px));
+  }
+
+  .pt-safe {
+    padding-top: max(0.75rem, env(safe-area-inset-top, 0px));
+  }
+}
+
+* {
+  -webkit-tap-highlight-color: transparent;
 }

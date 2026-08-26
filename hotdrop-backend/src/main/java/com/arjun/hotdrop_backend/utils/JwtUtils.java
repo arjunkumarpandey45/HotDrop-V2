@@ -13,7 +13,6 @@ import javax.crypto.SecretKey;
 
 import java.util.Date;
 
-
 @Slf4j
 @Component
 public class JwtUtils {
@@ -87,7 +86,6 @@ public class JwtUtils {
             return false;
         }
     }
-
 
     public String generateTokenFromHotdropId(String hotdropId) {
         return Jwts.builder()

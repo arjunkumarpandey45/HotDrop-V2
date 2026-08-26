@@ -17,7 +17,8 @@ import {
   Tag,
   ArrowLeft,
   SlidersHorizontal,
-  Boxes
+  Boxes,
+  X
 } from "lucide-react";
 import Sidebar from "../../components/layout/Sidebar";
 import Sponser from "../../components/post/Sponser";
@@ -30,6 +31,7 @@ import LikeModal from "../../components/modals/LikeModal";
 import ShareModal from "../../components/modals/ShareModal";
 import ImageModal from "../../components/modals/ImageModal"; 
 import PreviewModal from "../../components/modals/PreviewModal";
+import SearchModal from "../../components/modals/SearchModal";
 import API from "../../api/Api";
 import dp from "../../assets/dp.jpg";
 import { AnimatePresence } from "framer-motion";
@@ -55,6 +57,7 @@ function SearchPage() {
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [doubleTapHeartMap, setDoubleTapHeartMap] = useState({});
   const [showFilterModal, setShowFilterModal] = useState(false);
+  const [isSearchModalOpen, setIsSearchModalOpen] = useState(false);
 
   const quickTopics = [
     "React", "NextJS", "MERN", "SpringBoot", "NodeJS", "TailwindCSS", "AI", "Python", "Java", "PostgreSQL"
@@ -89,17 +92,14 @@ function SearchPage() {
     navigate(`/search?q=${encodeURIComponent(cleanTag)}`);
   };
 
-  // Pagination states
   const [fetchingMore, setFetchingMore] = useState(false);
   const [page, setPage] = useState(0);
   const [hasMore, setHasMore] = useState(true);
 
-  // Sync searchInput when URL query changes
   useEffect(() => {
     setSearchInput(query);
   }, [query]);
 
-  // Fetch search feed matching title or tags
   const fetchSearchResults = useCallback(async (pageNum = 0, q = "") => {
     if (!q.trim()) {
       setPosts([]);
@@ -116,7 +116,7 @@ function SearchPage() {
       let isLast = true;
 
       try {
-        // GET /posts/feed?search={q}&page={pageNum}&size=10
+
         const res = await API.get("/posts/feed", {
           params: {
             page: pageNum,
@@ -135,8 +135,7 @@ function SearchPage() {
         const fallbackRes = await API.get(`/post/getallposts?page=${pageNum + 1}&limit=10`);
         const payload = fallbackRes.data?.data || fallbackRes.data;
         const rawList = payload?.posts || (Array.isArray(payload) ? payload : []);
-        
-        // Filter locally if fallback endpoint does not support search
+
         const lowerQ = q.toLowerCase();
         fetchedPosts = rawList.filter((p) => {
           const titleMatch = (p.title || "").toLowerCase().includes(lowerQ);
@@ -177,13 +176,11 @@ function SearchPage() {
     }
   }, []);
 
-  // Trigger search on query or page change
   useEffect(() => {
     setPage(0);
     fetchSearchResults(0, query);
   }, [query, fetchSearchResults]);
 
-  // Infinite Scroll Listener
   useEffect(() => {
     const handleScroll = () => {
       const scrollHeight = document.documentElement.scrollHeight;
@@ -221,7 +218,6 @@ function SearchPage() {
     return date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
   };
 
-  // Like Logic
   const handleLike = async (postToLike) => {
     if (!user) return setShowAuthModal(true);
 
@@ -295,7 +291,6 @@ function SearchPage() {
     }, 800);
   };
 
-  // Comment Logic
   const submitComment = async (e) => {
     e.preventDefault();
     if (!user) return setShowAuthModal(true);
@@ -305,7 +300,7 @@ function SearchPage() {
 
     try {
       const res = await API.post(`/posts/comment-to-post/${targetPostId}`, { text: commentText });
-      
+
       showCommentToast(commentText ? `"${commentText}"` : "Comment added!");
       const newPopulatedComment = res.data?.data || res.data;
 
@@ -326,7 +321,7 @@ function SearchPage() {
       }
 
       setCommentText(""); 
-    // eslint-disable-next-line no-unused-vars
+
     } catch (error) {
       showErrorToast("Failed to post comment");
     }
@@ -343,16 +338,13 @@ function SearchPage() {
   return (
     <div className="h-[calc(100vh-4.25rem)] bg-[#f8fafc] px-2 sm:px-4 overflow-hidden">
       <div className="max-w-7xl mx-auto h-full grid grid-cols-1 lg:grid-cols-4 gap-6 lg:gap-8 items-start">
-        
-        {/* LEFT SIDEBAR (100% Independent Scroll Column) */}
+
         <div className="hidden lg:block h-full overflow-y-auto pt-2 pb-6 pr-1 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
           <Sidebar />
         </div>
 
-        {/* CENTER SEARCH RESULTS CONTENT (100% Independent Scroll Column) */}
         <div className="col-span-1 lg:col-span-2 h-full overflow-y-auto pt-2 pb-6 space-y-6 sm:space-y-8 pr-1 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
-          
-          {/* SEARCH HEADER CARD */}
+
           <div className="bg-white rounded-3xl p-4 sm:p-6 border border-slate-200/80 shadow-sm space-y-4">
             <div className="flex items-center justify-between">
               <button 
@@ -361,9 +353,7 @@ function SearchPage() {
               >
                 <ArrowLeft size={16} /> Back to Global Feed
               </button>
-              <span className="text-[10px] font-black uppercase tracking-wider text-blue-600 bg-blue-50 px-2.5 py-1 rounded-full">
-                Search Engine
-              </span>
+
             </div>
 
             <form onSubmit={handleSearchSubmit} className="relative flex items-center">
@@ -373,17 +363,19 @@ function SearchPage() {
                 placeholder="Search drops by title, keywords or #tags..."
                 value={searchInput}
                 onChange={(e) => setSearchInput(e.target.value)}
-                className="w-full bg-slate-50 border border-slate-200/90 rounded-2xl pl-10 pr-24 py-3 text-xs sm:text-sm font-semibold text-slate-800 placeholder-slate-400 outline-none focus:border-blue-500 focus:bg-white focus:ring-2 focus:ring-blue-100 transition"
+                onFocus={() => setIsSearchModalOpen(true)}
+                onClick={() => setIsSearchModalOpen(true)}
+                className="w-full bg-slate-50 border border-slate-200/90 rounded-2xl pl-10 pr-24 py-3 text-xs sm:text-sm font-semibold text-slate-800 placeholder-slate-400 outline-none focus:border-blue-500 focus:bg-white focus:ring-2 focus:ring-blue-100 transition cursor-pointer"
               />
               <button
                 type="submit"
-                className="absolute right-2 px-4 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-xl transition shadow-md shadow-blue-500/20"
+                onClick={() => setIsSearchModalOpen(true)}
+                className="absolute right-2 px-4 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-xl transition shadow-md shadow-blue-500/20 cursor-pointer"
               >
                 Search
               </button>
             </form>
 
-            {/* TOP FILTER & QUICK TOPICS BAR */}
             <div className="pt-2 border-t border-slate-100 flex items-center justify-between gap-2.5">
               <div className="flex items-center gap-2 overflow-x-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden py-0.5 flex-1 min-w-0">
                 <button
@@ -434,7 +426,6 @@ function SearchPage() {
             )}
           </div>
 
-          {/* LOADING SHIMMER */}
           {loading ? (
             <div className="space-y-6">
               {[1, 2].map((n) => (
@@ -451,7 +442,7 @@ function SearchPage() {
               ))}
             </div>
           ) : !query.trim() ? (
-            /* EMPTY QUERY STATE */
+
             <div className="bg-white rounded-3xl p-10 text-center border border-slate-200/80 shadow-sm space-y-4">
               <div className="w-16 h-16 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center mx-auto">
                 <Search size={32} />
@@ -474,7 +465,7 @@ function SearchPage() {
               </div>
             </div>
           ) : posts.length === 0 ? (
-            /* NO RESULTS FOUND STATE */
+
             <div className="bg-white rounded-3xl p-10 text-center border border-slate-200/80 shadow-sm space-y-4">
               <div className="w-16 h-16 bg-amber-50 text-amber-500 rounded-2xl flex items-center justify-center mx-auto">
                 <Sparkles size={32} />
@@ -853,6 +844,13 @@ function SearchPage() {
           </div>
         </div>
       )}
+
+      {/* LIVE SEARCH & SUGGESTIONS MODAL */}
+      <SearchModal 
+        isOpen={isSearchModalOpen} 
+        onClose={() => setIsSearchModalOpen(false)} 
+        initialMode="projects" 
+      />
 
     </div>
   );

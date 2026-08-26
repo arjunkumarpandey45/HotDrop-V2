@@ -28,7 +28,7 @@ function FollowingModal({ isOpen, onClose, userId, followingList, onFollowStatus
 
         let listData = [];
         try {
-          // 1. Fetch following list for target profile directly from GET /users/{userId}/get-all-following
+
           const res = await axios.get(`/users/${userId}/get-all-following`);
           const payload = res.data?.data || res.data;
           listData = Array.isArray(payload)
@@ -38,12 +38,10 @@ function FollowingModal({ isOpen, onClose, userId, followingList, onFollowStatus
           console.warn("Could not fetch following from API, using fallback if available:", err);
         }
 
-        // Fallback to followingList prop if listData is empty
         if ((!listData || listData.length === 0) && Array.isArray(followingList) && followingList.length > 0) {
           listData = followingList;
         }
 
-        // 2. Fetch logged in user's following list to know who currentUser is following
         let myFollowingIds = new Set();
         if (currentUserId) {
           try {
@@ -193,7 +191,7 @@ function FollowingModal({ isOpen, onClose, userId, followingList, onFollowStatus
         className="bg-white w-full max-w-sm rounded-3xl overflow-hidden shadow-2xl border border-slate-100 animate-in zoom-in-95 duration-150 flex flex-col max-h-[80vh]"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Modal Header */}
+
         <div className="p-4 px-5 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
           <h3 className="font-extrabold text-sm text-slate-900">Following</h3>
           <button
@@ -204,7 +202,6 @@ function FollowingModal({ isOpen, onClose, userId, followingList, onFollowStatus
           </button>
         </div>
 
-        {/* User List Container */}
         <div className="flex-1 overflow-y-auto p-3 space-y-1">
           {loading ? (
             <div className="flex justify-center items-center py-10 text-slate-400">

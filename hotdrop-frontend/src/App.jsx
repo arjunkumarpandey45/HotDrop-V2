@@ -8,6 +8,7 @@ import VerifyLink from './pages/auth/VerifyLink';
 import Login from './pages/auth/Login';
 import ForgotPassword from './pages/auth/ForgotPassword';
 import Navbar from './components/layout/Navbar';
+import BottomNav from './components/layout/BottomNav';
 import CreatePost from './pages/post/CreatePost';
 import EditUserProfile from './pages/profile/EditUserProfile';
 import FromShare from './pages/post/FromShare';
@@ -25,9 +26,20 @@ function AppLayout() {
   const location = useLocation();
   const checkAuth = useAuthStore((state) => state.checkAuth);
 
+  const user = useAuthStore((state) => state.user);
   const { isCreatePostOpen, closeCreatePost } = useUIStore();
 
   const showNavbar = location.pathname === '/';
+
+  const isMyProfile =
+    location.pathname === '/profile/me' ||
+    Boolean(
+      user && (
+        (user.hotdropId && location.pathname === `/user/userprofile/${user.hotdropId}`) ||
+        (user.username && location.pathname === `/user/userprofile/${user.username}`)
+      )
+    );
+  const showBottomNav = location.pathname === '/' || isMyProfile;
 
   useEffect(() => {
     checkAuth();
@@ -37,9 +49,11 @@ function AppLayout() {
     <div className="relative min-h-screen">
       {showNavbar && <Navbar />}
 
-      <main className={showNavbar ? "pt-16" : ""}>
+      <main className={`${showNavbar ? "pt-16" : ""} ${showBottomNav ? "pb-20 md:pb-0" : ""}`}>
         <Outlet />
       </main>
+
+      {showBottomNav && <BottomNav />}
 
       <CreatePost isOpen={isCreatePostOpen} onClose={closeCreatePost} />
     </div>

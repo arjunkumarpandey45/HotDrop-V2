@@ -1,8 +1,5 @@
 package com.arjun.hotdrop_backend.error;
 
-
-
-
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -19,7 +16,6 @@ import java.util.stream.Collectors;
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
-
     @ExceptionHandler(RuntimeException.class)
     public ResponseEntity<ApiErrorResponseDto> handleRuntimeException(
             RuntimeException ex, HttpServletRequest request) {
@@ -34,7 +30,6 @@ public class GlobalExceptionHandler {
 
         return new ResponseEntity<>(errorResponse, HttpStatus.BAD_REQUEST);
     }
-
 
     @ExceptionHandler(BadCredentialsException.class)
     public ResponseEntity<ApiErrorResponseDto> handleBadCredentials(
@@ -51,7 +46,6 @@ public class GlobalExceptionHandler {
         return new ResponseEntity<>(errorResponse, HttpStatus.UNAUTHORIZED);
     }
 
-
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ApiErrorResponseDto> handleValidationExceptions(
             MethodArgumentNotValidException ex, HttpServletRequest request) {
@@ -66,7 +60,7 @@ public class GlobalExceptionHandler {
                 .status(HttpStatus.BAD_REQUEST.value())
                 .error("Validation Failed")
                 .message(errorMessage)
-                .timestamp(LocalDateTime.now()) // Clean direct assign
+                .timestamp(LocalDateTime.now()) 
                 .path(request.getRequestURI())
                 .build();
 

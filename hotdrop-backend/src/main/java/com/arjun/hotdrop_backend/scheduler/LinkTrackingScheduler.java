@@ -25,7 +25,6 @@ public class LinkTrackingScheduler {
     private final PostRepo postRepo;
     private final TransactionTemplate transactionTemplate;
 
-
     private final List<String> userAgents;
     private final Random random;
 

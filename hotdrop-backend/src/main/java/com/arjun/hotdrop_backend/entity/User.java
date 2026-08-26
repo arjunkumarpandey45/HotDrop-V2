@@ -45,7 +45,6 @@ public class User {
     @Column(length = 250)
     private String bio;
 
-
     @Column(length = 255)
     private String profileImageUrl;
     @Column(length = 255)
@@ -101,6 +100,5 @@ private  String profileImagePublicId;
     )
     @Builder.Default
     private Set<Role> roles = new HashSet<>();
-
 
 }

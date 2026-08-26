@@ -38,7 +38,6 @@ API.interceptors.response.use(
   async (error) => {
     const originalRequest = error.config;
 
-    // Do NOT attempt token refresh on login, signup, refresh, logout, or public share endpoints
     if (
       !originalRequest ||
       originalRequest.url?.includes("/auth/refresh") ||
@@ -75,7 +74,6 @@ API.interceptors.response.use(
         processQueue(null, refreshRes);
         isRefreshing = false;
 
-        // Retry original request
         return API(originalRequest);
       } catch (refreshError) {
         console.warn("❌ Refresh Token Expired or Invalid");

@@ -1,7 +1,5 @@
 package com.arjun.hotdrop_backend.utils;
 
-
-
 import com.arjun.hotdrop_backend.dto.ApiResponse;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -19,11 +17,9 @@ public class ResponseHandler {
         return new ResponseEntity<>(apiResponse, status);
     }
 
-
     public static ResponseEntity<ApiResponse<Void>> generateResponse(HttpStatus status, String message) {
         return generateResponse(status, message, null);
     }
-
 
     public static ResponseEntity<ApiResponse<Object>> generateErrorResponse(HttpStatus status, String message, String errorDetails) {
         ApiResponse<Object> apiResponse = ApiResponse.builder()

@@ -28,7 +28,7 @@ function FollowersModal({ isOpen, onClose, userId, followersList, onFollowStatus
 
         let listData = [];
         try {
-          // 1. Fetch followers list directly from GET /users/{userId}/get-all-followers
+
           const res = await axios.get(`/users/${userId}/get-all-followers`);
           const payload = res.data?.data || res.data;
           listData = Array.isArray(payload)
@@ -38,12 +38,10 @@ function FollowersModal({ isOpen, onClose, userId, followersList, onFollowStatus
           console.warn("Could not fetch followers from API, using fallback if available:", err);
         }
 
-        // Fallback to followersList prop if listData is empty
         if ((!listData || listData.length === 0) && Array.isArray(followersList) && followersList.length > 0) {
           listData = followersList;
         }
 
-        // 2. Fetch logged in user's following list to accurately verify who currentUser follows
         let myFollowingIds = new Set();
         if (currentUserId) {
           try {
@@ -66,7 +64,6 @@ function FollowersModal({ isOpen, onClose, userId, followersList, onFollowStatus
 
         if (!isMounted) return;
 
-        // 3. Normalize & Annotate user list with accurate follow status
         const annotatedUsers = listData.map((rawItem) => {
           const u = typeof rawItem === "object" && rawItem !== null ? rawItem : { id: String(rawItem), hotdropId: String(rawItem) };
           const uId = String(u.id || u._id || u.userId || u.targetUserId || "");
@@ -198,7 +195,7 @@ function FollowersModal({ isOpen, onClose, userId, followersList, onFollowStatus
         className="bg-white w-full max-w-sm rounded-3xl overflow-hidden shadow-2xl border border-slate-100 animate-in zoom-in-95 duration-150 flex flex-col max-h-[80vh]"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Modal Header */}
+
         <div className="p-4 px-5 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
           <h3 className="font-extrabold text-sm text-slate-900">Followers</h3>
           <button
@@ -209,7 +206,6 @@ function FollowersModal({ isOpen, onClose, userId, followersList, onFollowStatus
           </button>
         </div>
 
-        {/* User List Container */}
         <div className="flex-1 overflow-y-auto p-3 space-y-1">
           {loading ? (
             <div className="flex justify-center items-center py-10 text-slate-400">

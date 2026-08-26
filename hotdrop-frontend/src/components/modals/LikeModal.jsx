@@ -22,7 +22,7 @@ function LikeModal({ post, onClose }) {
 
       try {
         setLoading(true);
-        // GET /posts/{postId}/get-who-likes-post -> returns ApiResponse<List<UserSummaryDto>>
+
         const res = await API.get(`/posts/${postId}/get-who-likes-post`);
         const payload = res.data?.data;
         const list = Array.isArray(payload)
@@ -56,7 +56,6 @@ function LikeModal({ post, onClose }) {
     navigate(`/user/userprofile/${hotdropId}`);
   };
 
-  // Accurate Count: Keep count synced with live post likeCount or likesList
   const count = Math.max(post?.likeCount ?? 0, likesList.length);
 
   return (
@@ -68,7 +67,7 @@ function LikeModal({ post, onClose }) {
         className="bg-white w-full max-w-xs rounded-3xl overflow-hidden shadow-2xl border border-slate-100 animate-in zoom-in-95 duration-150 flex flex-col"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* HEADER */}
+
         <div className="p-4 px-5 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
           <div className="flex items-center gap-2">
             <Heart size={18} className="text-rose-500 fill-rose-500" />
@@ -84,7 +83,6 @@ function LikeModal({ post, onClose }) {
           </button>
         </div>
 
-        {/* LIKES LIST */}
         <div className="max-h-[350px] overflow-y-auto p-3 space-y-2">
           {loading && likesList.length === 0 ? (
             <div className="flex justify-center items-center py-8 text-slate-400">

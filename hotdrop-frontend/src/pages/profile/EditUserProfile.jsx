@@ -551,17 +551,14 @@ function EditUserProfile() {
 
   return (
     <div className="w-full min-h-screen bg-[#f8fafc] px-2 sm:px-4 py-3 sm:py-5 select-none font-sans space-y-6">
-      
-      {/* 👤 1. USER PROFILE CARD (INDEPENDENT COMPACT CONTAINER: max-w-4xl) */}
+
       <div className="max-w-4xl mx-auto w-full">
         <div className="bg-white rounded-3xl border border-slate-200/80 shadow-sm hover:shadow-md transition-all overflow-hidden relative">
-          
-          {/* COMPACT VERCEL / DRIBBBLE STYLE GRADIENT BANNER */}
+
           <div className="h-20 sm:h-32 bg-gradient-to-r from-slate-950 via-indigo-950 to-slate-900 relative p-3 sm:p-4 flex justify-between items-start overflow-hidden">
             <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-blue-600/30 via-indigo-500/10 to-transparent opacity-70" />
             <div className="absolute -right-16 -bottom-16 w-44 h-44 bg-orange-500/15 rounded-full blur-3xl pointer-events-none" />
 
-            {/* BRAND BADGE */}
             <div className="relative z-10 flex items-center gap-1.5 select-none">
               <span className="w-2 h-2 rounded-full bg-orange-500 animate-pulse" />
               <span className="text-xs font-black uppercase tracking-tight text-white flex items-center gap-1">
@@ -570,7 +567,6 @@ function EditUserProfile() {
               </span>
             </div>
 
-            {/* SHARE BUTTON */}
             <div className="relative z-10">
               <button
                 onClick={() => setShowShareModal(true)}
@@ -583,13 +579,10 @@ function EditUserProfile() {
             </div>
           </div>
 
-          {/* PROFILE DETAILS */}
           <div className="px-4 sm:px-6 pb-4 sm:pb-5 relative">
-            
-            {/* TOP ROW: AVATAR + DESKTOP ACTION BUTTONS */}
+
             <div className="flex flex-col sm:flex-row items-center sm:items-end justify-between gap-3 -mt-14 sm:-mt-18 mb-3">
-              
-              {/* AVATAR (MOBILE: 100-120px, DESKTOP: 140-160px) */}
+
               <div 
                 className="relative shrink-0 cursor-pointer group z-20"
                 onClick={() => setShowFullImage(true)}
@@ -608,7 +601,6 @@ function EditUserProfile() {
                 </div>
               </div>
 
-              {/* 💻 DESKTOP ACTION BUTTONS (hidden on mobile) */}
               <div className="hidden sm:flex items-center gap-2">
                 {isOwnProfile ? (
                   <button
@@ -660,7 +652,6 @@ function EditUserProfile() {
 
             </div>
 
-            {/* NAME, BIO & SOCIALS */}
             <div className="space-y-2 text-center sm:text-left">
               <div>
                 <div className="flex flex-col sm:flex-row sm:items-center gap-1.5">
@@ -674,7 +665,6 @@ function EditUserProfile() {
                 </div>
               </div>
 
-              {/* BIO */}
               {displayUser?.bio && (
                 <p className="text-xs text-slate-600 leading-relaxed font-bold max-w-xl whitespace-pre-line">
                   {displayUser.bio}
@@ -682,10 +672,8 @@ function EditUserProfile() {
               )}
             </div>
 
-            {/* BOTTOM ROW: DESKTOP STATS PILLS / MOBILE STATS PILLS & ACTION BUTTONS & LOCATION/JOINED */}
             <div className="pt-2.5 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-2.5">
-              
-              {/* 💻 DESKTOP COMPACT STATS PILLS (hidden on mobile) */}
+
               <div className="hidden sm:grid grid-cols-3 gap-2 max-w-xs">
                 {stats.map((stat, i) => (
                   <button
@@ -704,10 +692,8 @@ function EditUserProfile() {
                 ))}
               </div>
 
-              {/* 📱 MOBILE BLOCK: STATS PILLS JUST ABOVE EDIT PROFILE & CONTACT BUTTONS */}
               <div className="flex sm:hidden flex-col gap-2 w-full pt-1">
-                
-                {/* STATS PILLS (JUST ABOVE!) */}
+
                 <div className="flex items-center justify-center gap-1.5 w-full">
                   {stats.map((stat, i) => (
                     <button
@@ -726,7 +712,6 @@ function EditUserProfile() {
                   ))}
                 </div>
 
-                {/* EDIT PROFILE & CONTACT BUTTONS (JUST BELOW STATS PILLS!) */}
                 <div className="flex items-center gap-2 w-full">
                   {isOwnProfile ? (
                     <button
@@ -778,7 +763,6 @@ function EditUserProfile() {
 
               </div>
 
-              {/* 📍 RIGHT-SIDE BOTTOM LOCATION & JOINED DATE */}
               <div className="flex items-center justify-center sm:justify-end gap-2 text-xs font-bold text-slate-600 shrink-0 w-full sm:w-auto pt-1 sm:pt-0">
                 <span className="flex items-center gap-1 bg-slate-50 px-2.5 py-1 rounded-xl border border-slate-200/80">
                   📍 India
@@ -794,7 +778,6 @@ function EditUserProfile() {
         </div>
       </div>
 
-      {/* 📦 2. USER PROJECT DROPS SECTION (INDEPENDENT FULL-WIDTH CONTAINER: max-w-7xl) */}
       <div className="max-w-7xl mx-auto w-full space-y-4">
         <UserPost
           postsOverride={displayUser?.posts}
@@ -803,7 +786,6 @@ function EditUserProfile() {
         />
       </div>
 
-      {/* FULL IMAGE PREVIEW MODAL */}
       {showFullImage && (
         <div
           className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-950/90 backdrop-blur-md animate-in fade-in duration-200"
@@ -824,7 +806,6 @@ function EditUserProfile() {
         </div>
       )}
 
-      {/* BACKEND INTEGRATION MODALS (PRESERVED 100%) */}
       {isOwnProfile && (
         <EditProfileModal
           key={showEditModal ? "open" : "closed"}
@@ -966,7 +947,6 @@ function EditUserProfile() {
   );
 }
 
-// Helper icon component for stats
 function UserCheckIcon({ size = 14, className = "" }) {
   return (
     <svg className={className} width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">

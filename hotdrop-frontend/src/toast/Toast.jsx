@@ -2,8 +2,6 @@ import { useEffect, useRef, useState } from "react";
 import { toast } from "react-toastify";
 import { motion } from "framer-motion";
 
-// --- 📜 AUTO SCROLLING TEXT COMPONENT ---
-// If the text overflows the container, it smoothly scrolls back and forth so the entire msg is readable!
 const AutoScrollingText = ({ text, className = "" }) => {
   const containerRef = useRef(null);
   const textRef = useRef(null);
@@ -67,7 +65,6 @@ const AutoScrollingText = ({ text, className = "" }) => {
   );
 };
 
-// --- 🎯 BASE TOAST CONFIG ---
 const toastConfig = {
   icon: false,
   closeButton: false,
@@ -75,13 +72,11 @@ const toastConfig = {
   draggable: true,
 };
 
-// Helper for dynamic autoClose duration based on text length
 const getAutoCloseDuration = (msg = "", base = 3000) => {
   if (!msg) return base;
   return Math.max(base, Math.min(7000, msg.length * 85));
 };
 
-// --- ❤️ LIKE TOAST ---
 const showLikeToast = (isLiked = true) => {
   const msg = isLiked ? "Added to your liked drops" : "Removed from liked drops";
   toast(
@@ -132,7 +127,6 @@ const showLikeToast = (isLiked = true) => {
   );
 };
 
-// --- 💬 COMMENT ADDED TOAST ---
 const showCommentToast = (msg = "Comment posted!") => {
   toast(
     <div className="relative flex items-center gap-3.5 pl-5 pr-4 py-3.5 font-sans overflow-hidden min-w-0 w-full">
@@ -161,7 +155,6 @@ const showCommentToast = (msg = "Comment posted!") => {
   );
 };
 
-// --- 🗑️ COMMENT DELETED TOAST ---
 const showCommentDeletedToast = (msg = "Comment deleted.") => {
   toast(
     <div className="relative flex items-center gap-3.5 pl-5 pr-4 py-3.5 font-sans overflow-hidden min-w-0 w-full">
@@ -190,7 +183,6 @@ const showCommentDeletedToast = (msg = "Comment deleted.") => {
   );
 };
 
-// --- ✅ WELCOME / SUCCESS TOAST ---
 const showSuccessToast = (msg) => {
   toast(
     <div className="relative flex items-center gap-3.5 pl-5 pr-4 py-3.5 font-sans overflow-hidden min-w-0 w-full">
@@ -219,7 +211,6 @@ const showSuccessToast = (msg) => {
   );
 };
 
-// --- ❌ ACTION FAILED TOAST ---
 const showErrorToast = (msg) => {
   toast(
     <div className="relative flex items-center gap-3.5 pl-5 pr-4 py-3.5 font-sans overflow-hidden min-w-0 w-full">
@@ -248,7 +239,6 @@ const showErrorToast = (msg) => {
   );
 };
 
-// --- 🚨 SIGNUP ERROR TOAST ---
 const showErrorToastForSIgnup = (msg) => {
   toast(
     <div className="relative flex items-center gap-3.5 pl-5 pr-4 py-3.5 font-sans overflow-hidden min-w-0 w-full">
@@ -277,7 +267,6 @@ const showErrorToastForSIgnup = (msg) => {
   );
 };
 
-// --- 🎉 SIGNUP SUCCESS TOAST ---
 const showSuccessToastForSignup = (msg) => {
   const textToShow = msg || "Welcome to HotDrop!";
   toast(
@@ -307,7 +296,6 @@ const showSuccessToastForSignup = (msg) => {
   );
 };
 
-// --- 🚪 LOGOUT TOAST ---
 const showSuccessToastForLogout = () => {
   const msg = "See you soon!";
   toast(
@@ -337,7 +325,6 @@ const showSuccessToastForLogout = () => {
   );
 };
 
-// --- 👤 PROFILE UPDATED TOAST ---
 const showProfileUpdatedToast = (msg = "Profile updated.") => {
   toast(
     <div className="relative flex items-center gap-3.5 pl-5 pr-4 py-3.5 font-sans overflow-hidden min-w-0 w-full">
@@ -366,7 +353,6 @@ const showProfileUpdatedToast = (msg = "Profile updated.") => {
   );
 };
 
-// --- 🔥 DROP PROJECT SUCCESS TOAST ---
 const showPostSuccessToast = (title) => {
   const msg = title || "Build is live!";
   toast(
@@ -396,7 +382,6 @@ const showPostSuccessToast = (title) => {
   );
 };
 
-// --- ⚠️ DROP PROJECT ERROR TOAST ---
 const showPostErrorToast = (errorMsg) => {
   const msg = errorMsg || "Error occurred!";
   toast(
@@ -426,7 +411,6 @@ const showPostErrorToast = (errorMsg) => {
   );
 };
 
-// --- 🗑️ PROJECT DROP DELETED TOAST ---
 const showProjectDeletedToast = (title = "Project Drop") => {
   const msg = `"${title}" permanently deleted`;
   toast(

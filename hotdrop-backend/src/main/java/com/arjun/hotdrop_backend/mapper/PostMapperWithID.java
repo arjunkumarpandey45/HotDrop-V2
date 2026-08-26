@@ -18,18 +18,15 @@ public class PostMapperWithID {
 
     public PostResponseDto toResponseDto(Post post, String currentHotdropId) {
 
-
         boolean isLiked = false;
         if (currentHotdropId != null) {
             isLiked = likeRepo.existsByUserAndPost(
                     userRepo.findByHotdropId(currentHotdropId).orElse(null), post);
         }
 
-
         List<String> imageUrls = post.getImages().stream()
                 .map(PostImage::getUrl)
                 .toList();
-
 
         PostResponseDto.UserSummaryDto creator = PostResponseDto.UserSummaryDto.builder()
                 .id(post.getUser().getId())

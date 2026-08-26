@@ -1,7 +1,5 @@
 package com.arjun.hotdrop_backend.dto;
 
-
-
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -30,10 +28,7 @@ public class PostResponseDto {
     private List<String> tags;
     private List<String> imageUrls;
 
-    
     private UserSummaryDto creator;
-
-
 
     @Data
     @Builder

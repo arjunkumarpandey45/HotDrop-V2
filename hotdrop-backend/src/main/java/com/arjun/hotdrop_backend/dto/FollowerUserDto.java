@@ -20,7 +20,6 @@ public class FollowerUserDto {
     private String lastName;
     private String profileImageUrl;
 
-
     @JsonProperty("isFollowing")
     private boolean isFollowing;
 }

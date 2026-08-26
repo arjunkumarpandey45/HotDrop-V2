@@ -10,14 +10,18 @@ import {
   UserPlus,
   ArrowRight,
   Globe,
+  Bell,
+  Settings,
 } from "lucide-react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 
 import API from "../../api/Api";
 import dp from "../../assets/dp.jpg";
 import { useAuthStore, useUIStore } from "../../store/useAuthStore";
+import { useNotificationStore } from "../../store/useNotificationStore";
 import { showSuccessToastForLogout } from "../../toast/Toast";
 import SearchModal from "../modals/SearchModal";
+import NotificationDropdown from "../notifications/NotificationDropdown";
 
 const Navbar = () => {
   const [isProfileOpen, setIsProfileOpen] = useState(false);
@@ -25,22 +29,45 @@ const Navbar = () => {
   const [isMobileSearchOpen, setIsMobileSearchOpen] = useState(false);
   const [isLoginPromptOpen, setIsLoginPromptOpen] = useState(false);
   const [isSearchModalOpen, setIsSearchModalOpen] = useState(false);
+  const [isDesktopNotificationOpen, setIsDesktopNotificationOpen] = useState(false);
+  const [isMobileNotificationOpen, setIsMobileNotificationOpen] = useState(false);
+  const [isMobileSettingsOpen, setIsMobileSettingsOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [suggestions, setSuggestions] = useState([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
-  const [searchMode, setSearchMode] = useState("projects"); // 'projects' | 'users'
+  const [searchMode, setSearchMode] = useState("users");
 
   const desktopSearchRef = useRef(null);
   const mobileSearchRef = useRef(null);
+  const desktopNotificationRef = useRef(null);
 
   const { user, isLoggedIn, logout, checkAuth } = useAuthStore();
+  const { openCreatePost } = useUIStore();
+  const {
+    unreadCount,
+    initSocket,
+    disconnectSocket,
+  } = useNotificationStore();
+
   const navigate = useNavigate();
   const location = useLocation();
 
   useEffect(() => {
     checkAuth(true);
   }, []);
+
+  useEffect(() => {
+    if (isLoggedIn && user) {
+      initSocket(user);
+    } else {
+      disconnectSocket();
+    }
+
+    return () => {
+      disconnectSocket();
+    };
+  }, [isLoggedIn, user?.hotdropId]);
 
   const userAvatar =
     user?.profileImageUrl ||
@@ -71,7 +98,6 @@ const Navbar = () => {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [showSuggestions]);
 
-  // LIVE SUGGESTIONS FETCHING FOR DESKTOP & MOBILE (Supports both 'users' & 'projects')
   useEffect(() => {
     const q = searchQuery.trim().replace(/^@/, "");
     if (!q) {
@@ -83,7 +109,6 @@ const Navbar = () => {
     const fetchSuggestions = async () => {
       try {
         if (searchMode === "projects") {
-          // --- 🚀 PROJECT DROPS SEARCH (/posts/feed?search=...) ---
           const res = await API.get("/posts/feed", {
             params: { page: 0, size: 5, search: q, sortBy: "created_at", direction: "DESC" },
           });
@@ -92,7 +117,6 @@ const Navbar = () => {
           setSuggestions(postList.slice(0, 5));
           setShowSuggestions(true);
         } else {
-          // --- 👤 CREATOR SEARCH (/users/suggestions or /users/search) ---
           let userList = [];
           try {
             const res = await API.get(`/users/suggestions/${encodeURIComponent(q)}`);
@@ -157,20 +181,39 @@ const Navbar = () => {
     }
   };
 
-  const { openCreatePost } = useUIStore();
-
   const handleCreateClick = () => {
     if (!isLoggedIn) {
       navigate("/signup");
       return;
     }
     openCreatePost();
-    navigate("/");
+    if (location.pathname !== "/") {
+      navigate("/");
+    }
+  };
+
+  const handleNotificationButtonClick = (isMobile = false) => {
+    if (!isLoggedIn) {
+      navigate("/login");
+      return;
+    }
+
+    const isMobileView = typeof window !== "undefined" && window.innerWidth < 768;
+    if (isMobile || isMobileView) {
+      setIsMobileNotificationOpen((prev) => !prev);
+      setIsDesktopNotificationOpen(false);
+    } else {
+      setIsDesktopNotificationOpen((prev) => !prev);
+      setIsMobileNotificationOpen(false);
+    }
+    setIsProfileOpen(false);
+    setIsMobileSettingsOpen(false);
   };
 
   const handleLogout = async () => {
     try {
       logout();
+      disconnectSocket();
       setTimeout(() => {
         showSuccessToastForLogout();
       }, 500);
@@ -197,21 +240,22 @@ const Navbar = () => {
 
   return (
     <header className={`fixed left-0 right-0 top-0 z-50 px-3 sm:px-4 transition-all duration-300 ${scrolled ? "pt-2" : "pt-3 sm:pt-4"}`}>
-      {(isProfileOpen || isSidebarOpen || isLoginPromptOpen || showSuggestions) && (
+      {(isProfileOpen || isSidebarOpen || isLoginPromptOpen || showSuggestions || isMobileNotificationOpen || isDesktopNotificationOpen || isMobileSettingsOpen) && (
         <div
-          className="fixed inset-0 z-40 bg-slate-900/20 backdrop-blur-sm transition-opacity duration-300"
+          className="fixed inset-0 z-40 bg-slate-950/40 backdrop-blur-md transition-all duration-300 animate-in fade-in"
           onClick={() => {
             setIsProfileOpen(false);
             setIsSidebarOpen(false);
             setIsLoginPromptOpen(false);
             setShowSuggestions(false);
+            setIsDesktopNotificationOpen(false);
+            setIsMobileNotificationOpen(false);
+            setIsMobileSettingsOpen(false);
           }}
         />
       )}
 
-      {/* Dock Structure Container */}
       <div className="relative z-50 mx-auto flex max-w-7xl items-center justify-between gap-2 sm:gap-3">
-        {/* MOBILE FULL-WIDTH SEARCH BAR WITH MODE TOGGLE & LIVE SUGGESTIONS */}
         {isMobileSearchOpen ? (
           <div className="flex w-full items-center gap-1.5 rounded-2xl border border-slate-200/90 bg-white/95 p-1.5 shadow-2xl backdrop-blur-2xl md:hidden animate-in fade-in zoom-in-95 duration-150">
             <button
@@ -222,14 +266,13 @@ const Navbar = () => {
               <X className="h-5 w-5" />
             </button>
 
-            {/* Mobile Mode Select Toggle */}
             <select
               value={searchMode}
               onChange={(e) => setSearchMode(e.target.value)}
               className="bg-slate-100 text-slate-800 font-black text-[10px] uppercase px-2 py-2 rounded-xl border border-slate-200/80 outline-none cursor-pointer shrink-0"
             >
-              <option value="projects">Projects </option>
-              <option value="users">Users </option>
+              <option value="projects">Projects</option>
+              <option value="users">Users</option>
             </select>
 
             <div className="relative flex-1 min-w-0" ref={mobileSearchRef}>
@@ -246,7 +289,6 @@ const Navbar = () => {
                 className="w-full rounded-xl border border-slate-200 bg-slate-50 px-2.5 py-1.5 text-xs font-semibold text-slate-800 placeholder-slate-400 outline-none focus:border-blue-500 focus:bg-white transition"
               />
 
-              {/* Mobile Live Suggestions Dropdown */}
               {showSuggestions && (
                 <div className="absolute left-0 right-0 top-full z-[100] mt-2.5 max-h-[300px] overflow-y-auto rounded-2xl border border-slate-100 bg-white p-1.5 shadow-2xl">
                   {suggestions.length > 0 ? (
@@ -255,6 +297,11 @@ const Navbar = () => {
                         const pTitle = p.title || "Project Drop";
                         const pOwner = p.creator || p.user || {};
                         const pHandle = pOwner.hotdropId || pOwner.username || "dev";
+                        const rawImages = p.imageUrls || p.images || [];
+                        const firstImg = rawImages.length > 0
+                          ? (typeof rawImages[0] === "string" ? rawImages[0] : rawImages[0]?.url)
+                          : null;
+
                         return (
                           <button
                             key={p.id || p._id || index}
@@ -262,8 +309,14 @@ const Navbar = () => {
                             onClick={() => handleSuggestionClick(pTitle, "projects")}
                             className="flex w-full items-center gap-3 rounded-xl px-3 py-2 text-left transition hover:bg-blue-50/80 cursor-pointer"
                           >
-                            <div className="w-7 h-7 bg-blue-100 text-blue-600 rounded-lg flex items-center justify-center shrink-0">
-                              <Globe size={14} />
+                            <div className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0 overflow-hidden bg-slate-100 border border-slate-200 shadow-2xs">
+                              {firstImg ? (
+                                <img src={firstImg} alt={pTitle} className="w-full h-full object-cover" />
+                              ) : (
+                                <div className="w-full h-full bg-blue-100 text-blue-600 flex items-center justify-center">
+                                  <Globe size={14} />
+                                </div>
+                              )}
                             </div>
                             <div className="flex flex-col min-w-0 flex-1">
                               <span className="truncate text-xs font-black uppercase text-slate-900">{pTitle}</span>
@@ -310,11 +363,10 @@ const Navbar = () => {
           </div>
         ) : (
           <>
-            {/* BLOCK 1: Left Brand Pill */}
             <div className="flex items-center gap-2 rounded-2xl border border-slate-200/80 bg-white/90 p-1.5 px-3 shadow-lg shadow-slate-200/50 backdrop-blur-xl">
               <button
                 onClick={() => setIsSidebarOpen(true)}
-                className="rounded-xl p-2 text-slate-600 transition hover:bg-slate-100 hover:text-slate-900"
+                className="rounded-xl p-2 text-slate-600 transition hover:bg-slate-100 hover:text-slate-900 cursor-pointer"
                 aria-label="Open Navigation"
               >
                 <Menu className="h-5 w-5" />
@@ -326,7 +378,6 @@ const Navbar = () => {
               </Link>
             </div>
 
-            {/* BLOCK 2: Center Search Dock (Triggers SearchModal on Desktop & Mobile) */}
             <div className="hidden flex-1 max-w-lg md:flex justify-center">
               <div 
                 onClick={() => setIsSearchModalOpen(true)}
@@ -344,76 +395,177 @@ const Navbar = () => {
               </div>
             </div>
 
-            {/* BLOCK 3: Right Actions Dock */}
-            <div className="flex items-center gap-2 rounded-2xl border border-slate-200/80 bg-white/90 p-1.5 shadow-lg shadow-slate-200/50 backdrop-blur-xl">
-              <button
-                onClick={() => setIsSearchModalOpen(true)}
-                className="rounded-xl p-2 text-slate-600 transition hover:bg-slate-100 md:hidden"
-                aria-label="Search"
-              >
-                <Search className="h-5 w-5" />
-              </button>
-
+            <div className="flex items-center gap-1.5 sm:gap-2 rounded-2xl border border-slate-200/80 bg-white/90 p-1.5 shadow-lg shadow-slate-200/50 backdrop-blur-xl">
               <button
                 onClick={handleCreateClick}
-                className="group relative flex items-center gap-2 overflow-hidden rounded-xl bg-gradient-to-r from-blue-600 via-blue-500 to-indigo-600 px-3 py-2 text-xs font-bold text-white shadow-md shadow-blue-500/20 transition-all hover:scale-[1.02] sm:px-4 sm:py-2.5 sm:text-sm"
+                className="group relative hidden md:flex items-center gap-2 overflow-hidden rounded-xl bg-gradient-to-r from-blue-600 via-blue-500 to-indigo-600 px-3.5 py-2 text-xs font-bold text-white shadow-md shadow-blue-500/20 transition-all hover:scale-[1.02] active:scale-95 cursor-pointer"
               >
-                <Plus className="h-4 w-4" />
-                <span className="hidden sm:inline">Drop Project</span>
+                <Plus className="h-4 w-4 stroke-[3]" />
+                <span className="hidden lg:inline">Drop Project</span>
               </button>
 
-              {!isLoggedIn ? (
-                <Link
-                  to="/signup"
-                  className="flex items-center gap-2 rounded-xl bg-slate-900 px-3.5 py-2 text-xs font-bold text-white transition hover:bg-slate-800 sm:text-sm"
+              <div className="relative" ref={desktopNotificationRef}>
+                <button
+                  onClick={() => handleNotificationButtonClick(false)}
+                  className={`relative rounded-xl p-2 transition cursor-pointer ${
+                    isDesktopNotificationOpen || isMobileNotificationOpen
+                      ? "bg-blue-50 text-blue-600"
+                      : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
+                  }`}
+                  aria-label="Notifications"
                 >
-                  <UserPlus className="h-4 w-4" />
-                  <span className="hidden sm:inline">Join</span>
-                </Link>
-              ) : (
-                <div className="relative">
-                  <button
-                    onClick={() => setIsProfileOpen((prev) => !prev)}
-                    className="flex items-center gap-1 rounded-xl p-1 hover:bg-slate-100 transition"
-                  >
-                    <div className="flex h-8 w-8 items-center justify-center overflow-hidden rounded-lg bg-slate-100 border border-slate-200 shrink-0">
-                      <img
-                        src={userAvatar}
-                        alt="Profile"
-                        className="h-full w-full object-cover"
-                        onError={(e) => {
-                          e.target.onerror = null;
-                          e.target.src = dp;
-                        }}
-                      />
-                    </div>
-                  </button>
-
-                  {isProfileOpen && (
-                    <div className="absolute right-0 top-full mt-2 w-48 rounded-2xl border border-slate-100 bg-white p-1.5 shadow-2xl animate-in fade-in zoom-in-95 duration-150">
-                      <Link
-                        to={`/user/userprofile/${user?.hotdropId || user?.username}`}
-                        onClick={() => setIsProfileOpen(false)}
-                        className="flex items-center gap-2.5 rounded-xl px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-100 hover:text-slate-900"
-                      >
-                        <User className="h-4 w-4" /> Profile
-                      </Link>
-                      <button
-                        onClick={handleLogout}
-                        className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-xs font-semibold text-red-600 hover:bg-red-50"
-                      >
-                        <LogOut className="h-4 w-4" /> Logout
-                      </button>
-                    </div>
+                  <Bell className="h-5 w-5" />
+                  {unreadCount > 0 && (
+                    <span className="absolute top-1 right-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-rose-500 px-1 text-[9px] font-black text-white shadow-sm ring-2 ring-white animate-pulse">
+                      {unreadCount > 9 ? "9+" : unreadCount}
+                    </span>
                   )}
+                </button>
+
+                <NotificationDropdown
+                  isOpen={isDesktopNotificationOpen}
+                  onClose={() => setIsDesktopNotificationOpen(false)}
+                />
+              </div>
+
+              {isMobileNotificationOpen && (
+                <div className="fixed inset-x-3 top-16 z-50 md:hidden">
+                  <NotificationDropdown
+                    isOpen={isMobileNotificationOpen}
+                    onClose={() => setIsMobileNotificationOpen(false)}
+                  />
                 </div>
               )}
+
+              <div className="relative md:hidden">
+                <button
+                  onClick={() => {
+                    setIsMobileSettingsOpen((prev) => !prev);
+                    setIsMobileNotificationOpen(false);
+                    setIsDesktopNotificationOpen(false);
+                  }}
+                  className={`rounded-xl p-2 transition cursor-pointer ${
+                    isMobileSettingsOpen
+                      ? "bg-blue-50 text-blue-600"
+                      : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
+                  }`}
+                  aria-label="Settings"
+                >
+                  <Settings className="h-5 w-5" />
+                </button>
+
+                {isMobileSettingsOpen && (
+                  <div className="absolute right-0 top-full mt-2 w-48 rounded-2xl border border-slate-100 bg-white p-1.5 shadow-2xl animate-in fade-in zoom-in-95 duration-150 z-50">
+                    {isLoggedIn ? (
+                      <>
+                        <div className="px-3 py-2 border-b border-slate-100 mb-1">
+                          <p className="text-xs font-black text-slate-900 lowercase truncate">
+                            @{user?.hotdropId || user?.username}
+                          </p>
+                          <p className="text-[10px] text-slate-400 font-medium truncate">
+                            {user?.email}
+                          </p>
+                        </div>
+
+                        <button
+                          onClick={() => {
+                            setIsMobileSettingsOpen(false);
+                            handleLogout();
+                          }}
+                          className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-xs font-semibold text-red-600 hover:bg-red-50 cursor-pointer"
+                        >
+                          <LogOut className="h-4 w-4" /> Logout
+                        </button>
+                      </>
+                    ) : (
+                      <div className="space-y-1 p-1">
+                        <Link
+                          to="/login"
+                          onClick={() => setIsMobileSettingsOpen(false)}
+                          className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-xs font-bold text-slate-700 hover:bg-slate-100"
+                        >
+                          <User className="h-4 w-4 text-blue-600" /> Log In
+                        </Link>
+                        <Link
+                          to="/signup"
+                          onClick={() => setIsMobileSettingsOpen(false)}
+                          className="flex w-full items-center gap-2 rounded-xl bg-blue-600 px-3 py-2 text-xs font-bold text-white shadow-md shadow-blue-500/20 hover:bg-blue-700"
+                        >
+                          <UserPlus className="h-4 w-4" /> Join
+                        </Link>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              <div className="hidden md:block">
+                {!isLoggedIn ? (
+                  <Link
+                    to="/signup"
+                    className="flex items-center gap-1.5 rounded-xl bg-slate-900 px-3 py-2 text-xs font-bold text-white transition hover:bg-slate-800"
+                  >
+                    <UserPlus className="h-4 w-4" />
+                    <span className="hidden sm:inline">Join</span>
+                  </Link>
+                ) : (
+                  <div className="relative">
+                    <button
+                      onClick={() => {
+                        setIsProfileOpen((prev) => !prev);
+                        setIsDesktopNotificationOpen(false);
+                        setIsMobileNotificationOpen(false);
+                      }}
+                      className="flex items-center gap-1 rounded-full p-0.5 hover:bg-slate-100 transition cursor-pointer"
+                    >
+                      <div className="flex h-8 w-8 items-center justify-center overflow-hidden rounded-full bg-slate-100 border border-slate-200 shrink-0 ring-2 ring-slate-100 hover:ring-blue-400 transition">
+                        <img
+                          src={userAvatar}
+                          alt="Profile"
+                          className="h-full w-full object-cover rounded-full"
+                          onError={(e) => {
+                            e.target.onerror = null;
+                            e.target.src = dp;
+                          }}
+                        />
+                      </div>
+                    </button>
+
+                    {isProfileOpen && (
+                      <div className="absolute right-0 top-full mt-2 w-48 rounded-2xl border border-slate-100 bg-white p-1.5 shadow-2xl animate-in fade-in zoom-in-95 duration-150 z-50">
+                        <div className="px-3 py-2 border-b border-slate-100 mb-1">
+                          <p className="text-xs font-black text-slate-900 lowercase truncate">
+                            @{user?.hotdropId || user?.username}
+                          </p>
+                          <p className="text-[10px] text-slate-400 font-medium truncate">
+                            {user?.email}
+                          </p>
+                        </div>
+
+                        <Link
+                          to={`/user/userprofile/${user?.hotdropId || user?.username}`}
+                          onClick={() => setIsProfileOpen(false)}
+                          className="flex items-center gap-2.5 rounded-xl px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-100 hover:text-slate-900"
+                        >
+                          <User className="h-4 w-4 text-blue-600" /> My Profile
+                        </Link>
+
+                        <button
+                          onClick={handleLogout}
+                          className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-xs font-semibold text-red-600 hover:bg-red-50 cursor-pointer"
+                        >
+                          <LogOut className="h-4 w-4" /> Logout
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
             </div>
           </>
         )}
       </div>
 
-      {/* MOBILE DRAWER SIDEBAR */}
       <aside
         className={`fixed inset-y-0 left-0 z-50 w-72 bg-white shadow-2xl transition-transform duration-300 ${
           isSidebarOpen ? "translate-x-0" : "-translate-x-full"
@@ -421,16 +573,19 @@ const Navbar = () => {
       >
         <div className="flex flex-col h-full p-4">
           <div className="flex justify-between items-center pb-4 border-b border-slate-100">
-            <span className="font-extrabold text-lg tracking-tight">Navigation</span>
+            <div className="flex items-center gap-1.5">
+              <span className="text-lg font-black uppercase text-orange-500">HOT</span>
+              <span className="text-lg font-black uppercase text-blue-600">DROP</span>
+            </div>
             <button
               onClick={() => setIsSidebarOpen(false)}
-              className="p-1 rounded-full text-slate-400 hover:bg-slate-100"
+              className="p-1 rounded-full text-slate-400 hover:bg-slate-100 cursor-pointer"
             >
               <X className="h-5 w-5" />
             </button>
           </div>
 
-          <nav className="space-y-1.5 mt-4">
+          <nav className="space-y-1.5 mt-4 flex-1">
             <Link
               to="/"
               onClick={() => setIsSidebarOpen(false)}
@@ -444,7 +599,6 @@ const Navbar = () => {
         </div>
       </aside>
 
-      {/* Login Prompt Dialog */}
       {isLoginPromptOpen && (
         <div className="fixed inset-0 z-[70] flex items-center justify-center p-4">
           <div className="relative w-full max-w-sm rounded-3xl bg-white p-6 text-center shadow-2xl animate-in fade-in zoom-in-95 duration-200">

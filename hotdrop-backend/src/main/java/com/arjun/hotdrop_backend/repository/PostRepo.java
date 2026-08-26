@@ -43,6 +43,3 @@ public interface PostRepo extends JpaRepository<Post, UUID> {
     boolean existsById(@NonNull UUID postId);
 }
 
-
-
-

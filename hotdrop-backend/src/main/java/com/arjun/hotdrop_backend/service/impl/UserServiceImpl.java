@@ -3,10 +3,12 @@ package com.arjun.hotdrop_backend.service.impl;
 import com.arjun.hotdrop_backend.dto.*;
 import com.arjun.hotdrop_backend.entity.*;
 
+import com.arjun.hotdrop_backend.enums.NotificationType;
 import com.arjun.hotdrop_backend.mapper.PostMapper;
 import com.arjun.hotdrop_backend.mapper.UserMapper;
 import com.arjun.hotdrop_backend.repository.*;
 import com.arjun.hotdrop_backend.service.CloudinaryService;
+import com.arjun.hotdrop_backend.service.NotificationService;
 import com.arjun.hotdrop_backend.service.UserService;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -14,11 +16,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
-
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
-
 
 @Service
 @RequiredArgsConstructor
@@ -30,12 +30,12 @@ public class UserServiceImpl implements UserService {
     private final FollowRepo followRepo;
     private final UserMapper userMapper;
     private final PostMapper postMapper;
+    private  final NotificationService notificationService;
     private final LikeRepo likeRepo;
     private final UserImageHistoryRepo userImageHistoryRepo;
 
     @Override
     public UserResponseOnSearchDto getUserByHotDropId(String hotdropId, String currentLoggedInHotdropId) {
-
 
         User currentUser = userRepo.findByHotdropId(hotdropId)
                 .orElseThrow(() -> {
@@ -43,14 +43,11 @@ public class UserServiceImpl implements UserService {
                     return new RuntimeException("User profile not found with ID: " + hotdropId);
                 });
 
-
         int postCount = postRepo.countByUser(currentUser);
         int followerCount = followRepo.countByFollowing(currentUser);
         int followingCount = followRepo.countByFollower(currentUser);
 
-
         boolean isOwner = currentLoggedInHotdropId != null && currentLoggedInHotdropId.equals(hotdropId);
-
 
         return UserResponseOnSearchDto.builder()
                 .id(currentUser.getId())
@@ -97,11 +94,17 @@ public class UserServiceImpl implements UserService {
                     .build();
             followRepo.save(newFollow);
             isFollowingNow = true;
+                notificationService.sendNotification(
+                        currentUser,
+                        targetUser,
+                        NotificationType.FOLLOW,
+                        "@" + currentUser.getHotdropId() + " started following you.",
+                        currentUser.getId()
+                );
+
         }
 
-
         followRepo.flush();
-
 
         int totalFollowers = followRepo.countByFollowing(targetUser);
 
@@ -130,7 +133,6 @@ public class UserServiceImpl implements UserService {
         return followersList.stream().map(follow -> {
             User followerUser = follow.getFollower();
 
-            // Check if logged-in user follows this follower
             boolean isFollowingBack = false;
             if (loggedInUser != null) {
                 isFollowingBack = followRepo.existsByFollowerAndFollowing(loggedInUser, followerUser);
@@ -164,7 +166,6 @@ public class UserServiceImpl implements UserService {
             throw new RuntimeException("Access Denied: You are not the owner of this profile");
         }
 
-
         if (requestDto.getHotdropId() != null && !requestDto.getHotdropId().isBlank()) {
             String newHotdropId = requestDto.getHotdropId().trim();
             if (!newHotdropId.equals(currentUser.getHotdropId())) {
@@ -178,9 +179,7 @@ public class UserServiceImpl implements UserService {
 
         MultipartFile profilePicture = requestDto.getProfilePicture();
 
-
         if (profilePicture != null && !profilePicture.isEmpty()) {
-
 
             if (currentUser.getProfileImageUrl() != null && !currentUser.getProfileImageUrl().isBlank()) {
                 try {
@@ -204,10 +203,8 @@ public class UserServiceImpl implements UserService {
                 }
             }
 
-
             try {
                 log.info("Uploading fresh profile image buffer stream data to Cloudinary");
-
 
                 Map<String, String> uploadResult = cloudinary.uploadImageForProfileImage(profilePicture);
 
@@ -218,7 +215,6 @@ public class UserServiceImpl implements UserService {
                     throw new RuntimeException("Keys mismatch: Retrieved null values from CloudinaryService response map.");
                 }
 
-
                 currentUser.setProfileImageUrl(newUploadedUrl);
                 currentUser.setProfileImagePublicId(newPublicId);
 
@@ -228,7 +224,6 @@ public class UserServiceImpl implements UserService {
             }
         }
 
-
         if (requestDto.getBio() != null) currentUser.setBio(requestDto.getBio().trim());
         if (requestDto.getFirstName() != null) currentUser.setFirstName(requestDto.getFirstName().trim());
         if (requestDto.getLastName() != null) currentUser.setLastName(requestDto.getLastName().trim());
@@ -236,7 +231,6 @@ public class UserServiceImpl implements UserService {
         if (requestDto.getLinkedinUrl() != null) currentUser.setLinkedinUrl(requestDto.getLinkedinUrl().trim());
         if (requestDto.getLeetcodeUrl() != null) currentUser.setLeetcodeUrl(requestDto.getLeetcodeUrl().trim());
         if (requestDto.getPortfolioUrl() != null) currentUser.setPortfolioUrl(requestDto.getPortfolioUrl().trim());
-
 
         User updatedUser = userRepo.saveAndFlush(currentUser);
         log.info("Successfully flushed user data transition blocks for hotdropId: {}", updatedUser.getHotdropId());
@@ -247,11 +241,10 @@ public class UserServiceImpl implements UserService {
     @Override
     @Transactional
     public MeResponseDto getMeByHotdropId(String hotdropId) {
-        // 1. Fetch User by email
+
         User user = userRepo.findByHotdropId(hotdropId)
                 .orElseThrow(() -> new RuntimeException("User not found with email: " + hotdropId));
 
-        // 2. Reuse the existing getMe logic via userId
         return getMe(user.getId());
     }
 
@@ -261,7 +254,7 @@ public class UserServiceImpl implements UserService {
 
         User user = userRepo.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User not found with ID: " + userId));
-// 2. Fetch Posts
+
         List<Post> userPosts = postRepo.findByUserIdOrderByCreatedAtDesc(userId);;
         int followerCount = followRepo.countByFollowing(user);
         int followingCount = followRepo.countByFollower(user);
@@ -269,7 +262,6 @@ public class UserServiceImpl implements UserService {
                 .map(role -> role.getRoleName().name())
 
                 .collect(Collectors.toSet());
-
 
         UserResponseDto userDto = UserResponseDto.builder()
                 .id(user.getId())
@@ -292,9 +284,7 @@ public class UserServiceImpl implements UserService {
                 .roles(roleNames)
                 .build();
 
-
         List<PostResponseDto> postDtos = userPosts.stream().map(post -> {
-
 
             List<String> imageUrls = post.getImages().stream()
                     .map(PostImage::getUrl)
@@ -325,7 +315,6 @@ public class UserServiceImpl implements UserService {
                     .build();
         }).toList();
 
-        // 6. Return combined MeResponseDto
         return MeResponseDto.builder()
                 .user(userDto)
                 .posts(postDtos)

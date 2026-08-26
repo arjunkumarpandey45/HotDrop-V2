@@ -83,7 +83,6 @@ export default function Verify() {
             If you don't see the email, check your Spam or Promotions folder.
           </div>
 
-          
           <p className="mt-4 text-center text-[11px] text-slate-500 md:text-xs">
             Redirecting to Login in{" "}
             <span className="font-bold text-sky-600">{countdown}</span>{" "}

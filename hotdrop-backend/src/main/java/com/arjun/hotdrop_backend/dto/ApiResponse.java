@@ -1,7 +1,5 @@
 package com.arjun.hotdrop_backend.dto;
 
-
-
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;

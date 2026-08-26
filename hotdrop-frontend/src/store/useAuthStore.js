@@ -1,27 +1,23 @@
 import { create } from "zustand";
 import api from "../api/Api";
 
-// --- 🎨 UI STORE ---
 export const useUIStore = create((set) => ({
   isCreatePostOpen: false,
   openCreatePost: () => set({ isCreatePostOpen: true }),
   closeCreatePost: () => set({ isCreatePostOpen: false }),
 }));
 
-// --- 🔐 AUTH STORE ---
 export const useAuthStore = create((set, get) => ({
   user: null,
   userPosts: [],
   isLoggedIn: false,
-  isCheckingAuth: true, // Initial app load state
+  isCheckingAuth: true, 
 
-  // Helper Setter for updating partial user profile data
   setUser: (updatedUser) =>
     set((state) => ({
       user: state.user ? { ...state.user, ...updatedUser } : updatedUser,
     })),
 
-  // --- 🔄 LOCAL COUNTER UPDATE ---
   updatePostCountLocally: (newPost = null) => {
     set((state) => {
       const updatedPosts = newPost ? [newPost, ...(state.userPosts || [])] : (state.userPosts || []);
@@ -38,7 +34,6 @@ export const useAuthStore = create((set, get) => ({
     });
   },
 
-  // --- 🔑 LOGIN ACTION ---
   login: async (identifier, password) => {
     try {
       const hotdropIdOrEmail = identifier.trim();
@@ -61,7 +56,6 @@ export const useAuthStore = create((set, get) => ({
 
       const fullUserObj = userData ? { ...userData, posts: postsData } : null;
 
-      // 🎯 Set state directly and stay logged in
       set({
         user: fullUserObj,
         userPosts: postsData,
@@ -84,11 +78,9 @@ export const useAuthStore = create((set, get) => ({
     }
   },
 
-  // --- 🛡️ CHECK AUTH ACTION ---
   checkAuth: async () => {
     const currentPath = window.location.pathname;
 
-    // 💡 GUARD 1: Prevent loop on auth pages
     if (
       currentPath.startsWith("/login") ||
       currentPath.startsWith("/signup") ||
@@ -99,7 +91,6 @@ export const useAuthStore = create((set, get) => ({
       return;
     }
 
-    // 💡 GUARD 2: If user is already authenticated in store, don't re-fetch
     if (get().isLoggedIn && get().user) {
       set({ isCheckingAuth: false });
       return;
@@ -136,7 +127,6 @@ export const useAuthStore = create((set, get) => ({
     }
   },
 
-  // --- 🚪 LOGOUT ACTION ---
   logout: async () => {
     try {
       await api.post("/auth/logout");

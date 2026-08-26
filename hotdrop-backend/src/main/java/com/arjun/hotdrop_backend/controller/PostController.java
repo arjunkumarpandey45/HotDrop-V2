@@ -16,7 +16,6 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
-
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -43,13 +42,11 @@ public class PostController {
         return ResponseEntity.ok("Tracking engine triggered successfully! Check your console logs. 🚀");
     }
 
-
     @PostMapping(value = "/create", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<ApiResponse<PostResponseDto>> createPost(
             @Valid @ModelAttribute CreatePostDto createPostDto,
             @RequestParam("files") MultipartFile[] files,
             @AuthenticationPrincipal UserDetails userDetails) {
-
 
         String userEmail = userDetails.getUsername();
 
@@ -81,7 +78,6 @@ public class PostController {
             @RequestParam(defaultValue = "DESC") String direction,
             @RequestParam(required = false) String search,
             @AuthenticationPrincipal UserDetails userDetails) {
-
 
         String currentHotdropId = (userDetails != null) ? userDetails.getUsername() : null;
 
@@ -168,7 +164,6 @@ public class PostController {
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
             @AuthenticationPrincipal UserDetails userDetails) {
-
 
         String currentHotdropId = (userDetails != null) ? userDetails.getUsername() : null;
 

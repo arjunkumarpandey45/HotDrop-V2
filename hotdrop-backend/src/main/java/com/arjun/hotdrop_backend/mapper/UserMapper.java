@@ -18,7 +18,6 @@ public class UserMapper {
     private final PostRepo postRepo;
     private final FollowRepo followRepo;
 
-    // 1. Full Profile DTO (Includes Counts) - Main Profile Page Ke Liye
     public UserResponseDto toResponseDto(User user) {
         if (user == null) {
             return null;
@@ -51,7 +50,6 @@ public class UserMapper {
                 .build();
     }
 
-    // 2. Lightweight DTO - Followers/Following Modals & Lists Ke Liye
     public UserResponseDto toBasicResponseDto(User user) {
         if (user == null) {
             return null;

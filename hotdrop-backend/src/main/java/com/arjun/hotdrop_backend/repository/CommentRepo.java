@@ -12,7 +12,6 @@ import org.springframework.stereotype.Repository;
 public interface CommentRepo extends JpaRepository<Comment, UUID> {
     void deleteCommentById(UUID id);
 
-
     boolean existsById(@NonNull UUID id);
 
     java.util.List<Comment> findByPostIdOrderByCreatedAtDesc(UUID postId);

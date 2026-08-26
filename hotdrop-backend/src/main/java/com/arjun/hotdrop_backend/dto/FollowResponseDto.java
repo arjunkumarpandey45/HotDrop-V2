@@ -1,6 +1,5 @@
 package com.arjun.hotdrop_backend.dto;
 
-
 import lombok.*;
 import java.util.UUID;
 

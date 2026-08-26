@@ -17,6 +17,5 @@ public class ProfileUpdateRequestDto {
     private String leetcodeUrl;
     private String portfolioUrl;
 
-    // --- BINDING FILE INSIDE THE DTO ---
     private MultipartFile profilePicture;
 }

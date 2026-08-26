@@ -1,7 +1,5 @@
 package com.arjun.hotdrop_backend.dto;
 
-
-
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
@@ -26,6 +24,5 @@ public class CreatePostDto {
     @Size(max = 512, message = "URL size exceeds limits.")
     private String projectUrl;
 
- 
     private String tags;
 }

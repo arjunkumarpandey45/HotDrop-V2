@@ -20,9 +20,8 @@ public interface UserRepo extends JpaRepository<User, UUID> {
     List<User> findTop5ByHotdropIdContainingIgnoreCaseOrFirstNameContainingIgnoreCase(String hotdropId, String firstName);
     Optional<User> findByHotdropId(String hotdropId);
 
-    // Cleaned EntityGraph removing non-existent fields ('followers', 'following', 'posts')
     @EntityGraph(attributePaths = {
-            "roles" // Eager fetch roles cleanly if needed
+            "roles" 
     })
     Optional<User> findById(UUID id);
     boolean existsByEmail(String email);

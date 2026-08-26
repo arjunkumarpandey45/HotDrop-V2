@@ -31,9 +31,7 @@ public class UserResponseOnSearchDto {
 
     private String githubUrl;
 
-
     private String linkedinUrl;
-
 
     private String leetcodeUrl;
 

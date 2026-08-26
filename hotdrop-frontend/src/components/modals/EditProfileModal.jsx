@@ -12,7 +12,6 @@ import {
 } from "lucide-react";
 import { useState, useEffect } from "react";
 
-
 const Github = ({ size = 14, className = "" }) => (
   <svg
     width={size}
@@ -48,7 +47,6 @@ const Linkedin = ({ size = 14, className = "" }) => (
   </svg>
 );
 
-
 const normalizeUrl = (url) => {
   if (!url || !url.trim()) return "";
   const trimmed = url.trim();
@@ -56,7 +54,6 @@ const normalizeUrl = (url) => {
   return `https://${trimmed}`;
 };
 
-// URL Regular Expressions
 const URL_REGEX = /^(https?:\/\/)?([\w-]+\.)+[\w-]+(\/[\w-.\/?%&=]*)?$/i;
 const GITHUB_REGEX = /^(https?:\/\/)?(www\.)?github\.com\/[a-zA-Z0-9_-]+\/?$/i;
 const LINKEDIN_REGEX = /^(https?:\/\/)?(www\.)?linkedin\.com\/(in|company)\/[a-zA-Z0-9_-]+\/?$/i;
@@ -179,7 +176,7 @@ function EditProfileModal({ isOpen, onClose, user, handleUpdate, loading }) {
         className="bg-white w-full max-w-lg rounded-3xl shadow-2xl flex flex-col max-h-[90vh] overflow-hidden border border-slate-100 animate-in zoom-in-95 duration-200"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Modal Header */}
+
         <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-white/80 backdrop-blur-md shrink-0">
           <div className="flex items-center gap-2">
             <h2 className="text-lg font-bold text-slate-900">Edit Profile</h2>
@@ -194,9 +191,8 @@ function EditProfileModal({ isOpen, onClose, user, handleUpdate, loading }) {
           </div>
         </div>
 
-        {/* Scrollable Body */}
         <div className="flex-1 overflow-y-auto px-6 py-6 space-y-6 custom-scrollbar">
-          {/* Profile Picture Upload Section */}
+
           <div className="flex flex-col items-center justify-center gap-2">
             <div className="relative group w-28 h-28">
               <div className="w-full h-full rounded-full overflow-hidden border-4 border-white shadow-xl ring-2 ring-slate-100 bg-slate-50 transition-transform duration-300 group-hover:scale-[1.02]">
@@ -226,9 +222,8 @@ function EditProfileModal({ isOpen, onClose, user, handleUpdate, loading }) {
             <p className="text-xs font-medium text-slate-400">Click picture to update</p>
           </div>
 
-          {/* Form Fields */}
           <div className="space-y-5">
-            {/* Name Fields */}
+
             <div className="grid grid-cols-2 gap-3.5">
               <Field icon={<User size={13} />} label="First Name">
                 <input
@@ -248,7 +243,6 @@ function EditProfileModal({ isOpen, onClose, user, handleUpdate, loading }) {
               </Field>
             </div>
 
-            {/* HotDrop Handle */}
             <Field icon={<AtSign size={13} />} label="HotDrop ID">
               <input
                 name="hotdropId"
@@ -258,7 +252,6 @@ function EditProfileModal({ isOpen, onClose, user, handleUpdate, loading }) {
               />
             </Field>
 
-            {/* Social / Developer Handles Divider */}
             <div className="pt-2">
               <div className="flex items-center gap-2 mb-3">
                 <Sparkles size={13} className="text-blue-500" />
@@ -325,7 +318,6 @@ function EditProfileModal({ isOpen, onClose, user, handleUpdate, loading }) {
               </div>
             </div>
 
-            {/* Bio */}
             <Field icon={<AlignLeft size={13} />} label="Biography">
               <textarea
                 name="bio"
@@ -338,7 +330,6 @@ function EditProfileModal({ isOpen, onClose, user, handleUpdate, loading }) {
           </div>
         </div>
 
-        {/* Modal Footer */}
         <div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-slate-100 bg-slate-50/50 shrink-0">
           <button
             type="button"

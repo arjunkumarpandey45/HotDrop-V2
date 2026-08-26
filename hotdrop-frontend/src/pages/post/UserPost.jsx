@@ -71,7 +71,6 @@ function UserPost({ postsOverride, hideOptions, ownerOverride }) {
   const clickTimeoutRef = useRef({});
   const maxLength = 100;
 
-  /* CLOSE MENU ON OUTSIDE CLICK */
   useEffect(() => {
     const closeMenu = () => setMenuOpen(null);
     window.addEventListener("click", closeMenu);
@@ -229,7 +228,6 @@ function UserPost({ postsOverride, hideOptions, ownerOverride }) {
     }
   };
 
-  // --- DOUBLE TAP TO LIKE HANDLER ---
   const triggerDoubleTapLike = (post) => {
     const pId = post.id || post._id;
     if (!user) {
@@ -255,7 +253,7 @@ function UserPost({ postsOverride, hideOptions, ownerOverride }) {
     const lastTap = lastTapTimeRef.current[pId] || 0;
 
     if (now - lastTap < 300) {
-      // 💥 DOUBLE TAP TRIGGERED
+
       if (clickTimeoutRef.current[pId]) {
         clearTimeout(clickTimeoutRef.current[pId]);
         clickTimeoutRef.current[pId] = null;
@@ -263,7 +261,7 @@ function UserPost({ postsOverride, hideOptions, ownerOverride }) {
       triggerDoubleTapLike(post);
       lastTapTimeRef.current[pId] = 0;
     } else {
-      // SINGLE TAP (Wait 280ms to differentiate single click vs double tap)
+
       lastTapTimeRef.current[pId] = now;
       clickTimeoutRef.current[pId] = setTimeout(() => {
         if (!user) {
@@ -363,7 +361,7 @@ function UserPost({ postsOverride, hideOptions, ownerOverride }) {
 
   return (
     <div className="w-full px-0.5 sm:px-1 md:px-2 py-2">
-      {/* 🚀 EXACTLY 3 IMAGES PER ROW ON DESKTOP */}
+
       <div className="grid grid-cols-1 md:grid-cols-3 gap-2 md:gap-2 w-full">
         {posts.map((post) => {
           const pId = post.id || post._id;
@@ -387,7 +385,7 @@ function UserPost({ postsOverride, hideOptions, ownerOverride }) {
 
           return (
             <div key={pId} className="w-full">
-              {/* 💻 CLEAN LIGHT DESKTOP GRID CARD WITH HALF-SCREEN HOVER ZOOM */}
+
               <div
                 className="hidden md:block relative bg-slate-50 rounded-2xl overflow-hidden cursor-pointer aspect-[4/3] group shadow-sm hover:shadow-lg transition-all duration-200 border border-slate-200/60 select-none"
                 onClick={(e) => handleImageClick(e, post, imgIndex)}
@@ -407,14 +405,12 @@ function UserPost({ postsOverride, hideOptions, ownerOverride }) {
                   </div>
                 )}
 
-                {/* DOUBLE TAP HEART POP ANIMATION */}
                 {isHeartActive && (
                   <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-30 animate-in zoom-in-50 fade-out duration-700">
                     <Heart size={72} className="fill-rose-500 text-rose-500 drop-shadow-[0_10px_25px_rgba(244,63,94,0.7)] animate-pulse" />
                   </div>
                 )}
 
-                {/* CLEAN MINIMAL HOVER OVERLAY */}
                 <div className="absolute inset-0 bg-black/35 backdrop-blur-[2px] opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center justify-center">
                   <div className="bg-white/95 text-slate-900 px-4 py-2 rounded-xl shadow-xl text-xs font-extrabold uppercase tracking-wider flex items-center gap-2">
                     <span>Click to view details</span>
@@ -430,9 +426,8 @@ function UserPost({ postsOverride, hideOptions, ownerOverride }) {
                 )}
               </div>
 
-              {/* 📱 MOBILE CARD VIEW: INSTAGRAM-STYLE HEADER ABOVE IMAGE */}
               <div className="block md:hidden relative bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden flex flex-col">
-                {/* 📸 INSTAGRAM-STYLE HEADER ABOVE IMAGE */}
+
                 <div className="flex items-center justify-between px-3.5 py-2.5 border-b border-slate-100 bg-white">
                   <div className="flex items-center gap-2.5">
                     <img
@@ -455,7 +450,6 @@ function UserPost({ postsOverride, hideOptions, ownerOverride }) {
                     </div>
                   </div>
 
-                  {/* 3-DOT MENU ON RIGHT FOR DELETE */}
                   {!hideOptions && (
                     <div className="relative z-20">
                       <button
@@ -490,7 +484,6 @@ function UserPost({ postsOverride, hideOptions, ownerOverride }) {
                   )}
                 </div>
 
-                {/* IMAGE WITH DOUBLE-TAP TO LIKE */}
                 <div
                   className="relative bg-slate-50 cursor-pointer flex items-center justify-center aspect-[4/3] overflow-hidden select-none"
                   onClick={(e) => handleImageClick(e, post, imgIndex)}
@@ -501,7 +494,6 @@ function UserPost({ postsOverride, hideOptions, ownerOverride }) {
                     alt="post"
                   />
 
-                  {/* DOUBLE TAP HEART POP ANIMATION */}
                   {isHeartActive && (
                     <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-30 animate-in zoom-in-50 fade-out duration-700">
                       <Heart size={68} className="fill-rose-500 text-rose-500 drop-shadow-[0_10px_25px_rgba(244,63,94,0.7)] animate-pulse" />
@@ -516,7 +508,6 @@ function UserPost({ postsOverride, hideOptions, ownerOverride }) {
                     </div>
                   )}
 
-                  {/* IMAGE SLIDER BUTTONS & COMPACT BLACK BORDERED WHITE DOTS */}
                   {user && images.length > 1 && (
                     <>
                       <div className="absolute inset-x-2 top-1/2 -translate-y-1/2 flex justify-between pointer-events-none z-20">
@@ -535,7 +526,6 @@ function UserPost({ postsOverride, hideOptions, ownerOverride }) {
                         </button>
                       </div>
 
-                      {/* COMPACT WHITE DOTS WITH BLACK BORDER */}
                       <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex items-center gap-1.5 pointer-events-none z-20">
                         {images.map((_, i) => (
                           <div
@@ -552,9 +542,8 @@ function UserPost({ postsOverride, hideOptions, ownerOverride }) {
                   )}
                 </div>
 
-                {/* CONTENT */}
                 <div className="p-4 flex flex-col flex-1">
-                  {/* TITLE & TAGS */}
+
                   <div className="flex items-start justify-between gap-3 mb-3 flex-wrap sm:flex-nowrap">
                     <div className="relative group/title min-w-0 flex-1">
                       <h3 className="text-[13px] font-black uppercase tracking-[0.15em] text-slate-800 leading-none">
@@ -565,7 +554,6 @@ function UserPost({ postsOverride, hideOptions, ownerOverride }) {
                     <PostTags tags={post.tags || post.tagsList || post.tag} postTitle={post.title} />
                   </div>
 
-                  {/* PROJECT LINK */}
                   <div
                     onClick={(e) => {
                       e.preventDefault();
@@ -581,7 +569,7 @@ function UserPost({ postsOverride, hideOptions, ownerOverride }) {
                     }}
                     className="group/link relative flex items-center justify-between p-[1px] rounded-xl mb-4 transition-all duration-300 hover:scale-[1.01] active:scale-[0.99] cursor-pointer"
                   >
-                    {/* Border Glow Layer */}
+
                     <div
                       className={`absolute inset-0 rounded-xl opacity-10 group-hover/link:opacity-100 transition-opacity duration-500 bg-gradient-to-r ${
                         isLinkDead
@@ -590,10 +578,9 @@ function UserPost({ postsOverride, hideOptions, ownerOverride }) {
                       }`}
                     />
 
-                    {/* Main Compact Body */}
                     <div className="relative w-full flex items-center justify-between bg-white/90 backdrop-blur-md border border-slate-200/50 rounded-[11px] px-3 py-1.5 shadow-sm">
                       <div className="flex items-center gap-2.5 truncate">
-                        {/* Mini Icon Container */}
+
                         <div
                           className={`flex items-center justify-center w-7 h-7 rounded-lg transition-all duration-500 ${
                             isLinkDead
@@ -648,7 +635,6 @@ function UserPost({ postsOverride, hideOptions, ownerOverride }) {
                     </div>
                   </div>
 
-                  {/* DESCRIPTION */}
                   <div className="relative group/desc">
                     <p className="text-[12px] text-slate-900 pb-1 font-medium leading-relaxed">
                       {post.description && post.description.length > maxLength && !isExpanded
@@ -674,7 +660,6 @@ function UserPost({ postsOverride, hideOptions, ownerOverride }) {
                     )}
                   </div>
 
-                  {/* FOOTER */}
                   <div className="flex justify-between items-center mt-auto border-t pt-3">
                     <div className="flex gap-5 items-center">
                       <div className="flex items-center gap-1">
@@ -725,7 +710,6 @@ function UserPost({ postsOverride, hideOptions, ownerOverride }) {
         })}
       </div>
 
-      {/* 🔍 DIRECTIONAL FLOATING IMAGE ZOOM PREVIEW ON HOVER */}
       <AnimatePresence>
         {hoveredPost && (
           <motion.div
@@ -769,13 +753,11 @@ function UserPost({ postsOverride, hideOptions, ownerOverride }) {
                 <div className="text-slate-400 font-bold text-xs">No Screenshot</div>
               )}
 
-              
             </div>
           </motion.div>
         )}
       </AnimatePresence>
 
-      {/* 💥 IMPROVED SLEEK DELETE CONFIRMATION MODAL */}
       {deleteConfirm && (
         <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4 animate-in fade-in duration-200">
           <div
@@ -822,7 +804,6 @@ function UserPost({ postsOverride, hideOptions, ownerOverride }) {
         </div>
       )}
 
-      {/* AUTH REQUIRED MODAL */}
       {showAuthModal && (
         <div className="fixed inset-0 z-[999] flex items-center justify-center p-6">
           <div
@@ -859,7 +840,6 @@ function UserPost({ postsOverride, hideOptions, ownerOverride }) {
         </div>
       )}
 
-      {/* IMAGE MODAL */}
       {imagePost && (
         <ImageModal
           post={imagePost}
@@ -876,7 +856,6 @@ function UserPost({ postsOverride, hideOptions, ownerOverride }) {
         />
       )}
 
-      {/* COMMENT MODAL */}
       {commentPost && (
         <CommentModal
           post={commentPost}
@@ -894,12 +873,10 @@ function UserPost({ postsOverride, hideOptions, ownerOverride }) {
         />
       )}
 
-      {/* SHARE MODAL */}
       {sharePost && (
         <ShareModal post={sharePost} onClose={() => setSharePost(null)} />
       )}
 
-      {/* LIKE MODAL */}
       {likePost && (
         <LikeModal post={likePost} onClose={() => setLikePost(null)} />
       )}

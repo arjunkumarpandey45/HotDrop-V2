@@ -120,7 +120,6 @@ function EmailModal({ isOpen, onClose, user, email: directEmail }) {
             </p>
           </div>
 
-          {/* Email Card */}
           {email ? (
             <div className="w-full bg-slate-50 border border-slate-200/80 rounded-xl p-3 flex items-center justify-between">
               <div className="flex items-center gap-2 min-w-0 pr-2">
@@ -143,7 +142,6 @@ function EmailModal({ isOpen, onClose, user, email: directEmail }) {
             </div>
           ) : null}
 
-          {/* Social Links List */}
           {socialLinks.length > 0 && (
             <div className="w-full space-y-2 pt-1 border-t border-slate-100">
               <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400 text-left mb-1.5">
