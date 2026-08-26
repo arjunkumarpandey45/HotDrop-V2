@@ -48,6 +48,7 @@ const Navbar = () => {
     unreadCount,
     initSocket,
     disconnectSocket,
+    markAllAsRead,
   } = useNotificationStore();
 
   const navigate = useNavigate();
@@ -192,19 +193,43 @@ const Navbar = () => {
     }
   };
 
+  const closeAllPopups = () => {
+    if (isDesktopNotificationOpen || isMobileNotificationOpen) {
+      if (unreadCount > 0) {
+        markAllAsRead();
+      }
+    }
+    setIsProfileOpen(false);
+    setIsSidebarOpen(false);
+    setIsLoginPromptOpen(false);
+    setShowSuggestions(false);
+    setIsDesktopNotificationOpen(false);
+    setIsMobileNotificationOpen(false);
+    setIsMobileSettingsOpen(false);
+  };
+
   const handleNotificationButtonClick = (isMobile = false) => {
     if (!isLoggedIn) {
       navigate("/login");
       return;
     }
 
-    const isMobileView = typeof window !== "undefined" && window.innerWidth < 768;
-    if (isMobile || isMobileView) {
-      setIsMobileNotificationOpen((prev) => !prev);
+    const isCurrentlyOpen = isDesktopNotificationOpen || isMobileNotificationOpen;
+    if (isCurrentlyOpen) {
+      if (unreadCount > 0) {
+        markAllAsRead();
+      }
       setIsDesktopNotificationOpen(false);
-    } else {
-      setIsDesktopNotificationOpen((prev) => !prev);
       setIsMobileNotificationOpen(false);
+    } else {
+      const isMobileView = typeof window !== "undefined" && window.innerWidth < 768;
+      if (isMobile || isMobileView) {
+        setIsMobileNotificationOpen(true);
+        setIsDesktopNotificationOpen(false);
+      } else {
+        setIsDesktopNotificationOpen(true);
+        setIsMobileNotificationOpen(false);
+      }
     }
     setIsProfileOpen(false);
     setIsMobileSettingsOpen(false);
@@ -243,15 +268,7 @@ const Navbar = () => {
       {(isProfileOpen || isSidebarOpen || isLoginPromptOpen || showSuggestions || isMobileNotificationOpen || isDesktopNotificationOpen || isMobileSettingsOpen) && (
         <div
           className="fixed inset-0 z-40 bg-slate-950/40 backdrop-blur-md transition-all duration-300 animate-in fade-in"
-          onClick={() => {
-            setIsProfileOpen(false);
-            setIsSidebarOpen(false);
-            setIsLoginPromptOpen(false);
-            setShowSuggestions(false);
-            setIsDesktopNotificationOpen(false);
-            setIsMobileNotificationOpen(false);
-            setIsMobileSettingsOpen(false);
-          }}
+          onClick={closeAllPopups}
         />
       )}
 

@@ -1,5 +1,5 @@
 import { useEffect, useRef } from "react";
-import { Bell, CheckCheck, X, BellOff, Loader2 } from "lucide-react";
+import { Bell, X, BellOff, Loader2 } from "lucide-react";
 import { useNotificationStore } from "../../store/useNotificationStore";
 import NotificationItem from "./NotificationItem";
 
@@ -19,6 +19,13 @@ const NotificationDropdown = ({ isOpen, onClose }) => {
     }
   }, [isOpen, fetchNotifications]);
 
+  const handleCloseDropdown = () => {
+    if (unreadCount > 0) {
+      markAllAsRead();
+    }
+    if (onClose) onClose();
+  };
+
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (
@@ -26,13 +33,13 @@ const NotificationDropdown = ({ isOpen, onClose }) => {
         dropdownRef.current &&
         !dropdownRef.current.contains(event.target)
       ) {
-        onClose();
+        handleCloseDropdown();
       }
     };
 
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, [isOpen, onClose]);
+  }, [isOpen, unreadCount]);
 
   if (!isOpen) return null;
 
@@ -58,26 +65,13 @@ const NotificationDropdown = ({ isOpen, onClose }) => {
           </div>
         </div>
 
-        <div className="flex items-center gap-1.5">
-          {unreadCount > 0 && (
-            <button
-              onClick={() => markAllAsRead()}
-              className="flex items-center gap-1 rounded-xl px-2 py-1 text-[10px] font-extrabold text-blue-600 hover:bg-blue-50 transition cursor-pointer"
-              title="Mark all as read"
-            >
-              <CheckCheck className="h-3.5 w-3.5" />
-              <span>Mark read</span>
-            </button>
-          )}
-
-          <button
-            onClick={onClose}
-            className="rounded-xl p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-700 transition"
-            aria-label="Close notifications"
-          >
-            <X className="h-4 w-4" />
-          </button>
-        </div>
+        <button
+          onClick={handleCloseDropdown}
+          className="rounded-xl p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-700 transition cursor-pointer"
+          aria-label="Close notifications"
+        >
+          <X className="h-4 w-4" />
+        </button>
       </div>
 
       <div className="mt-2 max-h-[380px] overflow-y-auto space-y-1.5 pr-1 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
@@ -117,13 +111,7 @@ const NotificationDropdown = ({ isOpen, onClose }) => {
 
       {notifications.length > 0 && (
         <div className="border-t border-slate-100 pt-2.5 mt-2 flex items-center justify-between px-2 text-[10px] font-bold text-slate-400">
-          <span className="flex items-center gap-1 text-slate-400">
-            <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
-            Live sync active
-          </span>
-          <span className="text-[9px] uppercase tracking-wider text-slate-400 font-extrabold">
-            HotDrop v2.0
-          </span>
+         
         </div>
       )}
     </div>

@@ -25,17 +25,21 @@ export const useNotificationStore = create((set, get) => ({
 
       const payload = res.data?.data || res.data;
       const list = payload?.content || payload?.notifications || (Array.isArray(payload) ? payload : []);
+      const normalizedList = list.map((n) => ({
+        ...n,
+        isRead: Boolean(n.isRead ?? n.read ?? n.is_read),
+      }));
 
       set((state) => {
         if (page === 0) {
           return {
-            notifications: list,
+            notifications: normalizedList,
             isLoading: false,
             hasFetched: true,
           };
         }
         const map = new Map(state.notifications.map((n) => [n.id, n]));
-        list.forEach((n) => map.set(n.id, n));
+        normalizedList.forEach((n) => map.set(n.id, n));
         return {
           notifications: Array.from(map.values()),
           isLoading: false,
@@ -64,7 +68,7 @@ export const useNotificationStore = create((set, get) => ({
 
     set((state) => ({
       notifications: state.notifications.map((n) =>
-        n.id === notificationId ? { ...n, isRead: true } : n
+        n.id === notificationId ? { ...n, isRead: true, read: true } : n
       ),
       unreadCount: Math.max(0, state.unreadCount - 1),
     }));
@@ -78,7 +82,7 @@ export const useNotificationStore = create((set, get) => ({
 
   markAllAsRead: async () => {
     set((state) => ({
-      notifications: state.notifications.map((n) => ({ ...n, isRead: true })),
+      notifications: state.notifications.map((n) => ({ ...n, isRead: true, read: true })),
       unreadCount: 0,
     }));
 
@@ -92,13 +96,16 @@ export const useNotificationStore = create((set, get) => ({
   addNotification: (notification) => {
     if (!notification) return;
 
+    const isNotificationRead = Boolean(notification.isRead ?? notification.read ?? notification.is_read);
+    const normalized = { ...notification, isRead: isNotificationRead, read: isNotificationRead };
+
     set((state) => {
       const exists = state.notifications.some((n) => n.id === notification.id);
       if (exists) return state;
 
       return {
-        notifications: [notification, ...state.notifications],
-        unreadCount: state.unreadCount + (notification.isRead ? 0 : 1),
+        notifications: [normalized, ...state.notifications],
+        unreadCount: state.unreadCount + (isNotificationRead ? 0 : 1),
       };
     });
   },

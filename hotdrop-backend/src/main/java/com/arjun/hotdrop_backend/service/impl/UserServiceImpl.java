@@ -98,7 +98,7 @@ public class UserServiceImpl implements UserService {
                         currentUser,
                         targetUser,
                         NotificationType.FOLLOW,
-                        "@" + currentUser.getHotdropId() + " started following you.",
+                         " started following you.",
                         currentUser.getId()
                 );
 

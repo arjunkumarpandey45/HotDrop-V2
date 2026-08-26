@@ -289,7 +289,7 @@ public class PostServiceImpl implements PostService {
                     user,
                     post.getUser(),
                     NotificationType.LIKE,
-                    "@" + user.getHotdropId() + " liked your post '" + post.getTitle() + "'",
+                      " liked your post '" + post.getTitle() + "'",
                     post.getId()
             );
         }
@@ -325,7 +325,7 @@ public class PostServiceImpl implements PostService {
                 user,
                 post.getUser(),
                 NotificationType.COMMENT,
-                "@" + user.getHotdropId() + " commented: " + text.trim(),
+                  " commented: " + text.trim(),
                 post.getId()
         );
         postRepo.save(post);

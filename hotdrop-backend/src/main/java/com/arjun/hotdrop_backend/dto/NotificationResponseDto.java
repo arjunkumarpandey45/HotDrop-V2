@@ -1,6 +1,7 @@
 package com.arjun.hotdrop_backend.dto;
 
 import com.arjun.hotdrop_backend.enums.NotificationType;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Builder;
 import lombok.Data;
 
@@ -17,6 +18,7 @@ public class NotificationResponseDto {
     private NotificationType type;
     private UUID referenceId;
     private String shareUrl;
+    @JsonProperty("isRead")
     private boolean isRead;
     private LocalDateTime createdAt;
 }
