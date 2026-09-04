@@ -59,11 +59,15 @@ const Login = () => {
 
 navigate("/", { replace: true });
       } else {
-        showErrorToast(result.message || "Invalid credentials.");
+        if (result.status !== 429) {
+          showErrorToast(result.message || "Invalid credentials.");
+        }
       }
     } catch (error) {
       console.error("Login catch error:", error);
-      showErrorToast("Something went wrong.");
+      if (error.response?.status !== 429) {
+        showErrorToast("Something went wrong.");
+      }
     } finally {
       setLoading(false);
     }

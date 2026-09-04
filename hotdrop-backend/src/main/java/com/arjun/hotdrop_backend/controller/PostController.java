@@ -1,5 +1,6 @@
 package com.arjun.hotdrop_backend.controller;
 
+import com.arjun.hotdrop_backend.annotation.RateLimited;
 import com.arjun.hotdrop_backend.dto.*;
 import com.arjun.hotdrop_backend.scheduler.LinkTrackingScheduler;
 import com.arjun.hotdrop_backend.service.PostService;
@@ -27,7 +28,7 @@ public class PostController {
     private JwtUtils jwtUtils;
     private final PostService postService;
     private final LinkTrackingScheduler linkTrackingScheduler;
-
+    @RateLimited
     @PostMapping("/verify-link")
     public ResponseEntity<LinkVerificationResponseDto> verifyLink(
             @Valid @RequestBody LinkVerificationRequestDto requestDto) {
@@ -41,7 +42,7 @@ public class PostController {
         linkTrackingScheduler.startLiveTracking();
         return ResponseEntity.ok("Tracking engine triggered successfully! Check your console logs. 🚀");
     }
-
+@RateLimited
     @PostMapping(value = "/create", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<ApiResponse<PostResponseDto>> createPost(
             @Valid @ModelAttribute CreatePostDto createPostDto,
@@ -135,6 +136,7 @@ public class PostController {
         );
     }
 
+
     @PostMapping("/comment-to-post/{postId}")
     public ResponseEntity<ApiResponse<CommentResponseDto>> comment(
             @PathVariable UUID postId,
@@ -158,6 +160,7 @@ public class PostController {
         return ResponseHandler.generateResponse(HttpStatus.NO_CONTENT
         ,"Comment Deleted Successfully from "+hotdropId+"'s post",null);
     }
+
     @GetMapping("/get-user-post/{userId}")
     public ResponseEntity<ApiResponse<PostListResponseDto>> getUserPosts(
             @PathVariable UUID userId,
@@ -193,7 +196,6 @@ public class PostController {
                 comments
         );
     }
-
     @GetMapping("/{postId}/get-who-likes-post")
     public ResponseEntity<ApiResponse<List<PostResponseDto.UserSummaryDto>>> getUsersWhoLikedPost(@PathVariable UUID postId) {
         List<PostResponseDto.UserSummaryDto> likedUsers = postService.getUsersWhoLikedPost(postId);

@@ -263,8 +263,8 @@ function AllPost() {
       console.error("Like error:", err);
       if (err.response?.status === 401) {
         setShowAuthModal(true);
-      } else {
-        toast.error(err.response?.data?.message || "Action failed");
+      } else if (err.response?.status !== 429) {
+        showErrorToast(err.response?.data?.message || "Action failed");
       }
     }
   };
@@ -318,7 +318,9 @@ function AllPost() {
       setCommentText(""); 
     } catch (error) {
       console.error("Comment error:", error);
-      showErrorToast("Failed to post comment");
+      if (error.response?.status !== 429) {
+        showErrorToast(error.response?.data?.message || "Failed to post comment");
+      }
     }
   };
 

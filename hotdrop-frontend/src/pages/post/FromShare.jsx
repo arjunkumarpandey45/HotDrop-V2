@@ -103,9 +103,10 @@ function FromShare() {
         toast.success(newLikedState ? "Drop liked! ❤️" : "Unliked");
       }
 
-    // eslint-disable-next-line no-unused-vars
     } catch (error) {
-      toast.error("Action failed");
+      if (error.response?.status !== 429) {
+        showErrorToast(error.response?.data?.message || "Action failed");
+      }
     }
   };
 
@@ -149,7 +150,9 @@ function FromShare() {
       showCommentToast("Comment added!");
     } catch (error) {
       console.error("Comment submit error in FromShare:", error);
-      showErrorToast("Error adding comment");
+      if (error.response?.status !== 429) {
+        showErrorToast(error.response?.data?.message || "Error adding comment");
+      }
     }
   };
 

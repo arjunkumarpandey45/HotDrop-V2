@@ -1,4 +1,5 @@
 import axios from "axios";
+import { showRateLimitToast } from "../toast/Toast";
 
 const URL = import.meta.env.VITE_BACKEND_URL;
 
@@ -36,6 +37,27 @@ API.interceptors.response.use(
   (response) => response,
 
   async (error) => {
+    // 1. Intercept 429 Too Many Requests (Rate Limiting)
+    if (error.response?.status === 429) {
+      const data = error.response.data;
+      let backendMsg = null;
+
+      if (typeof data === "string" && data.trim()) {
+        backendMsg = data.trim();
+      } else if (data && typeof data === "object") {
+        backendMsg = data.message || data.error || data.msg;
+      }
+
+      if (!backendMsg) {
+        backendMsg =
+          error.response.statusText ||
+          "Rate limit exceeded. Please wait before trying again.";
+      }
+
+      showRateLimitToast(backendMsg);
+      return Promise.reject(error);
+    }
+
     const originalRequest = error.config;
 
     if (

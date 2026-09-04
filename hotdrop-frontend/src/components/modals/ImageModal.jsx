@@ -176,12 +176,16 @@ function ImageModal({
         onClose();
       }
     } catch (error) {
-      toast.update(loadingToast, {
-        render: error.response?.data?.message || "Failed to delete!",
-        type: "error",
-        isLoading: false,
-        autoClose: 2000,
-      });
+      if (error.response?.status === 429) {
+        toast.dismiss(loadingToast);
+      } else {
+        toast.update(loadingToast, {
+          render: error.response?.data?.message || "Failed to delete!",
+          type: "error",
+          isLoading: false,
+          autoClose: 2000,
+        });
+      }
     } finally {
       setIsDeleting(false);
     }

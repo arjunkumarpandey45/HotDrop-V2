@@ -211,7 +211,47 @@ const showSuccessToast = (msg) => {
   );
 };
 
+let lastRateLimitToastTime = 0;
+
+const showRateLimitToast = (msg = "Rate limit exceeded. Please wait before trying again.") => {
+  lastRateLimitToastTime = Date.now();
+  const textToShow =
+    typeof msg === "string" && msg.trim()
+      ? msg.trim()
+      : msg?.message || msg?.error || "Rate limit exceeded. Please wait before trying again.";
+
+  toast(
+    <div className="relative flex items-center gap-3.5 pl-5 pr-4 py-3.5 font-sans overflow-hidden min-w-0 w-full">
+      <div className="absolute left-0 top-0 bottom-0 w-1.5 bg-gradient-to-b from-amber-500 via-orange-500 to-rose-500" />
+      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-tr from-amber-500 via-orange-500 to-rose-500 text-white shadow-lg shadow-orange-500/40 ring-4 ring-orange-500/20">
+        <svg className="h-5 w-5 stroke-[2.5]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+      </div>
+      <div className="flex flex-col min-w-0 flex-1 overflow-hidden">
+        <div className="flex items-center gap-1.5">
+          <span className="text-[11px] font-black uppercase tracking-wider text-amber-700">Too Many Requests</span>
+          <span className="text-xs">⏳</span>
+        </div>
+        <AutoScrollingText
+          text={textToShow}
+          className="text-xs font-bold text-amber-950 mt-0.5"
+        />
+      </div>
+    </div>,
+    {
+      ...toastConfig,
+      toastId: "rate-limit-toast",
+      className: "bg-white/95 backdrop-blur-xl border border-amber-300/90 rounded-3xl shadow-[0_20px_50px_rgba(245,158,11,0.18)] p-0 min-h-[58px]",
+      autoClose: getAutoCloseDuration(textToShow, 4000),
+    }
+  );
+};
+
 const showErrorToast = (msg) => {
+  if (Date.now() - lastRateLimitToastTime < 2000) {
+    return;
+  }
   toast(
     <div className="relative flex items-center gap-3.5 pl-5 pr-4 py-3.5 font-sans overflow-hidden min-w-0 w-full">
       <div className="absolute left-0 top-0 bottom-0 w-1.5 bg-gradient-to-b from-rose-500 via-red-500 to-amber-500" />
@@ -383,6 +423,9 @@ const showPostSuccessToast = (title) => {
 };
 
 const showPostErrorToast = (errorMsg) => {
+  if (Date.now() - lastRateLimitToastTime < 2000) {
+    return;
+  }
   const msg = errorMsg || "Error occurred!";
   toast(
     <div className="relative flex items-center gap-3.5 pl-5 pr-4 py-3.5 font-sans overflow-hidden min-w-0 w-full">
@@ -450,6 +493,7 @@ export {
   showProfileUpdatedToast,
   showSuccessToast,
   showErrorToast,
+  showRateLimitToast,
   showSuccessToastForSignup,
   showErrorToastForSIgnup,
   showSuccessToastForLogout,

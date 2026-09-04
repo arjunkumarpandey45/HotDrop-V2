@@ -1,5 +1,6 @@
 package com.arjun.hotdrop_backend.controller;
 
+import com.arjun.hotdrop_backend.annotation.RateLimited;
 import com.arjun.hotdrop_backend.dto.*;
 
 import com.arjun.hotdrop_backend.service.UserService;

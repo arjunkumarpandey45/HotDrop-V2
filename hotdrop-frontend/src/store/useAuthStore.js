@@ -70,6 +70,7 @@ export const useAuthStore = create((set, get) => ({
     } catch (error) {
       return {
         success: false,
+        status: error.response?.status,
         message:
           error.response?.data?.message ||
           error.response?.data?.error ||

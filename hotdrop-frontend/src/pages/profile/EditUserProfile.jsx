@@ -386,9 +386,11 @@ function EditUserProfile() {
       });
     } catch (err) {
       console.error("Follow error:", err);
-      showErrorToast(
-        err.response?.data?.message || "Failed to update follow status"
-      );
+      if (err.response?.status !== 429) {
+        showErrorToast(
+          err.response?.data?.message || "Failed to update follow status"
+        );
+      }
     } finally {
       setFollowLoading(false);
     }
@@ -436,7 +438,9 @@ function EditUserProfile() {
       showProfileUpdatedToast("Profile details updated!");
       setShowEditModal(false);
     } catch (err) {
-      showErrorToast(err.response?.data?.message || "Update failed");
+      if (err.response?.status !== 429) {
+        showErrorToast(err.response?.data?.message || "Update failed");
+      }
     } finally {
       setLoading(false);
     }

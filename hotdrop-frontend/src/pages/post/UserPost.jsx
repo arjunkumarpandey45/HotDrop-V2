@@ -139,12 +139,16 @@ function UserPost({ postsOverride, hideOptions, ownerOverride }) {
         setDeleteConfirm(null);
       }
     } catch (error) {
-      toast.update(loadingToast, {
-        render: error.response?.data?.message || "Failed to delete!",
-        type: "error",
-        isLoading: false,
-        autoClose: 2000,
-      });
+      if (error.response?.status === 429) {
+        toast.dismiss(loadingToast);
+      } else {
+        toast.update(loadingToast, {
+          render: error.response?.data?.message || "Failed to delete!",
+          type: "error",
+          isLoading: false,
+          autoClose: 2000,
+        });
+      }
     } finally {
       setIsDeleting(false);
     }
@@ -224,7 +228,9 @@ function UserPost({ postsOverride, hideOptions, ownerOverride }) {
       }
     } catch (error) {
       console.error("Like error:", error);
-      toast.error("Failed to update like status");
+      if (error.response?.status !== 429) {
+        showErrorToast(error.response?.data?.message || "Failed to update like status");
+      }
     }
   };
 
@@ -344,7 +350,9 @@ function UserPost({ postsOverride, hideOptions, ownerOverride }) {
       setCommentText("");
     } catch (error) {
       console.error("Comment submit error:", error);
-      showErrorToast("Failed to add comment");
+      if (error.response?.status !== 429) {
+        showErrorToast(error.response?.data?.message || "Failed to add comment");
+      }
     }
   };
 

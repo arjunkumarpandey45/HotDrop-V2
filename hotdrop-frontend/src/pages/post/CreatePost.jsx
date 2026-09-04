@@ -243,7 +243,9 @@ const CreatePost = ({ isOpen, onClose }) => {
             console.error("Link Verification Error:", error);
             setFormData((prev) => ({ ...prev, isLinkDead: true }));
             setIsLinkVerified(false);
-            showPostErrorToast("Link verification failed. Please check URL.");
+            if (error.response?.status !== 429) {
+                showPostErrorToast("Link verification failed. Please check URL.");
+            }
         } finally {
             setVerifyingLink(false);
         }
@@ -299,9 +301,11 @@ const CreatePost = ({ isOpen, onClose }) => {
                 onClose();
             }
         } catch (error) {
-            showPostErrorToast(
-                error.response?.data?.message || "Project Drop failed!"
-            );
+            if (error.response?.status !== 429) {
+                showPostErrorToast(
+                    error.response?.data?.message || "Project Drop failed!"
+                );
+            }
         } finally {
             setLoading(false);
         }

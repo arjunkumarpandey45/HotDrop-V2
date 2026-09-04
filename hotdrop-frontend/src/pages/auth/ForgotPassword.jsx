@@ -59,11 +59,13 @@ const ForgotPassword = () => {
       setStep(2);
     } catch (error) {
       console.error("Forgot password error:", error);
-      const errMsg =
-        error.response?.data?.message ||
-        error.response?.data?.error ||
-        "Failed to send OTP. Please try again.";
-      showErrorToast(errMsg);
+      if (error.response?.status !== 429) {
+        const errMsg =
+          error.response?.data?.message ||
+          error.response?.data?.error ||
+          "Failed to send OTP. Please try again.";
+        showErrorToast(errMsg);
+      }
     } finally {
       setLoading(false);
     }
@@ -76,11 +78,13 @@ const ForgotPassword = () => {
       const res = await api.post("/auth/forgot-password", { email: email.trim() });
       showSuccessToast(res.data?.message || "OTP resent to your email!");
     } catch (error) {
-      const errMsg =
-        error.response?.data?.message ||
-        error.response?.data?.error ||
-        "Failed to resend OTP.";
-      showErrorToast(errMsg);
+      if (error.response?.status !== 429) {
+        const errMsg =
+          error.response?.data?.message ||
+          error.response?.data?.error ||
+          "Failed to resend OTP.";
+        showErrorToast(errMsg);
+      }
     } finally {
       setResending(false);
     }
@@ -129,11 +133,13 @@ const ForgotPassword = () => {
       navigate("/login", { replace: true });
     } catch (error) {
       console.error("Verify OTP error:", error);
-      const errMsg =
-        error.response?.data?.message ||
-        error.response?.data?.error ||
-        "Invalid OTP or failed to reset password.";
-      showErrorToast(errMsg);
+      if (error.response?.status !== 429) {
+        const errMsg =
+          error.response?.data?.message ||
+          error.response?.data?.error ||
+          "Invalid OTP or failed to reset password.";
+        showErrorToast(errMsg);
+      }
     } finally {
       setLoading(false);
     }

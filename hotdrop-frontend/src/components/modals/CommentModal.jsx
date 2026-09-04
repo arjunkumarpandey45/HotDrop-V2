@@ -95,7 +95,9 @@ function CommentModal({
       showCommentDeletedToast("Comment deleted!");
     } catch (error) {
       console.error("Delete comment error:", error);
-      showErrorToast("Failed to delete comment");
+      if (error.response?.status !== 429) {
+        showErrorToast(error.response?.data?.message || "Failed to delete comment");
+      }
       setLocalComments(previousComments);
     } finally {
       setDeleteConfirm(null);
