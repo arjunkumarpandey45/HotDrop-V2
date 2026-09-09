@@ -4,7 +4,7 @@ import com.arjun.hotdrop_backend.annotation.RateLimited;
 import com.arjun.hotdrop_backend.dto.*;
 import com.arjun.hotdrop_backend.scheduler.LinkTrackingScheduler;
 import com.arjun.hotdrop_backend.service.PostService;
-import com.arjun.hotdrop_backend.utils.JwtUtils;
+
 import com.arjun.hotdrop_backend.utils.ResponseHandler;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -25,7 +25,7 @@ import java.util.UUID;
 @RequestMapping("/posts")
 @RequiredArgsConstructor
 public class PostController {
-    private JwtUtils jwtUtils;
+
     private final PostService postService;
     private final LinkTrackingScheduler linkTrackingScheduler;
     @RateLimited

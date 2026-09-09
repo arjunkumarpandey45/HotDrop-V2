@@ -5,8 +5,9 @@ import com.arjun.hotdrop_backend.dto.*;
 import com.arjun.hotdrop_backend.entity.RefreshToken;
 import com.arjun.hotdrop_backend.repository.RefreshTokenRepo;
 import com.arjun.hotdrop_backend.service.AuthService;
+import com.arjun.hotdrop_backend.service.JwtService;
 import com.arjun.hotdrop_backend.service.RefreshTokenService;
-import com.arjun.hotdrop_backend.utils.JwtUtils;
+
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -22,8 +23,8 @@ public class AuthController {
     private final AuthService authService;
     private final RefreshTokenService refreshTokenService;
     private final RefreshTokenRepo refreshTokenRepo;
-    private final JwtUtils jwtUtils;
 
+private final JwtService jwtService;
     @PostMapping("/signup")
     public ResponseEntity<UserResponseDto> signup(@Valid @RequestBody RegisterRequestDto registerRequestDto) {
         return ResponseEntity.ok(authService.register(registerRequestDto));
@@ -77,7 +78,7 @@ public class AuthController {
                 .map(RefreshToken::getUser)
                 .map(user -> {
 
-                    String newAccessToken = jwtUtils.generateTokenFromHotdropId(user.getHotdropId());
+                    String newAccessToken = jwtService.generateTokenFromHotdropId(user.getHotdropId());
 
                     ResponseCookie newAccessCookie = ResponseCookie.from("accessToken", newAccessToken)
                             .httpOnly(true).secure(false).path("/").maxAge(15 * 60).sameSite("Strict").build();

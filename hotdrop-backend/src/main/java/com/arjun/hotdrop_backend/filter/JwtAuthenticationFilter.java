@@ -1,7 +1,7 @@
 package com.arjun.hotdrop_backend.filter;
 
 import com.arjun.hotdrop_backend.service.JwtService;
-import com.arjun.hotdrop_backend.utils.JwtUtils;
+
 import io.micrometer.common.lang.NonNull;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -22,8 +22,8 @@ import java.io.IOException;
 @Component
 @RequiredArgsConstructor
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
-    private final JwtUtils jwtUtils;
 
+private final JwtService jwtService;
     private final UserDetailsService userDetailsService;
 
     @Override
@@ -49,12 +49,12 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             filterChain.doFilter(request, response);
             return;
         }
-       hotdropId = jwtUtils.getHotdropIdFromJwtToken(jwt);
+       hotdropId = jwtService.extractHotdropId(jwt);
 
         if (hotdropId != null && SecurityContextHolder.getContext().getAuthentication() == null) {
             UserDetails userDetails = this.userDetailsService.loadUserByUsername(hotdropId);
 
-            if (jwtUtils.validateJwtToken(jwt)) {
+            if (jwtService.validateJwtToken(jwt)) {
                 UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
                         userDetails,
                         null,

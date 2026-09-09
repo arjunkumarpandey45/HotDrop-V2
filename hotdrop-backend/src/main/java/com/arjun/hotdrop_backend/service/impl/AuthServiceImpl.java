@@ -13,7 +13,8 @@ import com.arjun.hotdrop_backend.repository.RoleRepo;
 import com.arjun.hotdrop_backend.repository.UserRepo;
 import com.arjun.hotdrop_backend.service.AuthService;
 import com.arjun.hotdrop_backend.service.EmailService;
-import com.arjun.hotdrop_backend.utils.JwtUtils;
+import com.arjun.hotdrop_backend.service.JwtService;
+
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
@@ -37,12 +38,13 @@ public class AuthServiceImpl implements AuthService {
     private final UserRepo userRepo;
     private final RoleRepo roleRepo;
     private final PasswordEncoder passwordEncoder;
-    private final JwtUtils jwtUtils;
+
     private final EmailService emailService;
     private final AuthenticationManager authenticationManager;
     private final OtpVerificationRepo otpVerificationRepo;
     private final RefreshTokenRepo refreshTokenRepo;
     private final UserMapper userMapper;
+    private final JwtService jwtService;
 
     @Override
     public UserResponseDto register(RegisterRequestDto registerRequestDto) {
@@ -82,7 +84,7 @@ public class AuthServiceImpl implements AuthService {
                 .firstName(registerRequestDto.getFirstName())
                 .lastName(registerRequestDto.getLastName()).build());
 
-        String token = jwtUtils.generateEmailVerificationToken(user.getEmail());
+        String token = jwtService.generateEmailVerificationToken(user.getEmail());
         String verificationLink = frontendURL+"/auth/verify-email?token=" + token;
         emailService.sendVerificationEmail(user.getEmail(), user.getFirstName(), verificationLink);
         return userMapper.toResponseDto(user);
@@ -92,11 +94,11 @@ public class AuthServiceImpl implements AuthService {
     @Transactional
     public String verifyEmail(String token) {
 
-        if (!jwtUtils.validateEmailToken(token)) {
+        if (!jwtService.validateEmailToken(token)) {
             throw new IllegalArgumentException("Invalid or expired verification token.");
         }
 
-        String email = jwtUtils.getEmailFromToken(token);
+        String email = jwtService.getEmailFromToken(token);
 
         User user = userRepo.findByEmail(email)
                 .orElseThrow(() -> new IllegalArgumentException("User not found."));
@@ -128,7 +130,7 @@ public class AuthServiceImpl implements AuthService {
         user.setLastLoginAt(LocalDateTime.now());
         userRepo.save(user);
 
-        return jwtUtils.generateToken(authentication);
+        return jwtService.generateToken(authentication);
     }
 
     @Override
