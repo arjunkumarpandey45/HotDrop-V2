@@ -35,7 +35,7 @@ public class TechStackDetectorServiceImpl implements TechStackDetectorService {
                     .ignoreHttpErrors(true)
                     .execute();
 
-            // 1. Lowercase Headers Map normalize karo
+            // 1. Lowercase Headers Map normalize
             Map<String, String> rawHeaders = response.headers();
             Map<String, String> headers = new HashMap<>();
             rawHeaders.forEach((k, v) -> headers.put(k.toLowerCase(), v.toLowerCase()));

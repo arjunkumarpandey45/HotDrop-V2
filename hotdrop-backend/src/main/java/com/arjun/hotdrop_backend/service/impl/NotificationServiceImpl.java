@@ -27,7 +27,9 @@ public class NotificationServiceImpl implements NotificationService {
     @Transactional
     public void sendNotification(User sender, User recipient, NotificationType type, String message, UUID referenceId) {
 
-        if (sender.getId().equals(recipient.getId())) {
+        if (sender != null && recipient != null && sender.getId().equals(recipient.getId())
+                && type != NotificationType.PROJECT_DEAD
+                && type != NotificationType.PROJECT_LIVE) {
             return;
         }
 
@@ -43,7 +45,8 @@ public class NotificationServiceImpl implements NotificationService {
         Notification saved = notificationRepo.save(notification);
 
         String postShareUrl = null;
-        if (referenceId != null && (type == NotificationType.LIKE || type == NotificationType.COMMENT)) {
+        if (referenceId != null && (type == NotificationType.LIKE || type == NotificationType.COMMENT
+                || type == NotificationType.PROJECT_DEAD || type == NotificationType.PROJECT_LIVE)) {
             postShareUrl = postRepo.findById(referenceId)
                     .map(Post::getShareUrl)
                     .orElse(null);
@@ -79,7 +82,8 @@ public class NotificationServiceImpl implements NotificationService {
         return notificationRepo.findByRecipientOrderByCreatedAtDesc(user, pageable)
                 .map(n -> {
                     String postShareUrl = null;
-                    if (n.getReferenceId() != null && (n.getType() == NotificationType.LIKE || n.getType() == NotificationType.COMMENT)) {
+                    if (n.getReferenceId() != null && (n.getType() == NotificationType.LIKE || n.getType() == NotificationType.COMMENT
+                            || n.getType() == NotificationType.PROJECT_DEAD || n.getType() == NotificationType.PROJECT_LIVE)) {
                         postShareUrl = postRepo.findById(n.getReferenceId())
                                 .map(com.arjun.hotdrop_backend.entity.Post::getShareUrl)
                                 .orElse(null);

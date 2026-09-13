@@ -1,7 +1,9 @@
 package com.arjun.hotdrop_backend.scheduler;
 
 import com.arjun.hotdrop_backend.entity.Post;
+import com.arjun.hotdrop_backend.enums.NotificationType;
 import com.arjun.hotdrop_backend.repository.PostRepo;
+import com.arjun.hotdrop_backend.service.NotificationService;
 import com.arjun.hotdrop_backend.utils.UserAgentProvider;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -25,6 +27,7 @@ public class LinkTrackingScheduler {
     private final UserAgentProvider userAgentProvider;
     private final PostRepo postRepo;
     private final TransactionTemplate transactionTemplate;
+    private final NotificationService notificationService;
 
 
 
@@ -40,7 +43,7 @@ public class LinkTrackingScheduler {
             .connectTimeout(Duration.ofSeconds(10))
             .build();
 
-    @Scheduled(fixedDelay = 300000)
+    @Scheduled(fixedDelay = 60000)
     public void startLiveTracking() {
         log.info("--- 🛡️ Upgraded Multi-threaded Tracking Started: {} ---", LocalDateTime.now());
 
@@ -80,9 +83,41 @@ public class LinkTrackingScheduler {
             log.info("💾 Flushing structural link updates down into PostgreSQL layer...");
             transactionTemplate.executeWithoutResult(status -> {
                 for (Post post : allPosts) {
-                    Boolean isDead = trackingResults.getOrDefault(post.getProjectUrl(), false);
-                    post.setLinkDead(isDead);
+                    boolean previouslyDead = post.isLinkDead();
+                    boolean currentlyDead = trackingResults.getOrDefault(post.getProjectUrl(), false);
+                    if (!previouslyDead && currentlyDead) {
+                        try {
+                            notificationService.sendNotification(
+                                    post.getUser(), // sender/system
+                                    post.getUser(), // recipient (post owner)
+                                    NotificationType.PROJECT_DEAD,
+                                    "🚨 Alert: Your project '" + post.getTitle() + "' is unreachable or returning an error!",
+                                    post.getId()
+                            );
+                            log.warn("⚠️ Dispatched PROJECT_DOWN notification for Post ID: {}", post.getId());
+                        } catch (Exception e) {
+                            log.error("Failed to send PROJECT_DOWN notification: {}", e.getMessage());
+                        }
+                    }
+
+                    if (previouslyDead && !currentlyDead) {
+                        try {
+                            notificationService.sendNotification(
+                                    post.getUser(),
+                                    post.getUser(),
+                                    NotificationType.PROJECT_LIVE,
+                                    "🔥 Great news! Your project '" + post.getTitle() + "' is back online and live!",
+                                    post.getId()
+                            );
+                            log.info("✅ Dispatched PROJECT_UP notification for Post ID: {}", post.getId());
+                        } catch (Exception e) {
+                            log.error("Failed to send PROJECT_UP notification: {}", e.getMessage());
+                        }
+                    }
+                    post.setLinkDead(currentlyDead);
                     post.setLastChecked(LocalDateTime.now());
+
+
                 }
                 postRepo.saveAll(allPosts);
             });

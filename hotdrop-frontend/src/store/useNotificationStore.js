@@ -119,6 +119,7 @@ export const useNotificationStore = create((set, get) => ({
     if (pollTimer) clearInterval(pollTimer);
     pollTimer = setInterval(() => {
       get().fetchUnreadCount();
+      get().fetchNotifications(0, 20);
     }, 30000);
 
     if (stompClient && stompClient.connected) return;
@@ -128,7 +129,7 @@ export const useNotificationStore = create((set, get) => ({
       const socketUrl = backendUrl.endsWith("/") ? `${backendUrl}ws` : `${backendUrl}/ws`;
 
       const client = new Client({
-        webSocketFactory: () => new SockJS(socketUrl),
+        webSocketFactory: () => new SockJS(socketUrl, null, { withCredentials: true }),
         reconnectDelay: 5000,
         heartbeatIncoming: 4000,
         heartbeatOutgoing: 4000,

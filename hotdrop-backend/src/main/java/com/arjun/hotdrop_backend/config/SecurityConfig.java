@@ -48,6 +48,7 @@ private String frontendURL;
                                 "/users/*/get-all-followers",
                                 "/users/search/**",
                                 "/actuator/health",
+                                "/ws/**",
                                 "/"
                         ).permitAll()
                         .requestMatchers(

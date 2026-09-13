@@ -1,5 +1,5 @@
 import { useNavigate } from "react-router-dom";
-import { Heart, MessageCircle, UserPlus, Sparkles, ChevronRight } from "lucide-react";
+import { Heart, MessageCircle, UserPlus, Sparkles, ChevronRight, AlertCircle, CheckCircle2 } from "lucide-react";
 import dp from "../../assets/dp.jpg";
 import { useNotificationStore } from "../../store/useNotificationStore";
 
@@ -49,7 +49,12 @@ const NotificationItem = ({ notification, onClose }) => {
       if (senderHotdropId) {
         navigate(`/user/userprofile/${senderHotdropId}`);
       }
-    } else if (normalizedType === "LIKE" || normalizedType === "COMMENT") {
+    } else if (
+      normalizedType === "LIKE" ||
+      normalizedType === "COMMENT" ||
+      normalizedType === "PROJECT_DEAD" ||
+      normalizedType === "PROJECT_LIVE"
+    ) {
       const targetSlug = shareUrl || referenceId;
       if (targetSlug) {
         navigate(`/posts/share/${targetSlug}`);
@@ -82,6 +87,18 @@ const NotificationItem = ({ notification, onClose }) => {
             <UserPlus className="h-2.5 w-2.5" />
           </div>
         );
+      case "PROJECT_DEAD":
+        return (
+          <div className="absolute -bottom-0.5 -right-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-rose-600 text-white ring-2 ring-white shadow-2xs">
+            <AlertCircle className="h-2.5 w-2.5 stroke-[2.5]" />
+          </div>
+        );
+      case "PROJECT_LIVE":
+        return (
+          <div className="absolute -bottom-0.5 -right-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-emerald-600 text-white ring-2 ring-white shadow-2xs">
+            <CheckCircle2 className="h-2.5 w-2.5 stroke-[2.5]" />
+          </div>
+        );
       default:
         return (
           <div className="absolute -bottom-0.5 -right-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-blue-500 text-white ring-2 ring-white shadow-2xs">
@@ -95,6 +112,16 @@ const NotificationItem = ({ notification, onClose }) => {
     const normalizedType = (type || "").toUpperCase();
     const handle = senderHotdropId || "developer";
     const time = formatTimeAgo(createdAt);
+
+    if (normalizedType === "PROJECT_DEAD" || normalizedType === "PROJECT_LIVE") {
+      return (
+        <p className="text-xs text-slate-800 leading-snug">
+          <span className="font-black text-slate-900">System Alert:</span>{" "}
+          <span className="font-normal text-slate-600">{message}</span>{" "}
+          <span className="text-[11px] text-slate-400 font-medium">{time}</span>
+        </p>
+      );
+    }
 
     if (message) {
       return (

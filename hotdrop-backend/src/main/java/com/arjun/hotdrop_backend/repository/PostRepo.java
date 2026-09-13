@@ -23,7 +23,7 @@ public interface PostRepo extends JpaRepository<Post, UUID> {
     @Query("UPDATE Post p SET p.likeCount = CASE WHEN p.likeCount > 0 THEN p.likeCount - 1 ELSE 0 END WHERE p.id = :postId")
     void decrementLikeCount(@Param("postId") UUID postId);
 
-    @Query("SELECT p FROM Post p WHERE p.projectUrl IS NOT NULL AND p.projectUrl <> ''")
+    @Query("SELECT p FROM Post p JOIN FETCH p.user WHERE p.projectUrl IS NOT NULL AND p.projectUrl <> ''")
     List<Post> findAllWithActiveProjectLinks();
     @Query(value = "SELECT p.* FROM posts p WHERE :keyword IS NULL OR " +
             "LOWER(p.title) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +

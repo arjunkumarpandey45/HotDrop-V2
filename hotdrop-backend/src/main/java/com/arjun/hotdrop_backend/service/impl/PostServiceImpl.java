@@ -89,12 +89,7 @@ public class PostServiceImpl implements PostService {
                         .detectedTags(new ArrayList<>(detectedTags))
                         .build();
             }
-            return LinkVerificationResponseDto.builder()
-                    .isLive(false)
-                    .url(cleanUrl)
-                    .message("Link returned bad status code: " + headResponse.statusCode())
-                    .detectedTags(Collections.emptyList())
-                    .build();
+
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             log.warn("HEAD verification thread context interrupted.");
