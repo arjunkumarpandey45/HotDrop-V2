@@ -41,7 +41,7 @@ function ShareModal({ post, onClose }) {
 
         <div className="flex justify-between items-center mb-4 pt-3">
           <h2 className="font-extrabold text-slate-900 text-base tracking-tight">
-            Share Drop
+            Share project
           </h2>
 
           <button
@@ -131,7 +131,7 @@ function ShareModal({ post, onClose }) {
             </div>
 
             <span className="text-xs text-slate-500 font-medium">
-              Scan QR code to open drop
+              Scan QR code to open project
             </span>
 
             <button

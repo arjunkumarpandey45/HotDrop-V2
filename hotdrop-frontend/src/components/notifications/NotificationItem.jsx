@@ -110,7 +110,7 @@ const NotificationItem = ({ notification, onClose }) => {
       return (
         <p className="text-xs text-slate-800 leading-snug">
           <span className="font-black text-slate-900">@{handle}</span>{" "}
-          <span className="font-normal text-slate-600">liked your drop.</span>{" "}
+          <span className="font-normal text-slate-600">liked your project.</span>{" "}
           <span className="text-[11px] text-slate-400 font-medium">{time}</span>
         </p>
       );
@@ -120,7 +120,7 @@ const NotificationItem = ({ notification, onClose }) => {
       return (
         <p className="text-xs text-slate-800 leading-snug">
           <span className="font-black text-slate-900">@{handle}</span>{" "}
-          <span className="font-normal text-slate-600">commented on your drop.</span>{" "}
+          <span className="font-normal text-slate-600">commented on your project.</span>{" "}
           <span className="text-[11px] text-slate-400 font-medium">{time}</span>
         </p>
       );

@@ -110,7 +110,7 @@ function UserPost({ postsOverride, hideOptions, ownerOverride }) {
   const handleFinalDelete = async () => {
     if (!deleteConfirm) return;
     setIsDeleting(true);
-    const loadingToast = toast.loading("Deleting your drop...");
+    const loadingToast = toast.loading("Deleting your project...");
 
     const targetId = deleteConfirm.id || deleteConfirm._id;
 
@@ -118,7 +118,7 @@ function UserPost({ postsOverride, hideOptions, ownerOverride }) {
       const res = await API.delete(`/posts/delete-post/${targetId}`);
       if (res.status === 200 || res.data?.success || res.data?.statusCode === 200) {
         toast.dismiss(loadingToast);
-        showProjectDeletedToast(deleteConfirm.title || "Project Drop");
+        showProjectDeletedToast(deleteConfirm.title || "Project");
 
         useAuthStore.setState((state) => {
           const filterFn = (p) => (p.id || p._id) !== targetId;
@@ -484,7 +484,7 @@ function UserPost({ postsOverride, hideOptions, ownerOverride }) {
                             className="flex w-full items-center gap-2 px-3 py-2 text-xs font-bold text-red-600 hover:bg-red-50 rounded-xl transition-colors"
                           >
                             <Trash2 size={15} className="text-red-500" />
-                            <span>Delete Drop</span>
+                            <span>Delete Project</span>
                           </button>
                         </div>
                       )}
@@ -777,10 +777,10 @@ function UserPost({ postsOverride, hideOptions, ownerOverride }) {
               <Trash2 size={26} strokeWidth={2.2} className="animate-bounce" />
             </div>
             <h4 className="text-base font-extrabold text-slate-900 mb-1">
-              Delete Drop?
+              Delete Project?
             </h4>
             <p className="text-xs text-slate-500 leading-relaxed mb-6">
-              This drop will be permanently removed.
+              This Project will be permanently removed.
               <br />
               <span className="font-bold text-slate-800">
                 "{deleteConfirm.title}"
@@ -823,7 +823,7 @@ function UserPost({ postsOverride, hideOptions, ownerOverride }) {
               <ShieldCheck size={24} />
             </div>
             <h2 className="text-base font-bold text-slate-900 mb-1">Sign in required</h2>
-            <p className="text-[12px] text-slate-500 mb-6">Please login to access this DROP.</p>
+            <p className="text-[12px] text-slate-500 mb-6">Please login to access this Project.</p>
             <div className="flex flex-col gap-2">
               <button
                 onClick={() => navigate("/login")}

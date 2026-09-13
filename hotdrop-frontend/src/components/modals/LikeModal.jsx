@@ -122,7 +122,7 @@ function LikeModal({ post, onClose }) {
             })
           ) : (
             <div className="text-center py-8 text-slate-400 text-xs font-medium">
-              No likes on this drop yet
+              No likes on this project yet
             </div>
           )}
         </div>

@@ -179,7 +179,7 @@ function SearchModal({ isOpen, onClose, initialMode = "users" }) {
             placeholder={
               searchMode === "users"
                 ? "Type HotDrop ID or name..."
-                : "Search project drops by title or #tag..."
+                : "Search project by title or #tag..."
             }
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
@@ -256,7 +256,7 @@ function SearchModal({ isOpen, onClose, initialMode = "users" }) {
             projectSuggestions.length > 0 ? (
               <div className="space-y-1">
                 {projectSuggestions.map((post, index) => {
-                  const pTitle = post.title || "Project Drop";
+                  const pTitle = post.title || "Project ";
                   const pOwner = post.creator || post.user || {};
                   const pHandle = pOwner.hotdropId || pOwner.username || "dev";
                   const rawImages = post.imageUrls || post.images || [];
@@ -307,7 +307,7 @@ function SearchModal({ isOpen, onClose, initialMode = "users" }) {
                   onClick={() => handleSelectProject(activeCleanQuery)}
                   className="px-4 py-2 bg-blue-600 text-white rounded-xl text-xs font-bold hover:bg-blue-700 transition cursor-pointer"
                 >
-                  Search Drops for "{activeCleanQuery}"
+                  Search Projects for "{activeCleanQuery}"
                 </button>
               </div>
             )

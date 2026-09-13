@@ -311,7 +311,7 @@ const Navbar = () => {
                   {suggestions.length > 0 ? (
                     searchMode === "projects" ? (
                       suggestions.map((p, index) => {
-                        const pTitle = p.title || "Project Drop";
+                        const pTitle = p.title || "Project ";
                         const pOwner = p.creator || p.user || {};
                         const pHandle = pOwner.hotdropId || pOwner.username || "dev";
                         const rawImages = p.imageUrls || p.images || [];
@@ -370,7 +370,7 @@ const Navbar = () => {
                       onClick={() => handleSuggestionClick(searchQuery, searchMode)}
                       className="flex w-full items-center justify-between px-3 py-2.5 text-xs font-bold text-blue-600 hover:bg-blue-50 rounded-xl transition cursor-pointer"
                     >
-                      <span>{searchMode === "users" ? `Go to profile @${searchQuery.replace(/^@/, "")}` : `Search drops for "${searchQuery}"`}</span>
+                      <span>{searchMode === "users" ? `Go to profile @${searchQuery.replace(/^@/, "")}` : `Searchs for "$ drop{searchQuery}"`}</span>
                       <ArrowRight size={14} />
                     </button>
                   )}

@@ -94,7 +94,7 @@ const NotificationDropdown = ({ isOpen, onClose }) => {
                 All caught up! ✨
               </h4>
               <p className="text-[11px] font-medium text-slate-400 mt-1 leading-relaxed">
-                When developers like, comment on your drops, or follow you, your alerts will show up here.
+                When developers like, comment on your project, or follow you, your alerts will show up here.
               </p>
             </div>
           </div>

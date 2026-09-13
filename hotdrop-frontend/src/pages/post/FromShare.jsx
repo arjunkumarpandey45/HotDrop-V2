@@ -159,7 +159,7 @@ function FromShare() {
   if (loading) {
     return (
       <div className="h-screen flex items-center justify-center font-black text-blue-600 tracking-widest uppercase animate-pulse text-sm">
-        Loading Drop...
+        Loading Project...
       </div>
     );
   }
@@ -167,7 +167,7 @@ function FromShare() {
   if (!post) {
     return (
       <div className="h-screen flex flex-col items-center justify-center font-bold text-slate-800 gap-2">
-        <span className="text-xl">404 - Drop Not Found</span>
+        <span className="text-xl">404 -Project Not Found</span>
         <button onClick={() => navigate("/")} className="text-xs text-blue-600 hover:underline">
           Go to Home
         </button>
@@ -422,7 +422,7 @@ function FromShare() {
             </div>
             <h2 className="text-base font-bold text-slate-900 mb-1">Sign in required</h2>
             <p className="text-xs text-slate-500 mb-5 leading-relaxed">
-              Join the community to access and interact with this drop.
+              Join the community to access and interact with this project.
             </p>
             <div className="flex flex-col gap-2">
               <button

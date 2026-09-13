@@ -362,7 +362,7 @@ function SearchPage() {
               <Search className="absolute left-3.5 w-4 h-4 text-slate-400" />
               <input
                 type="text"
-                placeholder="Search drops by title, keywords or #tags..."
+                placeholder="Search project by title, keywords or #tags..."
                 value={searchInput}
                 onChange={(e) => setSearchInput(e.target.value)}
                 onFocus={() => setIsSearchModalOpen(true)}
@@ -422,7 +422,7 @@ function SearchPage() {
                   </span>
                 </div>
                 <span className="text-[11px] font-bold text-slate-400">
-                  {loading ? "Searching..." : `${posts.length} drops found`}
+                  {loading ? "Searching..." : `${posts.length} projects found`}
                 </span>
               </div>
             )}
@@ -449,9 +449,9 @@ function SearchPage() {
               <div className="w-16 h-16 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center mx-auto">
                 <Search size={32} />
               </div>
-              <h3 className="text-base font-black text-slate-900 uppercase tracking-tight">Search Project Drops</h3>
+              <h3 className="text-base font-black text-slate-900 uppercase tracking-tight">Search Project </h3>
               <p className="text-xs text-slate-500 max-w-sm mx-auto">
-                Enter any title keyword or tech stack tag above to discover matching drops.
+                Enter any title keyword or tech stack tag above to discover matching projects.
               </p>
               <div className="flex flex-wrap items-center justify-center gap-2 pt-2">
                 <span className="text-[11px] font-bold text-slate-400 mr-1">Popular Tags:</span>
@@ -473,10 +473,10 @@ function SearchPage() {
                 <Sparkles size={32} />
               </div>
               <h3 className="text-base font-black text-slate-900 uppercase tracking-tight">
-                No Drops Matching "{query}"
+                No Project Matching "{query}"
               </h3>
               <p className="text-xs text-slate-500 max-w-sm mx-auto">
-                We couldn't find any project drops matching your title or tag search. Try searching for popular tech keywords.
+                We couldn't find any project  matching your title or tag search. Try searching for popular tech keywords.
               </p>
               <div className="flex flex-wrap items-center justify-center gap-2 pt-2">
                 {popularTags.map((tag) => (
@@ -534,7 +534,7 @@ function SearchPage() {
                     <button
                       onClick={() => setSharePost(post)}
                       className="p-2 rounded-xl text-slate-400 hover:text-blue-600 hover:bg-slate-50 transition-all cursor-pointer"
-                      title="Share Drop"
+                      title="Share Project"
                     >
                       <Share2 size={18} />
                     </button>
@@ -696,7 +696,7 @@ function SearchPage() {
             <div className="py-8 text-center flex flex-col items-center justify-center gap-2">
               <div className="w-6 h-6 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
               <span className="font-black text-blue-600 text-[10px] uppercase tracking-widest animate-pulse">
-                Fetching more drops...
+                Fetching more project...
               </span>
             </div>
           )}
@@ -719,7 +719,7 @@ function SearchPage() {
               <ShieldCheck size={26} />
             </div>
             <h2 className="text-base font-black text-slate-900 mb-1 uppercase tracking-tight">Sign In Required</h2>
-            <p className="text-xs text-slate-500 mb-6 font-medium leading-relaxed">Please log in to interact with drops on HotDrop.</p>
+            <p className="text-xs text-slate-500 mb-6 font-medium leading-relaxed">Please log in to interact with project on HotDrop.</p>
             <div className="flex flex-col gap-2.5">
               <button 
                 onClick={() => navigate("/login")} 
@@ -796,7 +796,7 @@ function SearchPage() {
               <div className="flex items-center gap-2 text-slate-900">
                 <Boxes size={18} className="text-blue-600" />
                 <h3 className="font-extrabold text-sm uppercase tracking-wider text-slate-900">
-                  Filter Drops by Tech Stack
+                  Filter Project by Tech Stack
                 </h3>
               </div>
               <button
@@ -814,7 +814,7 @@ function SearchPage() {
                   <Sparkles size={12} /> HotDrop Stack Filter
                 </div>
                 <p className="text-xs font-bold text-blue-100">
-                  Select any tech stack to discover matching live project drops! 🚀
+                  Select any tech stack to discover matching live project! 🚀
                 </p>
               </div>
             </div>

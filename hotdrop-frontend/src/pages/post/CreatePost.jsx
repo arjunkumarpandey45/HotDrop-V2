@@ -31,7 +31,7 @@ const PostPreview = ({ data, isOpen, onConfirm, onClose, loading }) => {
                             Preview
                         </p>
                         <h2 className="text-base font-extrabold text-slate-900">
-                            Review Your Drop
+                            Review Your Project
                         </h2>
                     </div>
 
@@ -107,8 +107,8 @@ const PostPreview = ({ data, isOpen, onConfirm, onClose, loading }) => {
 
                         <div
                             className={`inline-flex items-center gap-1.5 px-3 py-1 text-[10px] font-extrabold rounded-full shrink-0 ${data.isLinkDead
-                                    ? "bg-red-50 text-red-600 border border-red-200"
-                                    : "bg-emerald-50 text-emerald-600 border border-emerald-200"
+                                ? "bg-red-50 text-red-600 border border-red-200"
+                                : "bg-emerald-50 text-emerald-600 border border-emerald-200"
                                 }`}
                         >
                             {data.isLinkDead ? (
@@ -138,10 +138,10 @@ const PostPreview = ({ data, isOpen, onConfirm, onClose, loading }) => {
                         {loading ? (
                             <>
                                 <Loader2 className="h-4 w-4 animate-spin" />
-                                Publishing Drop...
+                                Publishing Project...
                             </>
                         ) : (
-                            "Publish Drop"
+                            "Publish project"
                         )}
                     </button>
                 </div>
@@ -155,7 +155,7 @@ const CreatePost = ({ isOpen, onClose }) => {
     const [loading, setLoading] = useState(false);
     const [verifyingLink, setVerifyingLink] = useState(false);
     const [isLinkVerified, setIsLinkVerified] = useState(false);
-
+    const [tags, setTags] = useState([]);
     const initialFormState = {
         title: "",
         description: "",
@@ -171,6 +171,7 @@ const CreatePost = ({ isOpen, onClose }) => {
         setFormData(initialFormState);
         setIsLinkVerified(false);
         setVerifyingLink(false);
+        setTags([]);
         setShowPreview(false);
     };
 
@@ -227,15 +228,22 @@ const CreatePost = ({ isOpen, onClose }) => {
 
             const isLive = res.data?.live === true;
             const isDead = !isLive;
-
-            setFormData((prev) => ({
-                ...prev,
-                isLinkDead: isDead,
-                projectUrl: formattedUrl,
-            }));
-
+            const detected = res.data?.detectedTags || [];
+            setFormData((prev) => {
+                // Purane manual tags aur auto tags ko merge karo bina duplicate ke
+                const existing = prev.tags ? prev.tags.split(",").map(t => t.trim()).filter(Boolean) : [];
+                const merged = Array.from(new Set([...existing, ...detected]));
+                return {
+                    ...prev,
+                    isLinkDead: isDead,
+                    projectUrl: formattedUrl,
+                    tags: merged.join(", "), // 👈 string update
+                };
+            });
             setIsLinkVerified(isLive);
-
+            if (detected.length > 0) {
+                setTags((prev) => Array.from(new Set([...prev, ...detected])));
+            }
             if (isDead) {
                 showPostErrorToast("Link is dead or completely unreachable.");
             }
@@ -281,7 +289,10 @@ const CreatePost = ({ isOpen, onClose }) => {
             data.append("description", formData.description.trim());
             data.append("projectUrl", formData.projectUrl.trim());
             data.append("tags", formData.tags.trim());
-
+            const cleanedTags = tags.length > 0
+                ? tags.join(",")
+                : formData.tags.trim();
+            data.append("tags", cleanedTags);
             formData.images.forEach((file) => {
                 data.append("files", file);
             });
@@ -303,7 +314,7 @@ const CreatePost = ({ isOpen, onClose }) => {
         } catch (error) {
             if (error.response?.status !== 429) {
                 showPostErrorToast(
-                    error.response?.data?.message || "Project Drop failed!"
+                    error.response?.data?.message || "Project posting failed!"
                 );
             }
         } finally {
@@ -326,7 +337,7 @@ const CreatePost = ({ isOpen, onClose }) => {
                 <div className="bg-gradient-to-r from-blue-600 via-blue-500 to-indigo-600 px-6 py-4 text-white flex justify-between items-center shadow-sm">
                     <div>
                         <h2 className="text-sm font-black uppercase tracking-wider">
-                            Drop Your Project
+                        Project Your Project
                         </h2>
                         <p className="text-[10px] text-blue-100 font-medium">
                             Share your live build link with the community
@@ -387,12 +398,12 @@ const CreatePost = ({ isOpen, onClose }) => {
                             disabled={verifyingLink || !formData.projectUrl}
                             onClick={() => checkUrl(formData.projectUrl)}
                             className={`px-3.5 rounded-xl border flex items-center gap-1.5 text-[10px] font-black tracking-wide transition min-w-[110px] justify-center ${verifyingLink
-                                    ? "bg-slate-100 text-slate-400 border-slate-200"
-                                    : isLinkVerified
-                                        ? formData.isLinkDead
-                                            ? "bg-red-50 text-red-600 border-red-200"
-                                            : "bg-emerald-50 text-emerald-600 border-emerald-200"
-                                        : "bg-blue-50 text-blue-600 border-blue-200 hover:bg-blue-100"
+                                ? "bg-slate-100 text-slate-400 border-slate-200"
+                                : isLinkVerified
+                                    ? formData.isLinkDead
+                                        ? "bg-red-50 text-red-600 border-red-200"
+                                        : "bg-emerald-50 text-emerald-600 border-emerald-200"
+                                    : "bg-blue-50 text-blue-600 border-blue-200 hover:bg-blue-100"
                                 }`}
                         >
                             {verifyingLink ? (
@@ -416,17 +427,48 @@ const CreatePost = ({ isOpen, onClose }) => {
                     </div>
 
                     <div className="relative">
+                         <div className="relative">
                         <Hash className="absolute left-3.5 top-3.5 h-4 w-4 text-slate-400" />
                         <input
                             type="text"
                             placeholder="React, Tailwind, Spring Boot..."
                             value={formData.tags}
                             className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2.5 pl-10 pr-3 text-sm font-medium text-slate-800 outline-none transition focus:border-blue-500 focus:bg-white focus:ring-4 focus:ring-blue-100"
-                            onChange={(e) =>
-                                setFormData({ ...formData, tags: e.target.value })
-                            }
+                            onChange={(e) => {
+                                const val = e.target.value;
+                                setFormData({ ...formData, tags: val });
+                                setTags(val.split(",").map(t => t.trim()).filter(Boolean));
+                            }}
                         />
                     </div>
+
+                    {/* 🌟 Auto-Detected Chips UI */}
+                    {tags.length > 0 && (
+                        <div className="flex flex-wrap gap-1.5 pt-1">
+                            {tags.map((tag, idx) => (
+                                <span
+                                    key={idx}
+                                    className="inline-flex items-center gap-1 px-2.5 py-0.5 text-[11px] font-bold rounded-lg bg-blue-50 text-blue-600 border border-blue-200"
+                                >
+                                    #{tag}
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            const updated = tags.filter((_, i) => i !== idx);
+                                            setTags(updated);
+                                            setFormData({ ...formData, tags: updated.join(", ") });
+                                        }}
+                                        className="hover:text-red-500 ml-0.5"
+                                    >
+                                        <X className="h-3 w-3" />
+                                    </button>
+                                </span>
+                            ))}
+                        </div>
+                    )}
+                    </div>
+                    {/* Input field ke theek baad yeh chips block lagao */}
+                   
 
                     <div>
                         <div className="flex items-center justify-between mb-2">
@@ -491,8 +533,8 @@ const CreatePost = ({ isOpen, onClose }) => {
                         disabled={!isFormValid}
                         onClick={() => setShowPreview(true)}
                         className={`flex-1 py-2.5 rounded-xl text-xs font-black flex items-center justify-center gap-1.5 transition ${isFormValid
-                                ? "bg-blue-600 text-white shadow-md shadow-blue-500/20 hover:bg-blue-700"
-                                : "bg-slate-200 text-slate-400 cursor-not-allowed"
+                            ? "bg-blue-600 text-white shadow-md shadow-blue-500/20 hover:bg-blue-700"
+                            : "bg-slate-200 text-slate-400 cursor-not-allowed"
                             }`}
                     >
                         Preview <ArrowRight className="h-3.5 w-3.5" />

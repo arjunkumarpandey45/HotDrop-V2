@@ -54,7 +54,7 @@ function NotFoundPage() {
             Page Not Found
           </h2>
           <p className="text-xs text-slate-600 font-semibold leading-relaxed">
-            The page or drop you are looking for does not exist or was moved.
+            The page or project you are looking for does not exist or was moved.
           </p>
         </div>
 
@@ -77,7 +77,7 @@ function NotFoundPage() {
             className="w-full sm:w-auto px-4 py-2.5 rounded-xl bg-white hover:bg-blue-100/60 text-slate-800 border border-blue-200/90 text-xs font-black uppercase tracking-wider transition-all duration-300 flex items-center justify-center gap-1.5 hover:scale-[1.02] active:scale-95 cursor-pointer shadow-2xs"
           >
             <Search size={14} className="text-blue-600" />
-            <span>Search Drops</span>
+            <span>Search Projects</span>
           </button>
         </div>
 

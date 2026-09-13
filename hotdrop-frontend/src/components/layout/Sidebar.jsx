@@ -67,7 +67,7 @@ const Sidebar = () => {
         </div>
 
         <p className="text-xs text-slate-600 font-medium leading-relaxed">
-          The open platform engineered for developers to drop live projects, receive genuine peer feedback, and showcase verified portfolios.
+          The open platform engineered for developers to project live projects, receive genuine peer feedback, and showcase verified portfolios.
         </p>
 
         <div className="space-y-2 pt-1 border-t border-slate-100">
@@ -102,7 +102,7 @@ const Sidebar = () => {
             <div className="flex flex-col min-w-0">
               <span className="text-xs font-black text-slate-900">Verified Dev Handles</span>
               <span className="text-[10px] text-slate-500 leading-normal font-medium">
-                Claim your unique @handle to showcase all drops.
+                Claim your unique @handle to showcase all projects.
               </span>
             </div>
           </div>

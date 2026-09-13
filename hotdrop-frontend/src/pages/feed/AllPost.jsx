@@ -140,7 +140,7 @@ function AllPost() {
       }
     } catch (error) {
       console.error("Fetch feed error:", error);
-      toast.error("Failed to load drops feed.");
+      toast.error("Failed to load project feed.");
     } finally {
       setLoading(false);
       setFetchingMore(false);
@@ -423,9 +423,9 @@ function AllPost() {
               <div className="w-16 h-16 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center mx-auto">
                 <Flame size={32} />
               </div>
-              <h3 className="text-base font-black text-slate-900 uppercase tracking-tight">No Drops Found</h3>
+              <h3 className="text-base font-black text-slate-900 uppercase tracking-tight">No project Found</h3>
               <p className="text-xs text-slate-500 max-w-sm mx-auto">
-                Be the first developer to drop a live project on HotDrop today!
+                Be the first developer to project a live project on HotDrop today!
               </p>
             </div>
           ) : (
@@ -643,7 +643,7 @@ function AllPost() {
             <div className="py-8 text-center flex flex-col items-center justify-center gap-2">
               <div className="w-6 h-6 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
               <span className="font-black text-blue-600 text-[10px] uppercase tracking-widest animate-pulse">
-                Fetching more drops...
+                Fetching more project...
               </span>
             </div>
           )}
@@ -711,7 +711,7 @@ function AllPost() {
               <div className="flex items-center gap-2 text-slate-900">
                 <Boxes size={18} className="text-blue-600" />
                 <h3 className="font-extrabold text-sm uppercase tracking-wider text-slate-900">
-                  Filter Drops by Tech Stack
+                  Filter project by Tech Stack
                 </h3>
               </div>
               <button
@@ -729,7 +729,7 @@ function AllPost() {
                   <Sparkles size={12} /> HotDrop Stack Filter
                 </div>
                 <p className="text-xs font-bold text-blue-100">
-                  Select any tech stack to discover matching live project drops! 🚀
+                  Select any tech stack to discover matching live project ! 🚀
                 </p>
               </div>
             </div>

@@ -9,6 +9,7 @@ import com.arjun.hotdrop_backend.repository.*;
 import com.arjun.hotdrop_backend.service.CloudinaryService;
 import com.arjun.hotdrop_backend.service.NotificationService;
 import com.arjun.hotdrop_backend.service.PostService;
+import com.arjun.hotdrop_backend.service.TechStackDetectorService;
 import com.arjun.hotdrop_backend.utils.SlugifyUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -38,6 +39,7 @@ public class PostServiceImpl implements PostService {
     private final PostRepo postRepo;
     private final CloudinaryService cloudinaryService;
     private final NotificationService notificationService;
+    private final TechStackDetectorService techStackDetectorService;
     private final List<String> userAgents;
     private final Random random;
     private final CommentRepo commentRepo;
@@ -76,14 +78,23 @@ public class PostServiceImpl implements PostService {
                     .method("HEAD", HttpRequest.BodyPublishers.noBody())
                     .build();
 
+
             HttpResponse<Void> headResponse = httpClient.send(headRequest, HttpResponse.BodyHandlers.discarding());
             if (headResponse.statusCode() >= 200 && headResponse.statusCode() < 400) {
+                Set<String> detectedTags = techStackDetectorService.detectTechStack(cleanUrl);
                 return LinkVerificationResponseDto.builder()
                         .isLive(true)
                         .url(cleanUrl)
                         .message("Link is live! 🔥 (Verified via HEAD)")
+                        .detectedTags(new ArrayList<>(detectedTags))
                         .build();
             }
+            return LinkVerificationResponseDto.builder()
+                    .isLive(false)
+                    .url(cleanUrl)
+                    .message("Link returned bad status code: " + headResponse.statusCode())
+                    .detectedTags(Collections.emptyList())
+                    .build();
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             log.warn("HEAD verification thread context interrupted.");
@@ -103,10 +114,12 @@ public class PostServiceImpl implements PostService {
 
             HttpResponse<Void> getResponse = httpClient.send(getRequest, HttpResponse.BodyHandlers.discarding());
             if (getResponse.statusCode() >= 200 && getResponse.statusCode() < 400) {
+                Set<String> detectedTags = techStackDetectorService.detectTechStack(cleanUrl);
                 return LinkVerificationResponseDto.builder()
                         .isLive(true)
                         .url(cleanUrl)
                         .message("Link is Live! 🔥 (Verified via GET)")
+                        .detectedTags(new ArrayList<>(detectedTags))
                         .build();
             }
 
@@ -114,6 +127,7 @@ public class PostServiceImpl implements PostService {
                     .isLive(false)
                     .url(cleanUrl)
                     .message("Link returned bad status code: " + getResponse.statusCode())
+                    .detectedTags(Collections.emptyList())
                     .build();
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
@@ -126,6 +140,7 @@ public class PostServiceImpl implements PostService {
                 .isLive(false)
                 .url(cleanUrl)
                 .message("Link is dead or completely unreachable.")
+                .detectedTags(Collections.emptyList())
                 .build();
     }
 
@@ -151,15 +166,25 @@ public class PostServiceImpl implements PostService {
         String cleanDescription = sanitizeInput(dto.getDescription());
         String cleanProjectUrl = sanitizeInput(dto.getProjectUrl());
         String uniqueShareUrl = SlugifyUtil.generateSlug(dto.getTitle()) + "-" + System.currentTimeMillis();
-
-        List<String> cleanedTags = new ArrayList<>();
+        Set<String> finalTagsSet = new LinkedHashSet<>();
         if (dto.getTags() != null && !dto.getTags().isBlank()) {
-            cleanedTags = Arrays.stream(dto.getTags().split(","))
+            Arrays.stream(dto.getTags().split(","))
                     .map(tag -> sanitizeInput(tag.trim().toLowerCase()))
                     .filter(tag -> !tag.isEmpty())
-                    .collect(Collectors.toList());
+                    .forEach(finalTagsSet::add);
         }
-
+        if (cleanProjectUrl != null && !cleanProjectUrl.isBlank()) {
+            try {
+                Set<String> autoTags = techStackDetectorService.detectTechStack(cleanProjectUrl);
+                autoTags.stream()
+                        .map(tag -> sanitizeInput(tag.trim().toLowerCase()))
+                        .filter(tag -> !tag.isEmpty())
+                        .forEach(finalTagsSet::add);
+            } catch (Exception e) {
+                log.warn("Could not auto-fingerprint tech stack during post creation: {}", e.getMessage());
+            }
+        }
+        List<String> cleanedTags = new ArrayList<>(finalTagsSet);
         Post post = Post.builder()
                 .title(cleanTitle)
                 .description(cleanDescription)

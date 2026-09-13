@@ -1,0 +1,36 @@
+package com.arjun.hotdrop_backend.utils;
+
+
+
+import org.springframework.stereotype.Component;
+
+import java.util.List;
+import java.util.concurrent.ThreadLocalRandom;
+
+@Component
+public class UserAgentProvider {
+
+    private static final List<String> USER_AGENTS = List.of(
+            // Chrome (Windows & Mac)
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
+            "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
+            // Firefox (Windows & Linux)
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:123.0) Gecko/20100101 Firefox/123.0",
+            "Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:122.0) Gecko/20100101 Firefox/122.0",
+            // Safari (Mac & iPhone)
+            "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.3 Safari/605.1.15",
+            "Mozilla/5.0 (iPhone; CPU iPhone OS 17_3 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.3 Mobile/15E148 Safari/604.1",
+            // Edge (Windows)
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36 Edg/122.0.0.0",
+            // Android (Chrome)
+            "Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.6261.64 Mobile Safari/537.36"
+    );
+
+    /**
+     * Thread-safe random User-Agent picker
+     */
+    public String getRandomUserAgent() {
+        int index = ThreadLocalRandom.current().nextInt(USER_AGENTS.size());
+        return USER_AGENTS.get(index);
+    }
+}

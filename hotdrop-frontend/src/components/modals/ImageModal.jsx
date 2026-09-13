@@ -146,7 +146,7 @@ function ImageModal({
 
   const handleFinalDelete = async () => {
     setIsDeleting(true);
-    const loadingToast = toast.loading("Removing your drop...");
+    const loadingToast = toast.loading("Removing you project...");
 
     const targetId = livePost.id || livePost._id;
 
@@ -264,7 +264,7 @@ function ImageModal({
           whileTap={{ scale: 0.95 }}
           onClick={handlePrevPost}
           className="hidden md:flex fixed left-5 top-1/2 -translate-y-1/2 bg-slate-900/85 hover:bg-black text-white p-3.5 rounded-2xl backdrop-blur-xl shadow-[0_10px_30px_rgba(0,0,0,0.5)] transition-colors duration-200 items-center gap-2 text-xs font-black uppercase tracking-wider z-[1200] border border-slate-700/60 select-none cursor-pointer"
-          title="Previous Drop (Left Arrow)"
+          title="Previous Project (Left Arrow)"
         >
           <ChevronLeft size={22} />
 
@@ -279,7 +279,7 @@ function ImageModal({
           whileTap={{ scale: 0.95 }}
           onClick={handleNextPost}
           className="hidden md:flex fixed right-5 top-1/2 -translate-y-1/2 bg-slate-900/85 hover:bg-black text-white p-3.5 rounded-2xl backdrop-blur-xl shadow-[0_10px_30px_rgba(0,0,0,0.5)] transition-colors duration-200 items-center gap-2 text-xs font-black uppercase tracking-wider z-[1200] border border-slate-700/60 select-none cursor-pointer"
-          title="Next Drop (Right Arrow)"
+          title="Next Project (Right Arrow)"
         >
 
           <ChevronRight size={22} />
@@ -414,7 +414,7 @@ function ImageModal({
                           className="flex w-full items-center gap-2 px-3 py-2 text-xs font-bold text-red-600 hover:bg-red-50 rounded-xl transition-colors"
                         >
                           <Trash2 size={15} className="text-red-500" />
-                          <span>Delete Drop</span>
+                          <span>Delete projet</span>
                         </button>
                       </div>
                     )}
@@ -578,7 +578,7 @@ function ImageModal({
             <div className="w-12 h-12 rounded-2xl bg-red-50 text-red-500 border border-red-100 flex items-center justify-center mb-3 shadow-inner">
               <Trash2 size={24} strokeWidth={2.2} />
             </div>
-            <h4 className="text-base font-extrabold text-slate-900 mb-1">Delete Drop?</h4>
+            <h4 className="text-base font-extrabold text-slate-900 mb-1">Delete project?</h4>
             <p className="text-xs text-slate-500 leading-relaxed mb-5">
               Are you sure you want to remove <span className="font-bold text-slate-800">"{livePost.title}"</span>? This action cannot be undone.
             </p>

@@ -2,6 +2,7 @@ package com.arjun.hotdrop_backend.scheduler;
 
 import com.arjun.hotdrop_backend.entity.Post;
 import com.arjun.hotdrop_backend.repository.PostRepo;
+import com.arjun.hotdrop_backend.utils.UserAgentProvider;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -21,12 +22,11 @@ import java.util.concurrent.*;
 @RequiredArgsConstructor
 @Slf4j
 public class LinkTrackingScheduler {
-
+    private final UserAgentProvider userAgentProvider;
     private final PostRepo postRepo;
     private final TransactionTemplate transactionTemplate;
 
-    private final List<String> userAgents;
-    private final Random random;
+
 
     private final ExecutorService ioExecutor = Executors.newFixedThreadPool(15, r -> {
         Thread t = new Thread(r);
@@ -72,7 +72,7 @@ public class LinkTrackingScheduler {
                 CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).join();
 
                 if (end < uniqueLinks.size()) {
-                    log.info("⏳ Batch complete. Human cooldown mimicking active...");
+                    log.info("⏳ Batch complete...");
                     TimeUnit.SECONDS.sleep(3);
                 }
             }
@@ -100,7 +100,7 @@ public class LinkTrackingScheduler {
     private void pingUrl(String link, Map<String, Boolean> results) {
         long startTime = System.nanoTime();
 
-        String randomUA = userAgents.get(java.util.concurrent.ThreadLocalRandom.current().nextInt(userAgents.size()));
+        String randomUA = userAgentProvider.getRandomUserAgent();
 
         try {
             HttpRequest request = HttpRequest.newBuilder()
