@@ -41,7 +41,60 @@ public class EmailServiceImpl implements EmailService {
             throw new RuntimeException("Failed to send verification email", e);
         }
     }
+    @Async
+    public void sendProjectDownAlert(String recipientEmail, String projectTitle, String projectUrl) {
+        String subject = "🚨Action Required: Your HotDrop project is DOWN!";
+        String content = """
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: auto; padding: 20px; border: 1px solid #fee2e2; border-radius: 12px; background-color: #fffaf0;">
+                <h2 style="color: #dc2626; margin-top: 0;">⚠️ Project Health Alert</h2>
+                <p style="font-size: 14px; color: #374151;">Hey developer,</p>
+                <p style="font-size: 14px; color: #374151;">Our automated monitor detected that your project <strong>%s</strong> is unreachable or throwing bad HTTP status codes.</p>
+                <div style="background-color: #fef2f2; padding: 12px; border-radius: 8px; font-family: monospace; color: #991b1b; margin: 15px 0;">
+                    Target URL: <a href="%s" style="color: #b91c1c;">%s</a>
+                </div>
+                <p style="font-size: 13px; color: #6b7280;">Please check your hosting deployment (Vercel, Render, Railway, etc.) and logs. We will automatically mark it back to Live once it starts responding!</p>
+                <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 20px 0;" />
+                <p style="font-size: 11px; color: #9ca3af;">Sent by HotDrop Autonomous Link Monitoring Engine</p>
+            </div>
+            """.formatted(projectTitle, projectUrl, projectUrl);
 
+        sendHtmlMail(recipientEmail, subject, content);
+    }
+
+    @Async
+    public void sendProjectUpAlert(String recipientEmail, String projectTitle, String projectUrl) {
+        String subject = "✅ Resolved: Your HotDrop project is LIVE!";
+        String content = """
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: auto; padding: 20px; border: 1px solid #d1fae5; border-radius: 12px; background-color: #f0fdf4;">
+                <h2 style="color: #059669; margin-top: 0;">✅ Project Restored!</h2>
+                <p style="font-size: 14px; color: #374151;">Good news!</p>
+                <p style="font-size: 14px; color: #374151;">Your project <strong>%s</strong> is now responding with valid HTTP 2xx/3xx statuses and has been restored to <strong>LIVE 🔥</strong> on the feed.</p>
+                <div style="background-color: #ecfdf5; padding: 12px; border-radius: 8px; font-family: monospace; color: #065f46; margin: 15px 0;">
+                    Target URL: <a href="%s" style="color: #047857;">%s</a>
+                </div>
+                <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 20px 0;" />
+                <p style="font-size: 11px; color: #9ca3af;">Sent by HotDrop Autonomous Link Monitoring Engine</p>
+            </div>
+            """.formatted(projectTitle, projectUrl, projectUrl);
+
+        sendHtmlMail(recipientEmail, subject, content);
+    }
+
+    private void sendHtmlMail(String to, String subject, String htmlBody) {
+        try {
+            MimeMessage message = mailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
+            helper.setTo(to);
+            helper.setSubject(subject);
+            helper.setText(htmlBody, true);
+            helper.setFrom("hotdrop1229@gmail.com", "HotDrop");
+
+            mailSender.send(message);
+            log.info("📧 Email dispatched to {}", to);
+        } catch (Exception e) {
+            log.error("Failed to send email to {}: {}", to, e.getMessage());
+        }
+    }
     @Override
     @Async
     public void sendOTP(String toEmail, String name, String otpCode) {
