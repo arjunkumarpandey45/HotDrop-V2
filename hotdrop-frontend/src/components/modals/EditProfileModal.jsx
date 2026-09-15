@@ -11,6 +11,7 @@ import {
   Sparkles,
 } from "lucide-react";
 import { useState, useEffect } from "react";
+import dp from "../../assets/dp.jpg";
 
 const Github = ({ size = 14, className = "" }) => (
   <svg
@@ -76,7 +77,7 @@ function EditProfileModal({ isOpen, onClose, user, handleUpdate, loading }) {
 
   const preview = selectedFile
     ? URL.createObjectURL(selectedFile)
-    : user?.profileImageUrl || null;
+    : user?.profileImageUrl || user?.profilePicture || user?.avatar || dp;
 
   useEffect(() => {
     if (isOpen) {
@@ -200,6 +201,10 @@ function EditProfileModal({ isOpen, onClose, user, handleUpdate, loading }) {
                   <img
                     src={preview}
                     alt="Profile"
+                    onError={(e) => {
+                      e.target.onerror = null;
+                      e.target.src = dp;
+                    }}
                     className="w-full h-full object-cover"
                   />
                 ) : (

@@ -376,9 +376,9 @@ function UserPost({ postsOverride, hideOptions, ownerOverride }) {
           const imgIndex = currentImageIndexMap[pId] || 0;
 
           const rawImages = post.imageUrls || post.images || [];
-          const images = rawImages.map((img) =>
-            typeof img === "string" ? img : img?.url || img
-          );
+          const images = (Array.isArray(rawImages) ? rawImages : [rawImages])
+            .filter(Boolean)
+            .map((img) => (typeof img === "string" ? img : img?.url || img));
 
           const projectUrl = post.projectUrl || post.projectLink;
           const isLinkDead = post.linkDead ?? post.isLinkDead ?? false;
@@ -552,9 +552,9 @@ function UserPost({ postsOverride, hideOptions, ownerOverride }) {
 
                 <div className="p-4 flex flex-col flex-1">
 
-                  <div className="flex items-start justify-between gap-3 mb-3 flex-wrap sm:flex-nowrap">
-                    <div className="relative group/title min-w-0 flex-1">
-                      <h3 className="text-[13px] font-black uppercase tracking-[0.15em] text-slate-800 leading-none">
+                  <div className="flex flex-col gap-2 mb-3">
+                    <div className="relative group/title min-w-0">
+                      <h3 className="text-[13px] font-black uppercase tracking-[0.15em] text-slate-800 leading-none break-words">
                         {post.title}
                       </h3>
                       <div className="h-[2px] w-8 bg-blue-600 mt-1.5 transition-all duration-300 group-hover/title:w-12" />

@@ -1,7 +1,9 @@
-import React, { useState } from "react";
-import { Tag, X, Sparkles } from "lucide-react";
+import { useState } from "react";
+import { Tag, X } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
-function PostTags({ tags, postTitle }) {
+function PostTags({ tags, postTitle, onTagClick }) {
+  const navigate = useNavigate();
   const [showModal, setShowModal] = useState(false);
 
   let rawTags = tags;
@@ -25,17 +27,37 @@ function PostTags({ tags, postTitle }) {
   const initialTags = tagList.slice(0, 3);
   const remainingCount = tagList.length - 3;
 
+  const handleTagClick = (e, rawTag) => {
+    e.stopPropagation();
+    e.preventDefault();
+    setShowModal(false);
+    const cleanTag = (rawTag || "").replace(/^#+/, "").trim();
+    if (!cleanTag) return;
+
+    if (typeof onTagClick === "function") {
+      onTagClick(cleanTag);
+    } else {
+      navigate(`/search?q=${encodeURIComponent(cleanTag)}`);
+    }
+  };
+
   return (
-    <div className="flex items-center gap-1.5 flex-wrap">
-      {initialTags.map((tag, idx) => (
-        <span
-          key={idx}
-          className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-lg bg-blue-50 text-blue-600 text-[10px] font-extrabold uppercase border border-blue-100/80 shadow-2xs hover:bg-blue-100 transition-colors"
-        >
-          <Tag size={10} className="text-blue-500" />
-          #{tag.replace(/^#/, "")}
-        </span>
-      ))}
+    <div className="flex items-center gap-1.5 flex-wrap" onClick={(e) => e.stopPropagation()}>
+      {initialTags.map((tag, idx) => {
+        const displayTag = tag.replace(/^#+/, "");
+        return (
+          <button
+            key={idx}
+            type="button"
+            onClick={(e) => handleTagClick(e, tag)}
+            title={`Search #${displayTag}`}
+            className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-600 hover:text-blue-700 text-[10px] font-extrabold uppercase border border-blue-100/80 hover:border-blue-200 shadow-2xs transition-all duration-150 cursor-pointer active:scale-95 group/tag select-none"
+          >
+            <Tag size={10} className="text-blue-500 group-hover/tag:scale-110 transition-transform" />
+            <span>#{displayTag}</span>
+          </button>
+        );
+      })}
 
       {remainingCount > 0 && (
         <>
@@ -43,6 +65,7 @@ function PostTags({ tags, postTitle }) {
             type="button"
             onClick={(e) => {
               e.stopPropagation();
+              e.preventDefault();
               setShowModal(true);
             }}
             className="inline-flex items-center justify-center px-2 py-0.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-[10px] font-black tracking-wider transition-all duration-200 cursor-pointer shadow-sm active:scale-95 shrink-0"
@@ -90,15 +113,21 @@ function PostTags({ tags, postTitle }) {
                 </div>
 
                 <div className="flex flex-wrap gap-2 max-h-60 overflow-y-auto p-1">
-                  {tagList.map((tag, idx) => (
-                    <span
-                      key={idx}
-                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-blue-50 text-blue-700 text-xs font-extrabold border border-blue-100 shadow-2xs hover:bg-blue-100 transition-all"
-                    >
-                      <Sparkles size={12} className="text-blue-500" />
-                      #{tag.replace(/^#/, "")}
-                    </span>
-                  ))}
+                  {tagList.map((tag, idx) => {
+                    const displayTag = tag.replace(/^#+/, "");
+                    return (
+                      <button
+                        key={idx}
+                        type="button"
+                        onClick={(e) => handleTagClick(e, tag)}
+                        title={`Search #${displayTag}`}
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-blue-50 hover:bg-blue-100 text-blue-700 hover:text-blue-800 text-xs font-extrabold border border-blue-100 hover:border-blue-200 shadow-2xs transition-all duration-150 cursor-pointer active:scale-95 group/tag select-none"
+                      >
+                        <Tag size={11} className="text-blue-500 group-hover/tag:scale-110 transition-transform" />
+                        <span>#{displayTag}</span>
+                      </button>
+                    );
+                  })}
                 </div>
 
                 <div className="pt-2 border-t border-slate-100 text-center">

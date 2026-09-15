@@ -41,5 +41,33 @@ public interface PostRepo extends JpaRepository<Post, UUID> {
     boolean existsByShareUrl(String shareUrl);
 
     boolean existsById(@NonNull UUID postId);
+    interface PostStatsProjection {
+        long getTotalDrops();
+        long getLiveDrops();
+        long getDeadDrops();
+        long getTotalLikes();
+       Long getTotalComments();
+    }
+
+    @Query(value = """
+        SELECT COUNT(p.id) AS totalDrops,
+            COUNT(CASE WHEN p.is_link_dead = false THEN 1 END) AS liveDrops,
+            COUNT(CASE WHEN p.is_link_dead = true THEN 1 END) AS deadDrops,
+            COALESCE(SUM(p.like_count), 0) AS totalLikes,
+                COALESCE(SUM(p.comment_count),0) AS totalComments
+        FROM posts p
+        WHERE p.user_id = :userId
+    """, nativeQuery = true)
+    PostStatsProjection getStatsByUserId(@Param("userId") UUID userId);
+
+    @Query(value = """
+        SELECT unnest(p.tags) AS tech, COUNT(*) AS count
+        FROM posts p
+        WHERE p.user_id = :userId
+        GROUP BY tech
+        ORDER BY count DESC
+        LIMIT 5
+    """, nativeQuery = true)
+    List<Object[]> getTopTechStacksByUserId(@Param("userId") UUID userId);
 }
 

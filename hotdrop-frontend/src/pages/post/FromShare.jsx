@@ -293,8 +293,8 @@ function FromShare() {
 
           <div className="flex flex-col">
 
-            <div className="flex items-start justify-between gap-3 mb-2 flex-wrap sm:flex-nowrap">
-              <h3 className="text-base font-extrabold uppercase text-slate-900 leading-snug min-w-0 flex-1">
+            <div className="flex flex-col gap-2 mb-2">
+              <h3 className="text-base font-extrabold uppercase text-slate-900 leading-snug break-words">
                 {post.title}
               </h3>
               <PostTags tags={post.tags || post.tagsList || post.tag} postTitle={post.title} />

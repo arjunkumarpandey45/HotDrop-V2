@@ -15,6 +15,7 @@ import FromShare from './pages/post/FromShare';
 import AllPost from './pages/feed/AllPost';
 import SearchPage from './pages/search/SearchPage';
 import NotFoundPage from './pages/error/NotFoundPage';
+import DeveloperAnalytics from './pages/dashboard/DeveloperAnalytics';
 import { useAuthStore, useUIStore } from './store/useAuthStore';
 import { Slide, ToastContainer } from 'react-toastify';
 
@@ -72,6 +73,14 @@ function App() {
         {
           path: '/search',
           element: <SearchPage />,
+        },
+        {
+          path: '/analytics',
+          element: <DeveloperAnalytics />,
+        },
+        {
+          path: '/developer/dashboard',
+          element: <DeveloperAnalytics />,
         },
         {
           path: '/signup',

@@ -18,7 +18,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { useState, useEffect } from "react";
 import PreviewModal from "./PreviewModal";
 import PostTags from "../post/PostTags";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import API from "../../api/Api";
 import { toast } from "react-toastify";
 import { showProjectDeletedToast } from "../../toast/Toast";
@@ -36,6 +36,7 @@ function ImageModal({
   setSharePost,
   ownerOverride,
 }) {
+  const navigate = useNavigate();
   const { user: currentUser } = useAuthStore();
   const [previewUrl, setPreviewUrl] = useState(null);
   const [isExpanded, setIsExpanded] = useState(false);
@@ -426,11 +427,18 @@ function ImageModal({
 
             <div className="p-5 space-y-4 flex-1 overflow-y-auto">
 
-              <div className="flex items-start justify-between gap-3 mb-2 flex-wrap sm:flex-nowrap">
-                <h2 className="font-extrabold text-base text-slate-900 leading-snug min-w-0 flex-1">
+              <div className="flex flex-col gap-2 mb-2">
+                <h2 className="font-extrabold text-base text-slate-900 leading-snug break-words">
                   {livePost.title}
                 </h2>
-                <PostTags tags={livePost.tags || livePost.tagsList || livePost.tag} postTitle={livePost.title} />
+                <PostTags
+                  tags={livePost.tags || livePost.tagsList || livePost.tag}
+                  postTitle={livePost.title}
+                  onTagClick={(tag) => {
+                    if (onClose) onClose();
+                    navigate(`/search?q=${encodeURIComponent(tag)}`);
+                  }}
+                />
               </div>
 
               <div className="relative">

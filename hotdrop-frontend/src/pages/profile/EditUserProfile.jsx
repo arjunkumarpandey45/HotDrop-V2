@@ -492,11 +492,7 @@ function EditUserProfile() {
     displayUser?.profilePicture ||
     displayUser?.avatar;
 
-  const profileAvatar = rawAvatar
-    ? `${rawAvatar}${
-        rawAvatar.includes("?") ? "&" : "?"
-      }t=${displayUser?.updatedAt || Date.now()}`
-    : dp;
+  const profileAvatar = rawAvatar || dp;
 
   const fullName = displayUser?.firstName
     ? `${displayUser.firstName} ${displayUser.lastName || ""}`.trim()
@@ -597,6 +593,10 @@ function EditUserProfile() {
                   <img
                     src={profileAvatar}
                     alt={fullName}
+                    onError={(e) => {
+                      e.target.onerror = null;
+                      e.target.src = dp;
+                    }}
                     className="w-full h-full object-cover rounded-full group-hover:scale-110 transition duration-500"
                   />
                 </div>
@@ -803,6 +803,10 @@ function EditUserProfile() {
           </button>
           <img
             src={profileAvatar}
+            onError={(e) => {
+              e.target.onerror = null;
+              e.target.src = dp;
+            }}
             className="max-w-full max-h-[85vh] rounded-3xl shadow-2xl object-contain ring-4 ring-white/20 animate-in zoom-in-95 duration-200"
             alt="Profile Preview"
             onClick={(e) => e.stopPropagation()}

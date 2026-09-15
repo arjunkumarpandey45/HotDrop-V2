@@ -431,17 +431,17 @@ function AllPost() {
           ) : (
 
             posts.map((post) => {
-              const pId = post.id || post._id;
+              const pId = post.id;
               const imgIndex = currentImage[pId] || 0;
-              const owner = post.user || post.creator || post.userResponseDto || {};
-              const rawImages = post.images || post.imageUrls || [];
+              const owner = post.creator  ;
+              const rawImages =  post.imageUrls || [];
               const images = rawImages.map((img) => typeof img === "string" ? { url: img } : img);
-              const ownerAvatar = owner.profilePicture || owner.profileImageUrl || owner.avatar || dp;
-              const ownerHandle = owner.hotdropId || owner.username || "user";
-              const isLiked = post.liked ?? (post.likes?.some((l) => String(l.id || l._id || l) === String(user?.id || user?._id)));
+              const ownerAvatar = owner.profilePicture ||dp;
+              const ownerHandle = owner.hotdropId;
+              const isLiked = post.liked ?? (post.likes?.some((l) => String(l.id ||  l) === String(user?.id || user?._id)));
               const isHeartActive = !!doubleTapHeartMap[pId];
-              const isLinkDead = post.isLinkDead ?? post.linkDead ?? false;
-              const projectLink = post.projectLink || post.projectUrl;
+              const isLinkDead =  post.linkDead ?? false;
+              const projectLink =  post.projectUrl;
 
               return (
                 <div

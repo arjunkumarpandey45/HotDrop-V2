@@ -44,7 +44,7 @@ public class LinkTrackingScheduler {
             .connectTimeout(Duration.ofSeconds(10))
             .build();
 
-    @Scheduled(fixedDelay = 6000000)
+    @Scheduled(fixedDelay = 60000)
     public void startLiveTracking() {
         log.info("--- 🛡️ Upgraded Multi-threaded Tracking Started: {} ---", LocalDateTime.now());
 

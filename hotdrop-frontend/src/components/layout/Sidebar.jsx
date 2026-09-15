@@ -7,7 +7,8 @@ import {
   ShieldCheck, 
   Heart,
   Code2,
-  Terminal
+  Terminal,
+  
 } from "lucide-react";
 
 const POPULAR_TAGS = [
@@ -50,8 +51,9 @@ const Sidebar = () => {
               <Flame size={17} className={isHome ? "text-blue-600 fill-blue-600/20" : "text-orange-500"} />
               <span>Global Feed</span>
             </div>
-            
           </Link>
+
+        
         </nav>
       </div>
 

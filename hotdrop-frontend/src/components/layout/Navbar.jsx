@@ -12,6 +12,7 @@ import {
   Globe,
   Bell,
   Settings,
+  BarChart3,
 } from "lucide-react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 
@@ -484,6 +485,28 @@ const Navbar = () => {
                           </p>
                         </div>
 
+                        
+
+                        <Link
+                          to={`/user/userprofile/${user?.hotdropId || user?.username}`}
+                          onClick={() => setIsMobileSettingsOpen(false)}
+                          className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition-colors"
+                        >
+                          <User className="h-4 w-4 text-blue-600" /> My Profile
+                        </Link>
+<Link
+                          to="/analytics"
+                          onClick={() => setIsMobileSettingsOpen(false)}
+                          className="flex w-full items-center justify-between rounded-xl px-3 py-2 text-xs font-bold text-slate-700 hover:bg-indigo-50 hover:text-indigo-600 transition-colors group"
+                        >
+                          <div className="flex items-center gap-2.5">
+                            <BarChart3 className="h-4 w-4 text-indigo-600 group-hover:scale-110 transition-transform" />
+                            <span>Analytics</span>
+                          </div>
+                          <span className="text-[9px] font-black uppercase tracking-wider bg-emerald-50 text-emerald-600 border border-emerald-200/80 px-1.5 py-0.5 rounded-md">
+                            Live
+                          </span>
+                        </Link>
                         <button
                           onClick={() => {
                             setIsMobileSettingsOpen(false);
@@ -559,6 +582,8 @@ const Navbar = () => {
                           </p>
                         </div>
 
+                        
+
                         <Link
                           to={`/user/userprofile/${user?.hotdropId || user?.username}`}
                           onClick={() => setIsProfileOpen(false)}
@@ -566,7 +591,19 @@ const Navbar = () => {
                         >
                           <User className="h-4 w-4 text-blue-600" /> My Profile
                         </Link>
-
+<Link
+                          to="/analytics"
+                          onClick={() => setIsProfileOpen(false)}
+                          className="flex items-center justify-between rounded-xl px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-indigo-50 hover:text-indigo-600 transition-colors group"
+                        >
+                          <div className="flex items-center gap-2.5">
+                            <BarChart3 className="h-4 w-4 text-indigo-600 group-hover:scale-110 transition-transform" />
+                            <span>Analytics</span>
+                          </div>
+                          <span className="text-[9px] font-black uppercase tracking-wider bg-emerald-50 text-emerald-600 border border-emerald-200/80 px-1.5 py-0.5 rounded-md">
+                            Live
+                          </span>
+                        </Link>
                         <button
                           onClick={handleLogout}
                           className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-xs font-semibold text-red-600 hover:bg-red-50 cursor-pointer"
@@ -612,6 +649,8 @@ const Navbar = () => {
             >
               <Notebook className="h-5 w-5" /> Global Feed
             </Link>
+
+           
           </nav>
         </div>
       </aside>
