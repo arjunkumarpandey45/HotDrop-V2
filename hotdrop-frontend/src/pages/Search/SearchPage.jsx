@@ -25,7 +25,7 @@ import Sponser from "../../components/post/Sponser";
 import PostDescription from "../../components/post/PostDescription";
 import PostTags from "../../components/post/PostTags";
 import { toast } from "react-toastify";
-import { showLikeToast, showCommentToast, showErrorToast } from "../../toast/Toast";
+import { showLikeToast, showCommentToast, showErrorToast, showDeadLinkToast } from "../../toast/Toast";
 import CommentModal from "../../components/modals/CommentModal";
 import LikeModal from "../../components/modals/LikeModal";
 import ShareModal from "../../components/modals/ShareModal";
@@ -609,7 +609,7 @@ function SearchPage() {
                           e.preventDefault();
                           if (!user) return setShowAuthModal(true);
                           if (!isLinkDead) setPreviewUrl(projectLink);
-                          else toast.error("This project link appears to be dead");
+                          else showDeadLinkToast("This project link is currently down or unreachable");
                         }}     
                         className="group/link relative flex items-center justify-between p-[1px] rounded-2xl mb-3.5 transition-all duration-300 hover:scale-[1.01] active:scale-[0.99] cursor-pointer"
                       >

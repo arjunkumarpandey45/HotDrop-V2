@@ -21,7 +21,7 @@ import ImageModal from "../../components/modals/ImageModal";
 import PreviewModal from "../../components/modals/PreviewModal";
 import PostTags from "../../components/post/PostTags";
 import API from "../../api/Api";
-import { showCommentToast, showErrorToast } from "../../toast/Toast";
+import { showCommentToast, showErrorToast, showDeadLinkToast } from "../../toast/Toast";
 import dp from "../../assets/dp.jpg";
 import { AnimatePresence } from "framer-motion";
 import { toast } from "react-toastify";
@@ -305,7 +305,7 @@ function FromShare() {
                 if (!isLinkDead && projectUrl) {
                   setPreviewUrl(projectUrl);
                 } else {
-                  toast.error("This project link appears to be dead");
+                  showDeadLinkToast("This project link is currently down or unreachable");
                 }
               }}
               className="group/link relative flex items-center justify-between p-[1px] rounded-xl mb-3 transition-all duration-300 hover:scale-[1.01] cursor-pointer"

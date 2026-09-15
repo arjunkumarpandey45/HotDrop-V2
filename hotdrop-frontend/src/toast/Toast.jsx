@@ -483,6 +483,69 @@ const showProjectDeletedToast = (title = "Project Drop") => {
   );
 };
 
+const showDashboardRefreshedToast = (msg = "Updated") => {
+  toast(
+    <div className="relative flex items-center gap-3.5 pl-5 pr-4 py-3.5 font-sans overflow-hidden min-w-0 w-full">
+      <div className="absolute left-0 top-0 bottom-0 w-1.5 bg-gradient-to-b from-blue-500 via-indigo-500 to-cyan-400" />
+      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-tr from-blue-600 via-indigo-600 to-cyan-500 text-white shadow-lg shadow-blue-500/40 ring-4 ring-blue-500/20">
+        <svg className="h-5 w-5 stroke-[2.5]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99" />
+        </svg>
+      </div>
+      <div className="flex flex-col min-w-0 flex-1 overflow-hidden">
+        <div className="flex items-center gap-1.5">
+          <span className="text-[11px] font-black uppercase tracking-wider text-blue-700">Upadated</span>
+          <span className="text-xs">⚡</span>
+        </div>
+        <AutoScrollingText
+          text={msg}
+          className="text-xs font-bold text-slate-800 mt-0.5"
+        />
+      </div>
+    </div>,
+    {
+      ...toastConfig,
+      toastId: "dashboard-refreshed-toast",
+      className: "bg-white/95 backdrop-blur-xl border border-blue-300/90 rounded-3xl shadow-[0_20px_50px_rgba(37,99,235,0.18)] p-0 min-h-[58px]",
+      autoClose: getAutoCloseDuration(msg, 2800),
+    }
+  );
+};
+
+const showDeadLinkToast = (msg = "This project link is currently down or unreachable") => {
+  const textToShow =
+    typeof msg === "string" && msg.trim()
+      ? msg.trim()
+      : "This project link is currently down or unreachable";
+
+  toast(
+    <div className="relative flex items-center gap-3.5 pl-5 pr-4 py-3.5 font-sans overflow-hidden min-w-0 w-full">
+      <div className="absolute left-0 top-0 bottom-0 w-1.5 bg-gradient-to-b from-rose-500 via-red-600 to-amber-500" />
+      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-tr from-rose-600 via-red-500 to-amber-500 text-white shadow-lg shadow-rose-500/40 ring-4 ring-rose-500/20">
+        <svg className="h-5 w-5 stroke-[2.5]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
+        </svg>
+      </div>
+      <div className="flex flex-col min-w-0 flex-1 overflow-hidden">
+        <div className="flex items-center gap-1.5">
+          <span className="text-[11px] font-black uppercase tracking-wider text-rose-700">Link Inactive</span>
+          <span className="text-xs">🚫</span>
+        </div>
+        <AutoScrollingText
+          text={textToShow}
+          className="text-xs font-bold text-rose-950 mt-0.5"
+        />
+      </div>
+    </div>,
+    {
+      ...toastConfig,
+      toastId: "dead-link-toast",
+      className: "bg-white/95 backdrop-blur-xl border border-rose-300/90 rounded-3xl shadow-[0_20px_50px_rgba(244,63,94,0.18)] p-0 min-h-[58px]",
+      autoClose: getAutoCloseDuration(textToShow, 3400),
+    }
+  );
+};
+
 export {
   showLikeToast,
   showCommentToast,
@@ -497,4 +560,6 @@ export {
   showSuccessToastForSignup,
   showErrorToastForSIgnup,
   showSuccessToastForLogout,
+  showDashboardRefreshedToast,
+  showDeadLinkToast,
 };

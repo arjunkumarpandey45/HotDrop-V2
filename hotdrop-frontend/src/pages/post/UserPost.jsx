@@ -24,7 +24,7 @@ import PreviewModal from "../../components/modals/PreviewModal";
 import PostTags from "../../components/post/PostTags";
 import API from "../../api/Api";
 import { toast } from "react-toastify";
-import { showLikeToast, showCommentToast, showProjectDeletedToast, showErrorToast } from "../../toast/Toast";
+import { showLikeToast, showCommentToast, showProjectDeletedToast, showErrorToast, showDeadLinkToast } from "../../toast/Toast";
 import { AnimatePresence, motion } from "framer-motion";
 import { Link, useNavigate } from "react-router-dom";
 import dp from "../../assets/dp.jpg";
@@ -572,7 +572,7 @@ function UserPost({ postsOverride, hideOptions, ownerOverride }) {
                       if (!isLinkDead && projectUrl) {
                         setPreviewUrl(projectUrl);
                       } else {
-                        toast.error("This project link appears to be dead");
+                        showDeadLinkToast("This project link is currently down or unreachable");
                       }
                     }}
                     className="group/link relative flex items-center justify-between p-[1px] rounded-xl mb-4 transition-all duration-300 hover:scale-[1.01] active:scale-[0.99] cursor-pointer"

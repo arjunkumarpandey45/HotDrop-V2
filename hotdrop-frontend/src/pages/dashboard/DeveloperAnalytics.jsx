@@ -26,6 +26,7 @@ import { Link, useNavigate } from "react-router-dom";
 import API from "../../api/Api";
 import { useAuthStore, useUIStore } from "../../store/useAuthStore";
 import { toast } from "react-toastify";
+import { showDashboardRefreshedToast } from "../../toast/Toast";
 import dp from "../../assets/dp.jpg";
 
 const TECH_META = {
@@ -234,7 +235,7 @@ function DeveloperAnalytics() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
-  const [copiedLink, setCopiedLink] = useState(false);
+  
   const [activeTechHover, setActiveTechHover] = useState(null);
   const [isSummaryModalOpen, setIsSummaryModalOpen] = useState(false);
   const [copiedSummary, setCopiedSummary] = useState(false);
@@ -265,7 +266,7 @@ function DeveloperAnalytics() {
         });
       }
       if (showToast) {
-        toast.success("Analytics updated from live monitors");
+        showDashboardRefreshedToast("Latest Data is here");
       }
     } catch (err) {
       console.error("Dashboard stats error:", err);
@@ -352,13 +353,7 @@ function DeveloperAnalytics() {
   const circumference = 2 * Math.PI * radius;
   const strokeDashoffset = circumference - (Math.min(100, Math.max(0, healthScore)) / 100) * circumference;
 
-  const handleCopyProfile = () => {
-    const shareUrl = `${window.location.origin}/user/userprofile/${user?.hotdropId || user?.username || ""}`;
-    navigator.clipboard.writeText(shareUrl);
-    setCopiedLink(true);
-    toast.success("Profile link copied!");
-    setTimeout(() => setCopiedLink(false), 2500);
-  };
+ 
 
   const handleCopySummary = () => {
     const handle = user?.hotdropId || user?.username || "developer";
@@ -409,14 +404,14 @@ MONITORING STATUS:
               title="Back"
             >
               <ArrowLeft size={14} />
-              <span className="hidden sm:inline">Back to Feed</span>
+              
             </button>
 
             <Link to="/" className="flex items-center tracking-tighter select-none pl-1">
               <span className="text-xl font-black uppercase text-orange-500">HOT</span>
               <span className="text-xl font-black uppercase text-blue-600">DROP</span>
               <span className="ml-2 text-[10px] font-black uppercase tracking-wider text-slate-500 bg-slate-100 px-2 py-0.5 rounded-md border border-slate-200/80 hidden sm:inline-block">
-                Analytics
+                
               </span>
             </Link>
           </div>
@@ -431,14 +426,7 @@ MONITORING STATUS:
               <RefreshCw size={14} className={isRefreshing ? "animate-spin text-blue-600" : ""} />
             </button>
 
-            <button
-              onClick={handleCopyProfile}
-              className="hidden sm:flex items-center gap-1.5 text-xs font-bold text-slate-700 hover:text-slate-900 bg-slate-100 hover:bg-slate-200/80 border border-slate-200/80 px-3 py-1.5 rounded-xl transition cursor-pointer"
-            >
-              {copiedLink ? <Check size={14} className="text-emerald-600" /> : <Share2 size={14} />}
-              <span>{copiedLink ? "Copied" : "Share"}</span>
-            </button>
-
+            
             {user && (
               <Link
                 to={`/user/userprofile/${user?.hotdropId || user?.username}`}
@@ -980,13 +968,7 @@ MONITORING STATUS:
                   </p>
                 </div>
 
-                <button
-                  onClick={handleCopyProfile}
-                  className="self-start sm:self-auto flex items-center gap-1.5 text-xs font-bold text-slate-700 hover:text-slate-900 bg-slate-100 hover:bg-slate-200/80 border border-slate-200/80 px-3 py-1.5 rounded-xl transition cursor-pointer"
-                >
-                  {copiedLink ? <Check size={14} className="text-emerald-600" /> : <Copy size={14} />}
-                  <span>{copiedLink ? "Copied" : "Copy Profile Link"}</span>
-                </button>
+                
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5 pt-1">

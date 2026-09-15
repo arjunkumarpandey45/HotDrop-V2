@@ -21,7 +21,7 @@ import PostTags from "../post/PostTags";
 import { Link, useNavigate } from "react-router-dom";
 import API from "../../api/Api";
 import { toast } from "react-toastify";
-import { showProjectDeletedToast } from "../../toast/Toast";
+import { showProjectDeletedToast, showDeadLinkToast } from "../../toast/Toast";
 
 function ImageModal({
   post,
@@ -469,7 +469,7 @@ function ImageModal({
                     if (!isLinkDead && projectUrl) {
                       setPreviewUrl(projectUrl);
                     } else {
-                      toast.error("This project link appears to be dead");
+                      showDeadLinkToast("This project link is currently down or unreachable");
                     }
                   }}
                   className="group/link relative flex items-center cursor-pointer justify-between p-[1px] rounded-xl transition-all duration-300 hover:scale-[1.01]"
