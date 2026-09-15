@@ -25,6 +25,7 @@ public class TechStackDetectorServiceImpl implements TechStackDetectorService {
         if (url == null || url.isBlank()) return tags;
 
         String targetUrl = url.trim().replaceAll("/+$", "");
+        log.info("Starting tech stack detection for URL: {}", targetUrl);
         String currentUA = userAgentProvider.getRandomUserAgent();
 
         try {
@@ -294,9 +295,10 @@ public class TechStackDetectorServiceImpl implements TechStackDetectorService {
             }
 
         } catch (Exception e) {
-            log.warn("Fingerprinting skipped/timed out for {}: {}", targetUrl, e.getMessage());
+            log.error("Failed to detect tech stack for {}: {}", targetUrl, e.getMessage());
         }
 
+        log.info("Tech stack detection completed for {}. Found {} technologies: {}", targetUrl, tags.size(), tags);
         return tags;
     }
 }

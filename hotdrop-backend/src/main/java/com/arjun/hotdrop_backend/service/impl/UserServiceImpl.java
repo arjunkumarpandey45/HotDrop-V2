@@ -36,10 +36,11 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public UserResponseOnSearchDto getUserByHotDropId(String hotdropId, String currentLoggedInHotdropId) {
+        log.info("Looking up user profile for hotdropId: '{}'", hotdropId);
 
         User currentUser = userRepo.findByHotdropId(hotdropId)
                 .orElseThrow(() -> {
-                    log.error("Search failed: HotdropId '{}' does not exist in database", hotdropId);
+                    log.error("User profile lookup failed: hotdropId '{}' not found", hotdropId);
                     return new RuntimeException("User profile not found with ID: " + hotdropId);
                 });
 
@@ -48,7 +49,7 @@ public class UserServiceImpl implements UserService {
         int followingCount = followRepo.countByFollower(currentUser);
 
         boolean isOwner = currentLoggedInHotdropId != null && currentLoggedInHotdropId.equals(hotdropId);
-
+        log.info("User profile found successfully for: '{}'", hotdropId);
         return UserResponseOnSearchDto.builder()
                 .id(currentUser.getId())
                 .firstName(currentUser.getFirstName())
@@ -71,13 +72,22 @@ public class UserServiceImpl implements UserService {
     @Override
     @Transactional
     public FollowResponseDto toggleFollowUser(UUID userIdToFollow, String currentHotdropId) {
+        log.info("User {} toggling follow status for target user ID: {}", currentHotdropId, userIdToFollow);
+
         User currentUser = userRepo.findByHotdropId(currentHotdropId)
-                .orElseThrow(() -> new RuntimeException("Authenticated user not found"));
+                .orElseThrow(() -> {
+                    log.error("Follow action failed: current user '{}' not found", currentHotdropId);
+                    return new RuntimeException("Authenticated user not found");
+                });
 
         User targetUser = userRepo.findById(userIdToFollow)
-                .orElseThrow(() -> new RuntimeException("Target user not found"));
+                .orElseThrow(() -> {
+                    log.error("Follow action failed: target user ID '{}' not found", userIdToFollow);
+                    return new RuntimeException("Target user not found");
+                });
 
         if (currentUser.getId().equals(targetUser.getId())) {
+            log.error("Follow action rejected: user {} attempted to follow themselves", currentHotdropId);
             throw new RuntimeException("You cannot follow yourself");
         }
 
@@ -87,6 +97,7 @@ public class UserServiceImpl implements UserService {
         if (existingFollow.isPresent()) {
             followRepo.delete(existingFollow.get());
             isFollowingNow = false;
+            log.info("User {} unfollowed user: {}", currentHotdropId, targetUser.getHotdropId());
         } else {
             Follow newFollow = Follow.builder()
                     .follower(currentUser)
@@ -94,14 +105,14 @@ public class UserServiceImpl implements UserService {
                     .build();
             followRepo.save(newFollow);
             isFollowingNow = true;
-                notificationService.sendNotification(
-                        currentUser,
-                        targetUser,
-                        NotificationType.FOLLOW,
-                         " started following you.",
-                        currentUser.getId()
-                );
-
+            notificationService.sendNotification(
+                    currentUser,
+                    targetUser,
+                    NotificationType.FOLLOW,
+                    " started following you.",
+                    currentUser.getId()
+            );
+            log.info("User {} followed user: {}", currentHotdropId, targetUser.getHotdropId());
         }
 
         followRepo.flush();
@@ -119,8 +130,13 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public List<FollowerUserDto> getUserFollowers(UUID profileUserId, String currentHotdropId) {
+        log.info("Fetching followers for user ID: {}", profileUserId);
+
         User targetProfileUser = userRepo.findById(profileUserId)
-                .orElseThrow(() -> new RuntimeException("Profile user not found"));
+                .orElseThrow(() -> {
+                    log.error("Failed to get followers: target user not found with ID: {}", profileUserId);
+                    return new RuntimeException("Profile user not found");
+                });
 
         User currentUser = null;
         if (currentHotdropId != null && !currentHotdropId.isBlank()) {
@@ -130,7 +146,7 @@ public class UserServiceImpl implements UserService {
         List<Follow> followersList = followRepo.findByFollowing(targetProfileUser);
         final User loggedInUser = currentUser;
 
-        return followersList.stream().map(follow -> {
+        List<FollowerUserDto> result = followersList.stream().map(follow -> {
             User followerUser = follow.getFollower();
 
             boolean isFollowingBack = false;
@@ -147,6 +163,9 @@ public class UserServiceImpl implements UserService {
                     .isFollowing(isFollowingBack)
                     .build();
         }).collect(Collectors.toList());
+
+        log.info("Fetched {} followers for user ID: {}", result.size(), profileUserId);
+        return result;
     }
 
     @Override
@@ -155,14 +174,21 @@ public class UserServiceImpl implements UserService {
             UUID userIdFromParams,
             String currentHotdropId,
             ProfileUpdateRequestDto requestDto) {
+        log.info("Updating profile for user: {}", currentHotdropId);
+
         String hotdropId = requestDto.getHotdropId();
-        if (!hotdropId.matches("^[a-zA-Z0-9]+$")) {
+        if (hotdropId != null && !hotdropId.matches("^[a-zA-Z0-9]+$")) {
+            log.error("Profile update rejected: hotdropId '{}' contains invalid characters", hotdropId);
             throw new IllegalArgumentException("Hotdrop ID can only contain letters and numbers");
         }
         User currentUser = userRepo.findByHotdropId(currentHotdropId)
-                .orElseThrow(() -> new RuntimeException("Authenticated user session data not found"));
+                .orElseThrow(() -> {
+                    log.error("Profile update failed: user not found with hotdropId: {}", currentHotdropId);
+                    return new RuntimeException("Authenticated user session data not found");
+                });
 
         if (userIdFromParams != null && !currentUser.getId().equals(userIdFromParams)) {
+            log.error("Profile update rejected: user {} cannot edit profile belonging to user ID: {}", currentHotdropId, userIdFromParams);
             throw new RuntimeException("Access Denied: You are not the owner of this profile");
         }
 
@@ -171,6 +197,7 @@ public class UserServiceImpl implements UserService {
             if (!newHotdropId.equals(currentUser.getHotdropId())) {
                 boolean isTaken = userRepo.existsByHotdropId(newHotdropId);
                 if (isTaken) {
+                    log.error("Profile update failed: hotdropId '{}' is already taken", newHotdropId);
                     throw new RuntimeException("HotdropId is already taken");
                 }
                 currentUser.setHotdropId(newHotdropId);
@@ -183,7 +210,6 @@ public class UserServiceImpl implements UserService {
 
             if (currentUser.getProfileImageUrl() != null && !currentUser.getProfileImageUrl().isBlank()) {
                 try {
-
                     String existingPublicId = (currentUser.getProfileImagePublicId() != null)
                             ? currentUser.getProfileImagePublicId()
                             : extractPublicIdFromUrl(currentUser.getProfileImageUrl());
@@ -196,30 +222,29 @@ public class UserServiceImpl implements UserService {
                             .build();
 
                     userImageHistoryRepo.save(historyRecord);
-                    log.info("Archived old profile image URL [{}] and publicId [{}] to history storage tracking.",
-                            currentUser.getProfileImageUrl(), existingPublicId);
+                    log.info("Archived previous profile picture for user: {}", currentUser.getHotdropId());
                 } catch (Exception e) {
-                    log.error("Failed to log image history record block: {}", e.getMessage());
+                    log.error("Failed to archive old profile image: {}", e.getMessage());
                 }
             }
 
             try {
-                log.info("Uploading fresh profile image buffer stream data to Cloudinary");
-
+                log.info("Uploading new profile picture for user: {}", currentUser.getHotdropId());
                 Map<String, String> uploadResult = cloudinary.uploadImageForProfileImage(profilePicture);
 
                 String newUploadedUrl = uploadResult.get("url");
                 String newPublicId = uploadResult.get("publicId");
 
                 if (newUploadedUrl == null || newPublicId == null) {
+                    log.error("Profile image upload failed: missing URL or public ID from Cloudinary");
                     throw new RuntimeException("Keys mismatch: Retrieved null values from CloudinaryService response map.");
                 }
 
                 currentUser.setProfileImageUrl(newUploadedUrl);
                 currentUser.setProfileImagePublicId(newPublicId);
-
-                log.info("Successfully bound new image state. URL: {}, PublicId: {}", newUploadedUrl, newPublicId);
+                log.info("Profile picture updated successfully for user: {}", currentUser.getHotdropId());
             } catch (Exception e) {
+                log.error("Profile picture upload failed for user {}: {}", currentUser.getHotdropId(), e.getMessage());
                 throw new RuntimeException("File upload sequence processing failed: " + e.getMessage());
             }
         }
@@ -233,7 +258,7 @@ public class UserServiceImpl implements UserService {
         if (requestDto.getPortfolioUrl() != null) currentUser.setPortfolioUrl(requestDto.getPortfolioUrl().trim());
 
         User updatedUser = userRepo.saveAndFlush(currentUser);
-        log.info("Successfully flushed user data transition blocks for hotdropId: {}", updatedUser.getHotdropId());
+        log.info("Profile details updated successfully for user: {}", updatedUser.getHotdropId());
 
         return userMapper.toResponseDto(updatedUser);
     }
@@ -241,9 +266,13 @@ public class UserServiceImpl implements UserService {
     @Override
     @Transactional
     public MeResponseDto getMeByHotdropId(String hotdropId) {
+        log.info("Fetching profile details for user: {}", hotdropId);
 
         User user = userRepo.findByHotdropId(hotdropId)
-                .orElseThrow(() -> new RuntimeException("User not found with email: " + hotdropId));
+                .orElseThrow(() -> {
+                    log.error("User not found with hotdropId: {}", hotdropId);
+                    return new RuntimeException("User not found with email: " + hotdropId);
+                });
 
         return getMe(user.getId());
     }
@@ -251,16 +280,19 @@ public class UserServiceImpl implements UserService {
     @Override
     @Transactional
     public MeResponseDto getMe(UUID userId) {
+        log.info("Compiling full account profile for user ID: {}", userId);
 
         User user = userRepo.findById(userId)
-                .orElseThrow(() -> new RuntimeException("User not found with ID: " + userId));
+                .orElseThrow(() -> {
+                    log.error("User account not found with ID: {}", userId);
+                    return new RuntimeException("User not found with ID: " + userId);
+                });
 
-        List<Post> userPosts = postRepo.findByUserIdOrderByCreatedAtDesc(userId);;
+        List<Post> userPosts = postRepo.findByUserIdOrderByCreatedAtDesc(userId);
         int followerCount = followRepo.countByFollowing(user);
         int followingCount = followRepo.countByFollower(user);
         Set<String> roleNames = user.getRoles().stream()
                 .map(role -> role.getRoleName().name())
-
                 .collect(Collectors.toSet());
 
         UserResponseDto userDto = UserResponseDto.builder()
@@ -315,6 +347,8 @@ public class UserServiceImpl implements UserService {
                     .build();
         }).toList();
 
+        log.info("Successfully compiled account profile for user: {} with {} posts", user.getHotdropId(), postDtos.size());
+
         return MeResponseDto.builder()
                 .user(userDto)
                 .posts(postDtos)
@@ -337,20 +371,34 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public List<UserResponseDto> getFollowersList(UUID userId) {
-        User targetUser = userRepo.findById(userId)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+        log.info("Fetching followers list for user ID: {}", userId);
 
-        return followRepo.findAllByFollowing(targetUser).stream()
+        User targetUser = userRepo.findById(userId)
+                .orElseThrow(() -> {
+                    log.error("Failed to get followers list: user not found with ID: {}", userId);
+                    return new RuntimeException("User not found");
+                });
+
+        List<Follow> follows = followRepo.findAllByFollowing(targetUser);
+        log.info("Found {} followers for user: {}", follows.size(), targetUser.getHotdropId());
+
+        return follows.stream()
                 .map(follow -> userMapper.toBasicResponseDto(follow.getFollower()))
                 .collect(Collectors.toList());
     }
 
     @Override
     public List<UserResponseDto> getFollowingList(UUID userId) {
+        log.info("Fetching following list for user ID: {}", userId);
+
         User currentUser = userRepo.findById(userId)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> {
+                    log.error("Failed to get following list: user not found with ID: {}", userId);
+                    return new RuntimeException("User not found");
+                });
 
         List<Follow> follows = followRepo.findAllByFollower(currentUser);
+        log.info("Found {} following accounts for user: {}", follows.size(), currentUser.getHotdropId());
 
         return follows.stream()
                 .map(follow -> userMapper.toBasicResponseDto(follow.getFollowing()))
@@ -358,12 +406,15 @@ public class UserServiceImpl implements UserService {
     }
 
     public List<PostResponseDto.UserSummaryDto> searchTop5Users(String query) {
+        log.info("Searching top 5 users matching query: '{}'", query);
+
         if (query == null || query.isBlank()) {
             return Collections.emptyList();
         }
 
         String cleanQuery = query.trim();
         List<User> users = userRepo.findTop5ByHotdropIdContainingIgnoreCaseOrFirstNameContainingIgnoreCase(cleanQuery, cleanQuery);
+        log.info("Found {} matching users for query: '{}'", users.size(), cleanQuery);
 
         return users.stream()
                 .map(user -> PostResponseDto.UserSummaryDto.builder()

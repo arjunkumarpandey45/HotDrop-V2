@@ -2,6 +2,7 @@ package com.arjun.hotdrop_backend.config;
 
 import com.arjun.hotdrop_backend.filter.JwtAuthenticationFilter;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -23,6 +24,7 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 import java.util.List;
 
+@Slf4j
 @Configuration
 @EnableWebSecurity
 @RequiredArgsConstructor
@@ -69,6 +71,7 @@ private String frontendURL;
                 .exceptionHandling(exception -> exception
                         .authenticationEntryPoint(
                                 (request, response, authException) -> {
+                                    log.error("Authentication required to access [{}]: {}", request.getRequestURI(), authException.getMessage());
                                     response.setStatus(
                                             HttpStatus.UNAUTHORIZED.value()
                                     );
@@ -90,6 +93,7 @@ private String frontendURL;
                         )
                         .accessDeniedHandler(
                                 (request, response, accessDeniedException) -> {
+                                    log.error("Access forbidden for request [{}]: {}", request.getRequestURI(), accessDeniedException.getMessage());
                                     response.setStatus(
                                             HttpStatus.FORBIDDEN.value()
                                     );

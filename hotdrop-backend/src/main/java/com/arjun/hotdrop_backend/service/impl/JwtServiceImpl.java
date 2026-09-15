@@ -26,22 +26,33 @@ public class JwtServiceImpl implements JwtService {
     @Value("${app.jwt.jwt-expiration-ms}")
     private long jwtExpirationMs;
     private Claims extractAllClaims(String token) {
-        return Jwts.parser()
-                .verifyWith(getSignInKey())
-                .build()
-                .parseSignedClaims(token)
-                .getPayload();
+        try {
+            return Jwts.parser()
+                    .verifyWith(getSignInKey())
+                    .build()
+                    .parseSignedClaims(token)
+                    .getPayload();
+        } catch (Exception e) {
+            log.error("Failed to parse claims from token: {}", e.getMessage());
+            throw e;
+        }
     }
+
     @Override
     public String extractHotdropId(String token) {
+        log.info("Extracting user hotdrop ID from token");
         Claims claims = extractAllClaims(token);
         return claims.getSubject();
     }
+
     public String getEmailFromToken(String token) {
+        log.info("Extracting email from verification token");
         Claims claims = extractAllClaims(token);
         return claims.getSubject();
     }
+
     public String generateEmailVerificationToken(String email) {
+        log.info("Generating email verification token for: {}", email);
         return Jwts.builder()
                 .subject(email)
                 .claim("purpose", "EMAIL_VERIFICATION")
@@ -50,28 +61,35 @@ public class JwtServiceImpl implements JwtService {
                 .signWith(getSignInKey())
                 .compact();
     }
+
     public boolean validateEmailToken(String token) {
+        log.info("Validating email verification token");
         try {
             Claims claims = extractAllClaims(token);
-
-            return "EMAIL_VERIFICATION".equals(claims.get("purpose"))
+            boolean isValid = "EMAIL_VERIFICATION".equals(claims.get("purpose"))
                     && claims.getExpiration().after(new Date());
-
+            if (!isValid) {
+                log.error("Email verification token is either expired or wrong purpose");
+            }
+            return isValid;
         } catch (Exception e) {
+            log.error("Email verification token validation failed: {}", e.getMessage());
             return false;
         }
     }
+
     public boolean validateJwtToken(String authToken) {
         try {
             extractAllClaims(authToken);
             return true;
         } catch (Exception e) {
-            log.error("Invalid JWT Token: {}", e.getMessage());
-
+            log.error("Invalid JWT access token: {}", e.getMessage());
             return false;
         }
     }
+
     public String generateTokenFromHotdropId(String hotdropId) {
+        log.info("Generating new JWT token for hotdropId: {}", hotdropId);
         return Jwts.builder()
                 .subject(hotdropId)
                 .issuedAt(new Date())
@@ -82,6 +100,7 @@ public class JwtServiceImpl implements JwtService {
 
     public String generateToken(Authentication authentication) {
         UserDetails userPrincipal = (UserDetails) authentication.getPrincipal();
+        log.info("Generating JWT access token for user: {}", userPrincipal.getUsername());
 
         return Jwts.builder()
                 .subject(userPrincipal.getUsername())
@@ -90,6 +109,7 @@ public class JwtServiceImpl implements JwtService {
                 .signWith(getSignInKey())
                 .compact();
     }
+
     private SecretKey getSignInKey() {
         byte[] keyBytes = Decoders.BASE64.decode(secretKey);
         return Keys.hmacShaKeyFor(keyBytes);

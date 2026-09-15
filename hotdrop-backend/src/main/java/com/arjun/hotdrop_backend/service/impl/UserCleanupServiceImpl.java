@@ -21,16 +21,20 @@ public class UserCleanupServiceImpl implements UserCleanupService {
     @Scheduled(fixedRate = 300000)
     @Transactional
     public void cleanExpiredUnverifiedUsers() {
-        log.info("Starting background cleanup for unverified users...");
+        log.info("Starting background cleanup for expired unverified users...");
 
-        LocalDateTime cutoffTime = LocalDateTime.now().minusMinutes(15);
+        try {
+            LocalDateTime cutoffTime = LocalDateTime.now().minusMinutes(15);
 
-        int deletedCount = userRepo.deleteUnverifiedUsersOlderThan(cutoffTime);
+            int deletedCount = userRepo.deleteUnverifiedUsersOlderThan(cutoffTime);
 
-        if (deletedCount > 0) {
-            log.info("Successfully cleaned up {} expired unverified user(s) from database.", deletedCount);
-        } else {
-            log.info("No expired unverified users found.");
+            if (deletedCount > 0) {
+                log.info("Successfully deleted {} expired unverified user(s) from database.", deletedCount);
+            } else {
+                log.info("No expired unverified users found to clean up.");
+            }
+        } catch (Exception e) {
+            log.error("Failed to clean up expired unverified users: {}", e.getMessage(), e);
         }
     }
 }

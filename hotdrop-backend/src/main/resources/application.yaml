@@ -1,3 +1,16 @@
+logging:
+  pattern:
+    console: "%clr(%d{yyyy-MM-dd HH:mm:ss.SSS}){faint} %clr(%5p) %clr([%15.15t]){faint} %clr([req:%X{requestId:-SYS}]){yellow} %clr(%-40.40logger{39}){cyan} : %m%n"
+    file: "%d{yyyy-MM-dd HH:mm:ss.SSS} %5p [%t] [req:%X{requestId:-SYS}] %-40.40logger{39} : %m%n"
+  file:
+    name: logs/hotdrop-app.log
+  logback:
+    rollingpolicy:
+      file-name-pattern: "logs/hotdrop-app-%d{yyyy-MM-dd}.%i.log.gz"
+      max-history: 30
+      max-file-size: 10MB
+      total-size-cap: 1GB
+
 spring:
   application:
     name: hotdrop-backend
@@ -24,6 +37,7 @@ spring:
   flyway:
     repair-on-migrate: true
     enabled: true
+
 
   mail:
     host: "${SMTP_HOST}"

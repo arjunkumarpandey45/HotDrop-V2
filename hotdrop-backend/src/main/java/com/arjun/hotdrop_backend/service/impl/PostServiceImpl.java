@@ -53,7 +53,9 @@ public class PostServiceImpl implements PostService {
 
     @Override
     public LinkVerificationResponseDto verifyProjectLink(String inputUrl) {
+        log.info("Verifying project link: {}", inputUrl);
         if (inputUrl == null || inputUrl.isBlank()) {
+            log.error("Link verification failed: URL is empty");
             return LinkVerificationResponseDto.builder()
                     .isLive(false)
                     .url(inputUrl)
@@ -78,10 +80,10 @@ public class PostServiceImpl implements PostService {
                     .method("HEAD", HttpRequest.BodyPublishers.noBody())
                     .build();
 
-
             HttpResponse<Void> headResponse = httpClient.send(headRequest, HttpResponse.BodyHandlers.discarding());
             if (headResponse.statusCode() >= 200 && headResponse.statusCode() < 400) {
                 Set<String> detectedTags = techStackDetectorService.detectTechStack(cleanUrl);
+                log.info("Project link {} is live (verified with HEAD request)", cleanUrl);
                 return LinkVerificationResponseDto.builder()
                         .isLive(true)
                         .url(cleanUrl)
@@ -92,9 +94,8 @@ public class PostServiceImpl implements PostService {
 
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
-            log.warn("HEAD verification thread context interrupted.");
+            log.warn("HEAD verification was interrupted for link: {}", cleanUrl);
         } catch (Exception ignored) {
-
         }
 
         try {
@@ -110,6 +111,7 @@ public class PostServiceImpl implements PostService {
             HttpResponse<Void> getResponse = httpClient.send(getRequest, HttpResponse.BodyHandlers.discarding());
             if (getResponse.statusCode() >= 200 && getResponse.statusCode() < 400) {
                 Set<String> detectedTags = techStackDetectorService.detectTechStack(cleanUrl);
+                log.info("Project link {} is live (verified with GET request)", cleanUrl);
                 return LinkVerificationResponseDto.builder()
                         .isLive(true)
                         .url(cleanUrl)
@@ -118,6 +120,7 @@ public class PostServiceImpl implements PostService {
                         .build();
             }
 
+            log.error("Project link {} returned unhealthy HTTP status: {}", cleanUrl, getResponse.statusCode());
             return LinkVerificationResponseDto.builder()
                     .isLive(false)
                     .url(cleanUrl)
@@ -126,11 +129,12 @@ public class PostServiceImpl implements PostService {
                     .build();
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
-            log.warn("GET verification thread context interrupted.");
+            log.warn("GET verification was interrupted for link: {}", cleanUrl);
         } catch (Exception e) {
-
+            log.error("Project link verification failed for {}: {}", cleanUrl, e.getMessage());
         }
 
+        log.error("Project link {} is dead or unreachable", cleanUrl);
         return LinkVerificationResponseDto.builder()
                 .isLive(false)
                 .url(cleanUrl)
@@ -151,12 +155,18 @@ public class PostServiceImpl implements PostService {
     @Override
     @Transactional
     public PostResponseDto createNewPost(CreatePostDto dto, MultipartFile[] files, String hotdropId) {
+        log.info("Creating new post with title: '{}' for user: {}", dto.getTitle(), hotdropId);
 
         if (files == null || files.length == 0 || files[0].isEmpty()) {
+            log.error("Failed to create post: no images uploaded");
             throw new RuntimeException("At least 1 image must be uploaded.");
         }
         User authenticatedUser = userRepo.findByHotdropId(String.valueOf(hotdropId))
-                .orElseThrow(() -> new RuntimeException("User not found "));
+                .orElseThrow(() -> {
+                    log.error("Failed to create post: user not found with hotdropId: {}", hotdropId);
+                    return new RuntimeException("User not found ");
+                });
+
         String cleanTitle = sanitizeInput(dto.getTitle());
         String cleanDescription = sanitizeInput(dto.getDescription());
         String cleanProjectUrl = sanitizeInput(dto.getProjectUrl());
@@ -176,7 +186,7 @@ public class PostServiceImpl implements PostService {
                         .filter(tag -> !tag.isEmpty())
                         .forEach(finalTagsSet::add);
             } catch (Exception e) {
-                log.warn("Could not auto-fingerprint tech stack during post creation: {}", e.getMessage());
+                log.warn("Could not detect tech stack during post creation: {}", e.getMessage());
             }
         }
         List<String> cleanedTags = new ArrayList<>(finalTagsSet);
@@ -205,7 +215,7 @@ public class PostServiceImpl implements PostService {
         post.setImages(postImages);
 
         Post savedPost = postRepo.save(post);
-        log.info("Project dropped successfully! Saved Post ID: {}", savedPost.getId());
+        log.info("Post created successfully! Post ID: {}, Title: '{}'", savedPost.getId(), savedPost.getTitle());
 
         return postMapper.toResponseDto(savedPost);
     }
@@ -213,14 +223,22 @@ public class PostServiceImpl implements PostService {
     @Override
     @Transactional
     public void deleteExistingPost(UUID postId, String currentHotdropId) {
+        log.info("Deleting post ID: {} requested by user: {}", postId, currentHotdropId);
 
         Post post = postRepo.findById(postId)
-                .orElseThrow(() -> new RuntimeException("Post not found!"));
+                .orElseThrow(() -> {
+                    log.error("Failed to delete post: post not found with ID: {}", postId);
+                    return new RuntimeException("Post not found!");
+                });
 
         User user = userRepo.findByHotdropId(currentHotdropId)
-                .orElseThrow(() -> new RuntimeException("Authenticated user session data not found"));
+                .orElseThrow(() -> {
+                    log.error("Failed to delete post: user not found with hotdropId: {}", currentHotdropId);
+                    return new RuntimeException("Authenticated user session data not found");
+                });
 
         if (!post.getUser().getHotdropId().equals(currentHotdropId)) {
+            log.error("Unauthorized: user {} tried to delete post {} owned by {}", currentHotdropId, postId, post.getUser().getHotdropId());
             throw new RuntimeException("Access Denied: You can only delete your own post!!");
         }
 
@@ -229,7 +247,6 @@ public class PostServiceImpl implements PostService {
 
             for (PostImage img : post.getImages()) {
                 if (img.getUrl() != null && !img.getUrl().isBlank()) {
-
                     String historyPublicId = (img.getPublicId() != null) ? img.getPublicId() : "";
 
                     UserImageHistory historyRecord = UserImageHistory.builder()
@@ -245,16 +262,17 @@ public class PostServiceImpl implements PostService {
 
             if (!archives.isEmpty()) {
                 userImageHistoryRepo.saveAll(archives);
-                log.info("Archived {} post image asset reference(s) to history table", archives.size());
+                log.info("Archived {} image(s) for deleted post ID: {}", archives.size(), postId);
             }
         }
 
         postRepo.delete(post);
-        log.info("Post ID: {} successfully evicted from core layers.", postId);
+        log.info("Post ID: {} successfully deleted by user: {}", postId, currentHotdropId);
     }
 
     @Override
     public PostListResponseDto getAllPostsCompiledFeed(int page, int size, String sortBy, String direction, String search, String currentHotdropId) {
+        log.info("Fetching compiled feed: page={}, size={}, sortBy={}, direction={}, search='{}'", page, size, sortBy, direction, search);
 
         Sort sort = direction.equalsIgnoreCase(Sort.Direction.ASC.name())
                 ? Sort.by(sortBy).ascending()
@@ -269,6 +287,8 @@ public class PostServiceImpl implements PostService {
                 .map(post -> postMapperWithID.toResponseDto(post, currentHotdropId))
                 .toList();
 
+        log.info("Compiled feed successfully with {} posts", postResponseDto.size());
+
         return PostListResponseDto.builder()
                 .posts(postResponseDto)
                 .pageNumber(postPage.getNumber())
@@ -281,27 +301,39 @@ public class PostServiceImpl implements PostService {
 
     @Override
     public PostResponseDto getPostByPostId(UUID postId) {
+        log.info("Fetching post by ID: {}", postId);
 
         Post post = postRepo.findById(postId).orElse(null);
         if (post == null) {
+            log.error("Post not found with ID: {}", postId);
             return null;
         }
 
+        log.info("Found post '{}' with ID: {}", post.getTitle(), postId);
         return postMapper.toResponseDto(post);
     }
 
     @Override
     @Transactional
     public PostResponseDto toggleLike(UUID postId, String hotdropId) {
-        Post post = postRepo.findById(postId).orElseThrow();
-        User user = userRepo.findByHotdropId(hotdropId).orElseThrow();
+        log.info("User {} toggling like on post ID: {}", hotdropId, postId);
+
+        Post post = postRepo.findById(postId).orElseThrow(() -> {
+            log.error("Failed to toggle like: post not found with ID: {}", postId);
+            return new RuntimeException("Post not found");
+        });
+
+        User user = userRepo.findByHotdropId(hotdropId).orElseThrow(() -> {
+            log.error("Failed to toggle like: user not found with hotdropId: {}", hotdropId);
+            return new RuntimeException("User not found");
+        });
 
         Optional<Like> existingLike = likeRepo.findByUserAndPost(user, post);
 
         if (existingLike.isPresent()) {
             likeRepo.delete(existingLike.get());
             post.setLikeCount(Math.max(0, post.getLikeCount() - 1));
-
+            log.info("User {} unliked post ID: {}. Current likes: {}", hotdropId, postId, post.getLikeCount());
         } else {
             likeRepo.save(Like.builder().user(user).post(post).build());
             post.setLikeCount(post.getLikeCount() + 1);
@@ -309,9 +341,10 @@ public class PostServiceImpl implements PostService {
                     user,
                     post.getUser(),
                     NotificationType.LIKE,
-                      " liked your post '" + post.getTitle() + "'",
+                    " liked your post '" + post.getTitle() + "'",
                     post.getId()
             );
+            log.info("User {} liked post ID: {}. Current likes: {}", hotdropId, postId, post.getLikeCount());
         }
 
         postRepo.save(post);
@@ -322,15 +355,24 @@ public class PostServiceImpl implements PostService {
     @Override
     @Transactional
     public CommentResponseDto addCommentToPost(UUID postId, String hotdropId, String text) {
+        log.info("Adding comment to post ID: {} by user: {}", postId, hotdropId);
+
         if (text == null || text.isBlank()) {
+            log.error("Failed to add comment: comment text is empty");
             throw new RuntimeException("Comment text cannot be empty");
         }
 
         Post post = postRepo.findById(postId)
-                .orElseThrow(() -> new RuntimeException("Post not found"));
+                .orElseThrow(() -> {
+                    log.error("Failed to add comment: post not found with ID: {}", postId);
+                    return new RuntimeException("Post not found");
+                });
 
         User user = userRepo.findByHotdropId(hotdropId)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> {
+                    log.error("Failed to add comment: user not found with hotdropId: {}", hotdropId);
+                    return new RuntimeException("User not found");
+                });
 
         Comment comment = Comment.builder()
                 .text(text.trim())
@@ -345,10 +387,11 @@ public class PostServiceImpl implements PostService {
                 user,
                 post.getUser(),
                 NotificationType.COMMENT,
-                  " commented: " + text.trim(),
+                " commented: " + text.trim(),
                 post.getId()
         );
         postRepo.save(post);
+        log.info("Comment successfully added to post ID: {} by user: {}. Current comments: {}", postId, hotdropId, post.getCommentCount());
 
         var userSummary = PostResponseDto.UserSummaryDto.builder()
                 .id(user.getId())
@@ -367,40 +410,52 @@ public class PostServiceImpl implements PostService {
     @Override
     @Transactional
     public void deleteComment(UUID commentId, String hotdropId) {
+        log.info("Deleting comment ID: {} requested by user: {}", commentId, hotdropId);
 
         Comment comment = commentRepo.findById(commentId)
-                .orElseThrow(() -> new RuntimeException("Comment not found"));
+                .orElseThrow(() -> {
+                    log.error("Failed to delete comment: comment not found with ID: {}", commentId);
+                    return new RuntimeException("Comment not found");
+                });
         commentRepo.deleteCommentById(commentId);
         User currentUser = userRepo.findByHotdropId(hotdropId)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> {
+                    log.error("Failed to delete comment: user not found with hotdropId: {}", hotdropId);
+                    return new RuntimeException("User not found");
+                });
         Post post = comment.getPost();
         boolean isCommentOwner = comment.getUser().getId().equals(currentUser.getId());
         boolean isPostOwner = post.getUser().getId().equals(currentUser.getId());
 
         if (!isCommentOwner && !isPostOwner) {
+            log.error("Unauthorized: user {} is neither the author of the comment nor the post owner", hotdropId);
             throw new RuntimeException("You are not authorized to delete this comment");
         }
         commentRepo.delete(comment);
 
         post.setCommentCount(Math.max(0, post.getCommentCount() - 1));
         postRepo.save(post);
+        log.info("Comment ID: {} deleted successfully by user: {}", commentId, hotdropId);
     }
 
     @Override
     @Transactional(readOnly = true)
     public PostListResponseDto getPostsByUserIdPaged(UUID userId, int page, int size, String currentHotdropId) {
+        log.info("Fetching posts created by user ID: {}, page: {}, size: {}", userId, page, size);
 
         if (!userRepo.existsById(userId)) {
+            log.error("Failed to fetch posts: target user not found with ID: {}", userId);
             throw new RuntimeException("Target user not found");
         }
 
         Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
-
         Page<Post> postPage = postRepo.findByUserId(userId, pageable);
 
         List<PostResponseDto> postResponseDtos = postPage.getContent().stream()
                 .map(post -> postMapperWithID.toResponseDto(post, currentHotdropId))
                 .toList();
+
+        log.info("Successfully fetched {} posts for user ID: {}", postResponseDtos.size(), userId);
 
         return PostListResponseDto.builder()
                 .posts(postResponseDtos)
@@ -415,6 +470,8 @@ public class PostServiceImpl implements PostService {
     @Override
     @Transactional(readOnly = true)
     public PostResponseDto getPostByShareUrl(String shareUrl, String hotdropId) {
+        log.info("Fetching post by share URL: '{}'", shareUrl);
+
         Post post = postRepo.findByShareUrl(shareUrl)
                 .or(() -> {
                     try {
@@ -424,19 +481,28 @@ public class PostServiceImpl implements PostService {
                         return java.util.Optional.empty();
                     }
                 })
-                .orElseThrow(() -> new RuntimeException("Post not found with shareUrl / id: " + shareUrl));
+                .orElseThrow(() -> {
+                    log.error("Post not found with shareUrl / ID: '{}'", shareUrl);
+                    return new RuntimeException("Post not found with shareUrl / id: " + shareUrl);
+                });
 
-        return postMapperWithID
-                .toResponseDto(post, hotdropId);
+        log.info("Found post '{}' for share URL: '{}'", post.getTitle(), shareUrl);
+        return postMapperWithID.toResponseDto(post, hotdropId);
     }
 
     @Override
     @Transactional(readOnly = true)
     public List<CommentResponseDto> getCommentsByPostId(UUID postId) {
+        log.info("Fetching comments for post ID: {}", postId);
+
         postRepo.findById(postId)
-                .orElseThrow(() -> new RuntimeException("Post not found with ID: " + postId));
+                .orElseThrow(() -> {
+                    log.error("Failed to fetch comments: post not found with ID: {}", postId);
+                    return new RuntimeException("Post not found with ID: " + postId);
+                });
 
         List<Comment> comments = commentRepo.findByPostIdOrderByCreatedAtDesc(postId);
+        log.info("Fetched {} comments for post ID: {}", comments.size(), postId);
 
         return comments.stream()
                 .map(comment -> {
@@ -456,12 +522,19 @@ public class PostServiceImpl implements PostService {
                 })
                 .collect(Collectors.toList());
     }
+
     @Transactional(readOnly = true)
     public List<PostResponseDto.UserSummaryDto> getUsersWhoLikedPost(UUID postId) {
+        log.info("Fetching users who liked post ID: {}", postId);
+
         Post post = postRepo.findById(postId)
-                .orElseThrow(() -> new RuntimeException("Post not found with ID: " + postId));
+                .orElseThrow(() -> {
+                    log.error("Failed to fetch liked users: post not found with ID: {}", postId);
+                    return new RuntimeException("Post not found with ID: " + postId);
+                });
 
         List<Like> likes = likeRepo.findByPost(post);
+        log.info("Fetched {} users who liked post ID: {}", likes.size(), postId);
 
         return likes.stream()
                 .map(like -> {

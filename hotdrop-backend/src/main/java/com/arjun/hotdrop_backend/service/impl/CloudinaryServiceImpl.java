@@ -21,8 +21,10 @@ public class CloudinaryServiceImpl implements CloudinaryService {
 
     @Override
     public Map<String, String> uploadImageForPost(MultipartFile file) {
+        log.info("Starting post image upload to Cloudinary (file size: {} bytes)", file != null ? file.getSize() : 0);
         try {
-            if (file.isEmpty()) {
+            if (file == null || file.isEmpty()) {
+                log.error("Cannot upload post image: file is empty or missing");
                 throw new RuntimeException("Cannot upload empty file.");
             }
 
@@ -38,18 +40,21 @@ public class CloudinaryServiceImpl implements CloudinaryService {
             String url = (String) uploadResult.get("secure_url");
             String publicId = (String) uploadResult.get("public_id");
 
+            log.info("Post image uploaded successfully to Cloudinary. Public ID: {}", publicId);
             return Map.of("url", url, "publicId", publicId);
 
         } catch (IOException e) {
-            log.error("Failed to upload image file to Cloudinary cluster for post: {}", e.getMessage());
+            log.error("Failed to upload post image to Cloudinary: {}", e.getMessage());
             throw new RuntimeException("Image upload failed: " + e.getMessage());
         }
     }
 
     @Override
     public Map<String, String> uploadImageForProfileImage(MultipartFile file) {
+        log.info("Starting profile image upload to Cloudinary (file size: {} bytes)", file != null ? file.getSize() : 0);
         try {
-            if (file.isEmpty()) {
+            if (file == null || file.isEmpty()) {
+                log.error("Cannot upload profile image: file is empty or missing");
                 throw new RuntimeException("Cannot upload empty file.");
             }
 
@@ -65,21 +70,23 @@ public class CloudinaryServiceImpl implements CloudinaryService {
             String url = (String) uploadResult.get("secure_url");
             String publicId = (String) uploadResult.get("public_id");
 
+            log.info("Profile image uploaded successfully to Cloudinary. Public ID: {}", publicId);
             return Map.of("url", url, "publicId", publicId);
 
         } catch (IOException e) {
-            log.error("Failed to upload image file to Cloudinary cluster for ProfileImage: {}", e.getMessage());
+            log.error("Failed to upload profile image to Cloudinary: {}", e.getMessage());
             throw new RuntimeException("Image upload failed: " + e.getMessage());
         }
     }
 
     @Override
     public void deleteImage(String publicId) {
+        log.info("Deleting image from Cloudinary with publicId: {}", publicId);
         try {
             cloudinary.uploader().destroy(publicId, ObjectUtils.emptyMap());
-            log.info("Successfully dropped resource asset from Cloudinary: {}", publicId);
+            log.info("Successfully deleted image from Cloudinary with publicId: {}", publicId);
         } catch (IOException e) {
-            log.error("Cloudinary asset deletion failed for public_id {}: {}", publicId, e.getMessage());
+            log.error("Failed to delete image from Cloudinary for publicId {}: {}", publicId, e.getMessage());
         }
     }
 }

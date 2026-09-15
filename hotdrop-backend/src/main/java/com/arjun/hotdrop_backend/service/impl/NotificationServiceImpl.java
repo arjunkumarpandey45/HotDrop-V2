@@ -26,12 +26,14 @@ public class NotificationServiceImpl implements NotificationService {
 
     @Transactional
     public void sendNotification(User sender, User recipient, NotificationType type, String message, UUID referenceId) {
-
         if (sender != null && recipient != null && sender.getId().equals(recipient.getId())
                 && type != NotificationType.PROJECT_DEAD
                 && type != NotificationType.PROJECT_LIVE) {
+            log.info("Skipping notification because sender and recipient are the same user ({})", sender.getHotdropId());
             return;
         }
+
+        log.info("Creating notification of type '{}' for user: {}", type, recipient != null ? recipient.getHotdropId() : "unknown");
 
         Notification notification = Notification.builder()
                 .sender(sender)
@@ -54,8 +56,8 @@ public class NotificationServiceImpl implements NotificationService {
 
         NotificationResponseDto payload = NotificationResponseDto.builder()
                 .id(saved.getId())
-                .senderHotdropId(sender.getHotdropId())
-                .senderProfilePicture(sender.getProfileImageUrl())
+                .senderHotdropId(sender != null ? sender.getHotdropId() : "HotDrop")
+                .senderProfilePicture(sender != null ? sender.getProfileImageUrl() : null)
                 .message(message)
                 .type(type)
                 .referenceId(referenceId)
@@ -70,16 +72,21 @@ public class NotificationServiceImpl implements NotificationService {
                 payload
         );
 
-        log.info("Real-time notification dispatched to @{}", recipient.getHotdropId());
+        log.info("Real-time notification dispatched to user: @{}", recipient.getHotdropId());
     }
 
     @Override
     public org.springframework.data.domain.Page<NotificationResponseDto> getUserNotifications(String hotdropId, org.springframework.data.domain.Pageable pageable) {
+        log.info("Fetching notifications for user: {}", hotdropId);
+
         User user = userRepo.findByHotdropId(hotdropId)
                 .or(() -> userRepo.findByEmail(hotdropId))
-                .orElseThrow(() -> new RuntimeException("User not found: " + hotdropId));
+                .orElseThrow(() -> {
+                    log.error("Failed to fetch notifications: user not found for {}", hotdropId);
+                    return new RuntimeException("User not found: " + hotdropId);
+                });
 
-        return notificationRepo.findByRecipientOrderByCreatedAtDesc(user, pageable)
+        org.springframework.data.domain.Page<NotificationResponseDto> result = notificationRepo.findByRecipientOrderByCreatedAtDesc(user, pageable)
                 .map(n -> {
                     String postShareUrl = null;
                     if (n.getReferenceId() != null && (n.getType() == NotificationType.LIKE || n.getType() == NotificationType.COMMENT
@@ -90,8 +97,8 @@ public class NotificationServiceImpl implements NotificationService {
                     }
                     return NotificationResponseDto.builder()
                             .id(n.getId())
-                            .senderHotdropId(n.getSender().getHotdropId())
-                            .senderProfilePicture(n.getSender().getProfileImageUrl())
+                            .senderHotdropId(n.getSender() != null ? n.getSender().getHotdropId() : "HotDrop")
+                            .senderProfilePicture(n.getSender() != null ? n.getSender().getProfileImageUrl() : null)
                             .message(n.getMessage())
                             .type(n.getType())
                             .referenceId(n.getReferenceId())
@@ -100,42 +107,68 @@ public class NotificationServiceImpl implements NotificationService {
                             .createdAt(n.getCreatedAt())
                             .build();
                 });
+
+        log.info("Fetched {} notifications for user: {}", result.getNumberOfElements(), hotdropId);
+        return result;
     }
 
     @Override
     public long getUnreadCount(String hotdropId) {
+        log.info("Fetching unread notification count for user: {}", hotdropId);
+
         User user = userRepo.findByHotdropId(hotdropId)
                 .or(() -> userRepo.findByEmail(hotdropId))
-                .orElseThrow(() -> new RuntimeException("User not found: " + hotdropId));
-        return notificationRepo.countByRecipientAndIsReadFalse(user);
+                .orElseThrow(() -> {
+                    log.error("Failed to get unread notification count: user not found for {}", hotdropId);
+                    return new RuntimeException("User not found: " + hotdropId);
+                });
+
+        long count = notificationRepo.countByRecipientAndIsReadFalse(user);
+        log.info("User {} has {} unread notifications", hotdropId, count);
+        return count;
     }
 
     @Override
     @Transactional
     public void markAsRead(UUID notificationId, String hotdropId) {
+        log.info("Marking notification {} as read for user: {}", notificationId, hotdropId);
+
         Notification notification = notificationRepo.findById(notificationId)
-                .orElseThrow(() -> new RuntimeException("Notification not found"));
+                .orElseThrow(() -> {
+                    log.error("Failed to mark as read: notification {} not found", notificationId);
+                    return new RuntimeException("Notification not found");
+                });
 
         if (!notification.getRecipient().getHotdropId().equalsIgnoreCase(hotdropId) &&
             !notification.getRecipient().getEmail().equalsIgnoreCase(hotdropId)) {
+            log.error("Unauthorized: user {} tried to mark notification {} belonging to another user", hotdropId, notificationId);
             throw new RuntimeException("Unauthorized to modify this notification");
         }
+
         notification.setRead(true);
         notificationRepo.save(notification);
+        log.info("Notification {} marked as read for user: {}", notificationId, hotdropId);
     }
 
     @Override
     @Transactional
     public void markAllAsRead(String hotdropId) {
+        log.info("Marking all notifications as read for user: {}", hotdropId);
+
         User user = userRepo.findByHotdropId(hotdropId)
                 .or(() -> userRepo.findByEmail(hotdropId))
-                .orElseThrow(() -> new RuntimeException("User not found: " + hotdropId));
+                .orElseThrow(() -> {
+                    log.error("Failed to mark all as read: user not found for {}", hotdropId);
+                    return new RuntimeException("User not found: " + hotdropId);
+                });
 
         org.springframework.data.domain.Page<Notification> page = notificationRepo.findByRecipientOrderByCreatedAtDesc(user, org.springframework.data.domain.Pageable.unpaged());
         java.util.List<Notification> unread = page.getContent().stream()
                 .filter(n -> !n.isRead())
                 .toList();
+
         unread.forEach(n -> n.setRead(true));
         notificationRepo.saveAll(unread);
+        log.info("Successfully marked {} notifications as read for user: {}", unread.size(), hotdropId);
     }
 }
