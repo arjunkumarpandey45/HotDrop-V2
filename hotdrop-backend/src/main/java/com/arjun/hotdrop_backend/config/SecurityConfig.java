@@ -49,7 +49,7 @@ private String frontendURL;
                                 "/users/*/get-all-following",
                                 "/users/*/get-all-followers",
                                 "/users/search/**",
-                                "/actuator/health",
+                                "/actuator/**",
                                 "/ws/**",
                                 "/"
                         ).permitAll()

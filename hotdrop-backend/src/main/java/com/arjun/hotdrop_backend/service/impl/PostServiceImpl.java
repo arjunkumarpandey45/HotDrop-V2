@@ -11,6 +11,7 @@ import com.arjun.hotdrop_backend.service.NotificationService;
 import com.arjun.hotdrop_backend.service.PostService;
 import com.arjun.hotdrop_backend.service.TechStackDetectorService;
 import com.arjun.hotdrop_backend.utils.SlugifyUtil;
+import com.arjun.hotdrop_backend.utils.UserAgentProvider;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -40,8 +41,7 @@ public class PostServiceImpl implements PostService {
     private final CloudinaryService cloudinaryService;
     private final NotificationService notificationService;
     private final TechStackDetectorService techStackDetectorService;
-    private final List<String> userAgents;
-    private final Random random;
+    private final UserAgentProvider userAgentProvider;
     private final CommentRepo commentRepo;
     private final PostMapperWithID postMapperWithID;
     private final PostMapper postMapper;
@@ -68,7 +68,7 @@ public class PostServiceImpl implements PostService {
             cleanUrl = "https://" + cleanUrl;
         }
 
-        String randomUA = userAgents.get(random.nextInt(userAgents.size()));
+        String randomUA = userAgentProvider.getRandomUserAgent();
 
         try {
             HttpRequest headRequest = HttpRequest.newBuilder()

@@ -26,9 +26,7 @@ public class UserAgentProvider {
             "Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.6261.64 Mobile Safari/537.36"
     );
 
-    /**
-     * Thread-safe random User-Agent picker
-     */
+
     public String getRandomUserAgent() {
         int index = ThreadLocalRandom.current().nextInt(USER_AGENTS.size());
         return USER_AGENTS.get(index);
