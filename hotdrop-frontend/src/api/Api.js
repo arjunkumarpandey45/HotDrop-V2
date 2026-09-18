@@ -67,6 +67,8 @@ API.interceptors.response.use(
       originalRequest.url?.includes("/auth/signup") ||
       originalRequest.url?.includes("/auth/logout") ||
       originalRequest.url?.includes("/auth/forgot-password") ||
+      originalRequest.url?.includes("/auth/resend-email") ||
+      originalRequest.url?.includes("/auth/verify-email") ||
       originalRequest.url?.includes("/auth/verify-otp") ||
       originalRequest.url?.includes("/posts/share") ||
       originalRequest.url?.includes("/posts/share-post") ||

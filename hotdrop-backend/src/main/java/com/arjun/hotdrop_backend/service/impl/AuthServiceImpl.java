@@ -48,63 +48,200 @@ public class AuthServiceImpl implements AuthService {
     private final UserMapper userMapper;
     private final JwtService jwtService;
 
+
     @Override
     public UserResponseDto register(RegisterRequestDto registerRequestDto) {
-        log.info("Starting user registration for email: {} and hotdropId: {}", registerRequestDto.getEmail(), registerRequestDto.getHotdropId());
 
-        Optional<User> existingUser = userRepo.findByEmail(registerRequestDto.getEmail());
+        log.info("Starting user registration for email: {} and hotdropId: {}",
+                registerRequestDto.getEmail(),
+                registerRequestDto.getHotdropId());
+
+        String email = registerRequestDto.getEmail();
+        String hotdropId = registerRequestDto.getHotdropId();
+
+
+        Optional<User> existingUser = userRepo.findByEmail(email);
 
         if (existingUser.isPresent()) {
+
             User user = existingUser.get();
-            if (!user.isEmailVerified()) {
-                log.error("Registration rejected: email {} is already registered but not yet verified", registerRequestDto.getEmail());
-                throw new IllegalArgumentException("Email not verified. Please try again in 15 minutes.");
+
+            if (user.isEmailVerified()) {
+
+                log.warn("Registration rejected: email {} is already verified",
+                        email);
+
+                throw new IllegalArgumentException("Email already exists");
             }
-            log.error("Registration rejected: email {} is already registered and verified", registerRequestDto.getEmail());
-            throw new IllegalArgumentException("Email already exists");
+
+
+
+            Optional<User> existingHotdropUser =
+                    userRepo.findByHotdropId(hotdropId);
+
+            if (existingHotdropUser.isPresent()
+                    && !existingHotdropUser.get().getId().equals(user.getId())) {
+
+                log.warn("Registration rejected: hotdropId {} is already in use",
+                        hotdropId);
+
+                throw new IllegalArgumentException("Hotdrop Id already exists");
+            }
+
+
+            if (!hotdropId.matches("^[a-zA-Z0-9]+$")) {
+
+                log.warn("Registration rejected: hotdropId {} contains invalid symbols",
+                        hotdropId);
+
+                throw new IllegalArgumentException(
+                        "Hotdrop ID can only contain letters and numbers"
+                );
+            }
+
+
+            user.setHotdropId(hotdropId);
+
+            user.setPassword(
+                    passwordEncoder.encode(
+                            registerRequestDto.getPassword()
+                    )
+            );
+
+            user.setFirstName(registerRequestDto.getFirstName());
+            user.setLastName(registerRequestDto.getLastName());
+
+
+            user.setEmailVerified(false);
+
+            userRepo.save(user);
+
+            log.info("Unverified user updated successfully for email: {}",
+                    email);
+
+            String token =
+                    jwtService.generateEmailVerificationToken(user.getEmail());
+
+            String verificationLink =
+                    frontendURL + "/auth/verify-email?token=" + token;
+
+
+            emailService.sendVerificationEmail(
+                    user.getEmail(),
+                    user.getFirstName(),
+                    verificationLink
+            );
+
+            log.info("New verification email sent to: {}", email);
+
+            return userMapper.toResponseDto(user);
         }
 
-        String hotdropId = registerRequestDto.getHotdropId();
-        if (userRepo.existsByHotdropId(registerRequestDto.getHotdropId())) {
-            log.error("Registration rejected: hotdropId {} is already in use", registerRequestDto.getHotdropId());
+
+
+
+        if (!hotdropId.matches("^[a-zA-Z0-9]+$")) {
+
+            log.warn("Registration rejected: hotdropId {} contains invalid symbols",
+                    hotdropId);
+
+            throw new IllegalArgumentException(
+                    "Hotdrop ID can only contain letters and numbers"
+            );
+        }
+
+
+        if (userRepo.existsByHotdropId(hotdropId)) {
+
+            log.warn("Registration rejected: hotdropId {} is already in use",
+                    hotdropId);
+
             throw new IllegalArgumentException("Hotdrop Id already exists");
         }
 
-        if (userRepo.existsByEmail(registerRequestDto.getEmail())) {
-            log.error("Registration rejected: email {} is already in use", registerRequestDto.getEmail());
-            throw new IllegalArgumentException("Email already exists");
-        }
-
-        if (!hotdropId.matches("^[a-zA-Z0-9]+$")) {
-            log.error("Registration rejected: hotdropId {} contains invalid symbols", hotdropId);
-            throw new IllegalArgumentException("Hotdrop ID can only contain letters and numbers");
-        }
 
         Role userRole = roleRepo.findByRoleName(RoleType.USER)
                 .orElseThrow(() -> {
-                    log.error("Registration failed: default USER role not found in database");
+                    log.error("Registration failed: default USER role not found");
+
                     return new RuntimeException("Default role not found");
                 });
 
-        User user = userRepo.save(User.builder()
-                .hotdropId(registerRequestDto.getHotdropId())
-                .password(passwordEncoder.encode(registerRequestDto.getPassword()))
-                .email(registerRequestDto.getEmail())
-                .authProvider(AuthProvider.LOCAL)
-                .roles(Set.of(userRole))
-                .firstName(registerRequestDto.getFirstName())
-                .lastName(registerRequestDto.getLastName()).build());
 
-        log.info("User entity created with ID: {}. Generating verification email...", user.getId());
+        User user = userRepo.save(
+                User.builder()
+                        .hotdropId(hotdropId)
+                        .password(
+                                passwordEncoder.encode(
+                                        registerRequestDto.getPassword()
+                                )
+                        )
+                        .email(email)
+                        .authProvider(AuthProvider.LOCAL)
+                        .roles(Set.of(userRole))
+                        .firstName(registerRequestDto.getFirstName())
+                        .lastName(registerRequestDto.getLastName())
+                        .emailVerified(false)
+                        .build()
+        );
 
-        String token = jwtService.generateEmailVerificationToken(user.getEmail());
-        String verificationLink = frontendURL + "/auth/verify-email?token=" + token;
-        emailService.sendVerificationEmail(user.getEmail(), user.getFirstName(), verificationLink);
+        log.info("New user created with ID: {}",
+                user.getId());
 
-        log.info("Registration successful for user: {}. Verification email sent to: {}", user.getHotdropId(), user.getEmail());
+
+        String token =
+                jwtService.generateEmailVerificationToken(user.getEmail());
+
+        String verificationLink =
+                frontendURL + "/auth/verify-email?token=" + token;
+
+        emailService.sendVerificationEmail(
+                user.getEmail(),
+                user.getFirstName(),
+                verificationLink
+        );
+
+        log.info("Registration successful for user: {}. Verification email sent to: {}",
+                user.getHotdropId(),
+                user.getEmail());
+
         return userMapper.toResponseDto(user);
     }
 
+    @Override
+    public void reVerifyEmail(String email) {
+
+        Optional<User> existingUser = userRepo.findByEmail(email);
+
+        if (existingUser.isEmpty()) {
+            throw new IllegalArgumentException("Email not registered");
+        }
+
+        User user = existingUser.get();
+
+        if (user.isEmailVerified()) {
+
+            log.warn("Re-verification rejected: email {} is already verified",
+                    email);
+
+            throw new IllegalArgumentException("Email already verified");
+        }
+
+        String token =
+                jwtService.generateEmailVerificationToken(user.getEmail());
+
+        String verificationLink =
+                frontendURL + "/auth/verify-email?token=" + token;
+
+        emailService.sendVerificationEmail(
+                user.getEmail(),
+                user.getFirstName(),
+                verificationLink
+        );
+
+        log.info("New verification email sent to: {}", email);
+
+    }
     @Override
     @Transactional
     public String verifyEmail(String token) {
@@ -275,4 +412,9 @@ public class AuthServiceImpl implements AuthService {
         }
         log.info("Logout process completed");
     }
+
+
+
+
+
 }

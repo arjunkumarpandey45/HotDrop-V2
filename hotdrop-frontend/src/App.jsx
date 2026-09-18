@@ -7,6 +7,7 @@ import Verify from './pages/auth/Verify';
 import VerifyLink from './pages/auth/VerifyLink';
 import Login from './pages/auth/Login';
 import ForgotPassword from './pages/auth/ForgotPassword';
+import ResendVerification from './pages/auth/ResendVerification';
 import Navbar from './components/layout/Navbar';
 import BottomNav from './components/layout/BottomNav';
 import CreatePost from './pages/post/CreatePost';
@@ -109,6 +110,22 @@ function App() {
         {
           path: '/posts/:postId',
           element: <FromShare />,
+        },
+        {
+          path: '/auth/resend-email',
+          element: <ResendVerification />,
+        },
+        {
+          path: '/auth/resend-verification',
+          element: <ResendVerification />,
+        },
+        {
+          path: '/resend-verification',
+          element: <ResendVerification />,
+        },
+        {
+          path: '/verify-email',
+          element: <ResendVerification />,
         },
         {
           path: '/auth/verify-email',

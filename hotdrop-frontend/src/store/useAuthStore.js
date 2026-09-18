@@ -86,7 +86,13 @@ export const useAuthStore = create((set, get) => ({
       currentPath.startsWith("/login") ||
       currentPath.startsWith("/signup") ||
       currentPath.startsWith("/forgot-password") ||
-      currentPath.startsWith("/auth/forgot-password")
+      currentPath.startsWith("/auth/forgot-password") ||
+      currentPath.startsWith("/auth/resend-email") ||
+      currentPath.startsWith("/auth/resend-verification") ||
+      currentPath.startsWith("/resend-verification") ||
+      currentPath.startsWith("/verify-email") ||
+      currentPath.startsWith("/auth/verify-email") ||
+      currentPath.startsWith("/verify")
     ) {
       set({ user: null, userPosts: [], isLoggedIn: false, isCheckingAuth: false });
       return;

@@ -130,23 +130,33 @@ export default function VerifyLink() {
           )}
 
           {status !== "success" && (
-            <div className="mt-4 grid gap-2.5 sm:grid-cols-2">
-            <button
-              onClick={() => navigate("/login")}
-              className="flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-sky-600 via-sky-500 to-indigo-600 py-2 text-xs font-bold text-white shadow-lg shadow-sky-200 transition hover:scale-[1.01] hover:shadow-xl md:text-sm"
-            >
-              Go to Login
-              <ArrowRight className="h-3.5 w-3.5" />
-            </button>
+            <div className="mt-4 space-y-2">
+              <div className="grid gap-2.5 sm:grid-cols-2">
+                <button
+                  onClick={() => navigate("/login")}
+                  className="flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-sky-600 via-sky-500 to-indigo-600 py-2 text-xs font-bold text-white shadow-lg shadow-sky-200 transition hover:scale-[1.01] hover:shadow-xl md:text-sm"
+                >
+                  Go to Login
+                  <ArrowRight className="h-3.5 w-3.5" />
+                </button>
 
-            <button
-              type="button"
-              onClick={() => window.location.reload()}
-              className="flex w-full items-center justify-center gap-2 rounded-2xl border border-slate-300 bg-white py-2 text-xs font-semibold text-slate-700 transition hover:border-slate-400 hover:bg-slate-50 md:text-sm"
-            >
-              <Loader2 className="h-3.5 w-3.5" />
-              Retry
-            </button>
+                <button
+                  type="button"
+                  onClick={() => window.location.reload()}
+                  className="flex w-full items-center justify-center gap-2 rounded-2xl border border-slate-300 bg-white py-2 text-xs font-semibold text-slate-700 transition hover:border-slate-400 hover:bg-slate-50 md:text-sm"
+                >
+                  <Loader2 className="h-3.5 w-3.5" />
+                  Retry
+                </button>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => navigate("/auth/resend-email")}
+                className="flex w-full items-center justify-center gap-2 rounded-2xl border border-sky-200 bg-sky-50/80 py-2 text-xs font-semibold text-sky-700 transition hover:bg-sky-100 md:text-sm"
+              >
+                Request Fresh Verification Link
+              </button>
             </div>
           )}
 

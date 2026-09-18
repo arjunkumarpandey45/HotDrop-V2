@@ -144,10 +144,10 @@ navigate("/", { replace: true });
                     Password
                   </label>
                   <Link
-                    to="/auth/forgot-password"
+                    to="/auth/resend-email"
                     className="text-[11px] font-semibold text-blue-600 hover:underline"
                   >
-                    Forgot Password?
+                    Verify Email
                   </Link>
                 </div>
 
@@ -173,6 +173,15 @@ navigate("/", { replace: true });
                       <Eye className="h-4 w-4" />
                     )}
                   </button>
+                </div>
+
+                <div className="mt-1 flex justify-end">
+                  <Link
+                    to="/auth/forgot-password"
+                    className="text-[11px] font-semibold text-blue-600 hover:underline"
+                  >
+                    Forgot Password?
+                  </Link>
                 </div>
               </div>
 

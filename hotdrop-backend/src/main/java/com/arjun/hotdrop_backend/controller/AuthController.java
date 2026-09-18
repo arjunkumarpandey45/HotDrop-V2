@@ -34,7 +34,14 @@ public class AuthController {
         log.info("User registered successfully: {}", registerRequestDto.getHotdropId());
         return ResponseEntity.ok(responseDto);
     }
-
+@RateLimited
+@PostMapping("/resend-email")
+public ResponseEntity<String> resendVerifyEmail(@RequestBody ReVerificationEmailDto reVerificationEmailDto){
+    log.info("Received re-verification email request : {}", reVerificationEmailDto.getEmail());
+        authService.reVerifyEmail(reVerificationEmailDto.getEmail());
+    log.info("Verification link Successfully sent to : {}", reVerificationEmailDto.getEmail());
+        return ResponseEntity.ok("Verification Link Sent To Your Email");
+}
     @RateLimited
     @GetMapping("/verify-email")
     public ResponseEntity<String> verifyEmail(@RequestParam String token) {
