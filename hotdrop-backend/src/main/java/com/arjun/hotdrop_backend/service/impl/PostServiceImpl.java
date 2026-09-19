@@ -14,6 +14,8 @@ import com.arjun.hotdrop_backend.utils.SlugifyUtil;
 import com.arjun.hotdrop_backend.utils.UserAgentProvider;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -154,6 +156,7 @@ public class PostServiceImpl implements PostService {
 
     @Override
     @Transactional
+    @CacheEvict(value = "compiledFeed", allEntries = true)
     public PostResponseDto createNewPost(CreatePostDto dto, MultipartFile[] files, String hotdropId) {
         log.info("Creating new post with title: '{}' for user: {}", dto.getTitle(), hotdropId);
 
@@ -222,6 +225,10 @@ public class PostServiceImpl implements PostService {
 
     @Override
     @Transactional
+    @CacheEvict(
+            value = {"compiledFeed", "postDetails", "postByShareUrl", "userPostsPaged"},
+            allEntries = true
+    )
     public void deleteExistingPost(UUID postId, String currentHotdropId) {
         log.info("Deleting post ID: {} requested by user: {}", postId, currentHotdropId);
 
@@ -271,6 +278,11 @@ public class PostServiceImpl implements PostService {
     }
 
     @Override
+    @Cacheable(
+            value = "compiledFeed",
+            key = "{#page, #size, #sortBy, #direction, #search, #currentHotdropId}",
+            unless = "#result == null"
+    )
     public PostListResponseDto getAllPostsCompiledFeed(int page, int size, String sortBy, String direction, String search, String currentHotdropId) {
         log.info("Fetching compiled feed: page={}, size={}, sortBy={}, direction={}, search='{}'", page, size, sortBy, direction, search);
 
@@ -300,6 +312,7 @@ public class PostServiceImpl implements PostService {
     }
 
     @Override
+    @Cacheable(value = "postDetails", key = "#postId", unless = "#result == null")
     public PostResponseDto getPostByPostId(UUID postId) {
         log.info("Fetching post by ID: {}", postId);
 
@@ -315,6 +328,10 @@ public class PostServiceImpl implements PostService {
 
     @Override
     @Transactional
+    @CacheEvict(
+            value = {"compiledFeed", "postDetails", "postByShareUrl", "userPostsPaged"},
+            allEntries = true
+    )
     public PostResponseDto toggleLike(UUID postId, String hotdropId) {
         log.info("User {} toggling like on post ID: {}", hotdropId, postId);
 
@@ -354,6 +371,10 @@ public class PostServiceImpl implements PostService {
 
     @Override
     @Transactional
+    @CacheEvict(
+            value = {"postComments", "compiledFeed", "postDetails", "postByShareUrl"},
+            allEntries = true
+    )
     public CommentResponseDto addCommentToPost(UUID postId, String hotdropId, String text) {
         log.info("Adding comment to post ID: {} by user: {}", postId, hotdropId);
 
@@ -409,6 +430,10 @@ public class PostServiceImpl implements PostService {
 
     @Override
     @Transactional
+    @CacheEvict(
+            value = {"postComments", "compiledFeed", "postDetails", "postByShareUrl"},
+            allEntries = true
+    )
     public void deleteComment(UUID commentId, String hotdropId) {
         log.info("Deleting comment ID: {} requested by user: {}", commentId, hotdropId);
 
@@ -440,6 +465,11 @@ public class PostServiceImpl implements PostService {
 
     @Override
     @Transactional(readOnly = true)
+    @Cacheable(
+            value = "userPostsPaged",
+            key = "{#userId, #page, #size, #currentHotdropId}",
+            unless = "#result == null"
+    )
     public PostListResponseDto getPostsByUserIdPaged(UUID userId, int page, int size, String currentHotdropId) {
         log.info("Fetching posts created by user ID: {}, page: {}, size: {}", userId, page, size);
 
@@ -469,6 +499,11 @@ public class PostServiceImpl implements PostService {
 
     @Override
     @Transactional(readOnly = true)
+    @Cacheable(
+            value = "postByShareUrl",
+            key = "{#shareUrl, #hotdropId}",
+            unless = "#result == null"
+    )
     public PostResponseDto getPostByShareUrl(String shareUrl, String hotdropId) {
         log.info("Fetching post by share URL: '{}'", shareUrl);
 
@@ -492,6 +527,11 @@ public class PostServiceImpl implements PostService {
 
     @Override
     @Transactional(readOnly = true)
+    @Cacheable(
+            value = "postComments",
+            key = "#postId",
+            unless = "#result == null"
+    )
     public List<CommentResponseDto> getCommentsByPostId(UUID postId) {
         log.info("Fetching comments for post ID: {}", postId);
 

@@ -23,3 +23,11 @@ services:
       - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD}
     depends_on:
       - prometheus
+
+
+  redis:
+    image: redis:alpine
+    container_name: hotdrop-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"

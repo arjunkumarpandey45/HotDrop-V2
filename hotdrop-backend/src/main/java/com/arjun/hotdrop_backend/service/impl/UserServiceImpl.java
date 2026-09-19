@@ -13,6 +13,8 @@ import com.arjun.hotdrop_backend.service.UserService;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -35,6 +37,11 @@ public class UserServiceImpl implements UserService {
     private final UserImageHistoryRepo userImageHistoryRepo;
 
     @Override
+    @Cacheable(
+            value = "publicUserProfiles",
+            key = "{#hotdropId, #currentLoggedInHotdropId}",
+            unless = "#result == null"
+    )
     public UserResponseOnSearchDto getUserByHotDropId(String hotdropId, String currentLoggedInHotdropId) {
         log.info("Looking up user profile for hotdropId: '{}'", hotdropId);
 
@@ -71,6 +78,7 @@ public class UserServiceImpl implements UserService {
 
     @Override
     @Transactional
+    @CacheEvict(value = {"publicUserProfiles", "userFollowersList", "userFollowingList"}, allEntries = true)
     public FollowResponseDto toggleFollowUser(UUID userIdToFollow, String currentHotdropId) {
         log.info("User {} toggling follow status for target user ID: {}", currentHotdropId, userIdToFollow);
 
@@ -170,6 +178,7 @@ public class UserServiceImpl implements UserService {
 
     @Override
     @Transactional
+    @CacheEvict(value = {"publicUserProfiles", "userSearchTop5"}, allEntries = true)
     public UserResponseDto updateProfileDetails(
             UUID userIdFromParams,
             String currentHotdropId,
@@ -370,6 +379,7 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
+    @Cacheable(value = "userFollowersList", key = "#userId", unless = "#result == null")
     public List<UserResponseDto> getFollowersList(UUID userId) {
         log.info("Fetching followers list for user ID: {}", userId);
 
@@ -388,6 +398,7 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
+    @Cacheable(value = "userFollowingList", key = "#userId", unless = "#result == null")
     public List<UserResponseDto> getFollowingList(UUID userId) {
         log.info("Fetching following list for user ID: {}", userId);
 
@@ -404,7 +415,11 @@ public class UserServiceImpl implements UserService {
                 .map(follow -> userMapper.toBasicResponseDto(follow.getFollowing()))
                 .collect(Collectors.toList());
     }
-
+    @Cacheable(
+            value = "userSearchTop5",
+            key = "#query.toLowerCase().trim()",
+            unless = "#result == null || #result.isEmpty()"
+    )
     public List<PostResponseDto.UserSummaryDto> searchTop5Users(String query) {
         log.info("Searching top 5 users matching query: '{}'", query);
 

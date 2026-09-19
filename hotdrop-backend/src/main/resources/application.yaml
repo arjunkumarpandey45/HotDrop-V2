@@ -28,7 +28,18 @@ logging:
 spring:
   application:
     name: hotdrop-backend
+  data:
+    redis:
+      host: ${REDIS_HOST}
+      port: ${REDIS_PORT}
+  cache:
+    type: redis
+    redis:
 
+      time-to-live: ${REDIS_EXPIRY_TIME}
+
+
+      cache-null-values: false
   servlet:
     multipart:
       max-file-size: ${ONE_IMAGE_SIZE}
