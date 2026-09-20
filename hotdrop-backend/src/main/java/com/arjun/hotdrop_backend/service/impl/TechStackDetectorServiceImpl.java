@@ -25,7 +25,7 @@ public class TechStackDetectorServiceImpl implements TechStackDetectorService {
         if (url == null || url.isBlank()) return tags;
 
         String targetUrl = url.trim().replaceAll("/+$", "");
-        log.info("Starting tech stack detection for URL: {}", targetUrl);
+        log.info("Checking technologies used by: {}", targetUrl);
         String currentUA = userAgentProvider.getRandomUserAgent();
 
         try {
@@ -36,7 +36,7 @@ public class TechStackDetectorServiceImpl implements TechStackDetectorService {
                     .ignoreHttpErrors(true)
                     .execute();
 
-            // 1. Lowercase Headers Map normalize
+            // Convert headers to lowercase
             Map<String, String> rawHeaders = response.headers();
             Map<String, String> headers = new HashMap<>();
             rawHeaders.forEach((k, v) -> headers.put(k.toLowerCase(), v.toLowerCase()));
@@ -49,9 +49,7 @@ public class TechStackDetectorServiceImpl implements TechStackDetectorService {
             String xPoweredBy = headers.getOrDefault("x-powered-by", "");
             String finalUrl = response.url().toString().toLowerCase();
 
-            // ----------------------------------------------------
-            // 1. HOSTING & CLOUD PLATFORMS (Redirected URL + Headers)
-            // ----------------------------------------------------
+            // Hosting and cloud providers
             if (targetUrl.toLowerCase().contains(".vercel.app")
                     || finalUrl.contains(".vercel.app")
                     || headers.containsKey("x-vercel-id")
@@ -86,9 +84,7 @@ public class TechStackDetectorServiceImpl implements TechStackDetectorService {
                 tags.add("GitHub Pages");
             }
 
-            // ----------------------------------------------------
-            // 2. FRONTEND FRAMEWORKS & COMPILERS
-            // ----------------------------------------------------
+            // Frontend frameworks
             // Next.js
             if (doc.select("script#__NEXT_DATA__").size() > 0 || lowerHtml.contains("/_next/")) {
                 tags.add("Next.js");
@@ -150,9 +146,7 @@ public class TechStackDetectorServiceImpl implements TechStackDetectorService {
                 }
             }
 
-            // ----------------------------------------------------
-            // 3. BUILD TOOLS & BUNDLERS (Vite & Webpack)
-            // ----------------------------------------------------
+            // Build tools
             boolean hasViteScript = doc.select("script[type='module'][src*='assets/']").size() > 0
                     || doc.select("link[rel='modulepreload']").size() > 0
                     || lowerHtml.contains("/@vite/client");
@@ -166,9 +160,7 @@ public class TechStackDetectorServiceImpl implements TechStackDetectorService {
                 tags.add("Webpack");
             }
 
-            // ----------------------------------------------------
-            // 4. STYLING & UI LIBRARIES
-            // ----------------------------------------------------
+            // Styling and UI libraries
             for (Element el : doc.select("[class]")) {
                 String cls = el.className();
                 if (cls.contains("flex") && (cls.contains("gap-") || cls.contains("items-") || cls.contains("bg-") || cls.contains("text-") || cls.contains("rounded-"))) {
@@ -185,10 +177,8 @@ public class TechStackDetectorServiceImpl implements TechStackDetectorService {
             if (lowerHtml.contains("ant-")) tags.add("Ant Design");
             if (lowerHtml.contains("lucide")) tags.add("Lucide");
 
-            // ----------------------------------------------------
-            // 5. BACKEND & RUNTIMES (C++, Rust, Go, Python, Java, Node, PHP)
-            // ----------------------------------------------------
-            // Native C++ Frameworks
+            // Backend languages and runtimes
+            // C++ frameworks
             if (serverHeader.contains("crow") || serverHeader.contains("drogon") || serverHeader.contains("pistache")) {
                 tags.add("C++");
             }
@@ -197,7 +187,7 @@ public class TechStackDetectorServiceImpl implements TechStackDetectorService {
                 tags.add("C++");
             }
 
-            // Strict WASM (Only when actual wasm binaries or MIME types exist)
+            // WebAssembly check
             boolean hasWasmAsset = doc.select("link[href*='.wasm'], script[src*='.wasm']").size() > 0
                     || lowerHtml.contains("application/wasm")
                     || lowerHtml.contains("webassembly.instantiatestreaming");
@@ -239,7 +229,7 @@ public class TechStackDetectorServiceImpl implements TechStackDetectorService {
                 tags.add("Python");
             }
 
-            // Node.js & Alternative JS Runtimes
+            // JavaScript runtimes
             if (xPoweredBy.contains("express") || cookies.containsKey("connect.sid")) {
                 tags.add("Express");
                 tags.add("Node.js");
@@ -268,17 +258,13 @@ public class TechStackDetectorServiceImpl implements TechStackDetectorService {
                 tags.add("C#");
             }
 
-            // ----------------------------------------------------
-            // 6. BAAS & APIS
-            // ----------------------------------------------------
+            // Backend services and APIs
             if (lowerHtml.contains("supabase.co")) tags.add("Supabase");
             if (lowerHtml.contains("firebaseapp.com") || lowerHtml.contains("firebaseio.com")) tags.add("Firebase");
             if (lowerHtml.contains("appwrite.io")) tags.add("Appwrite");
             if (lowerHtml.contains("/graphql") || lowerHtml.contains("__schema")) tags.add("GraphQL");
 
-            // ----------------------------------------------------
-            // 7. SPRING BOOT WHITELABEL FALLBACK PROBE
-            // ----------------------------------------------------
+            // Check for Spring Boot default error page
             if (!tags.contains("Spring Boot")) {
                 try {
                     Document probeDoc = Jsoup.connect(targetUrl + "/__hotdrop_probe_404__")
@@ -295,10 +281,10 @@ public class TechStackDetectorServiceImpl implements TechStackDetectorService {
             }
 
         } catch (Exception e) {
-            log.error("Failed to detect tech stack for {}: {}", targetUrl, e.getMessage());
+            log.error("Could not detect technologies for {}: {}", targetUrl, e.getMessage());
         }
 
-        log.info("Tech stack detection completed for {}. Found {} technologies: {}", targetUrl, tags.size(), tags);
+        log.info("Finished checking technologies for {}. Found {}: {}", targetUrl, tags.size(), tags);
         return tags;
     }
 }

@@ -1,5 +1,6 @@
 package com.arjun.hotdrop_backend.service.impl;
 
+
 import com.arjun.hotdrop_backend.dto.*;
 import com.arjun.hotdrop_backend.entity.OtpVerification;
 import com.arjun.hotdrop_backend.entity.Role;
@@ -54,9 +55,9 @@ public class AuthServiceImpl implements AuthService {
     @Override
     public UserResponseDto register(RegisterRequestDto registerRequestDto) {
 
-        log.info("Starting user registration for email: {} and hotdropId: {}",
-                registerRequestDto.getEmail(),
-                registerRequestDto.getHotdropId());
+        log.info("Registering user: {} with email: {}",
+                registerRequestDto.getHotdropId(),
+                registerRequestDto.getEmail());
 
         String email = registerRequestDto.getEmail();
         String hotdropId = registerRequestDto.getHotdropId();
@@ -70,7 +71,7 @@ public class AuthServiceImpl implements AuthService {
 
             if (user.isEmailVerified()) {
 
-                log.warn("Registration rejected: email {} is already verified",
+                log.warn("Cannot register: email {} is already verified.",
                         email);
 
                 throw new IllegalArgumentException("Email already exists");
@@ -84,7 +85,7 @@ public class AuthServiceImpl implements AuthService {
             if (existingHotdropUser.isPresent()
                     && !existingHotdropUser.get().getId().equals(user.getId())) {
 
-                log.warn("Registration rejected: hotdropId {} is already in use",
+                log.warn("Cannot register: username {} is already taken.",
                         hotdropId);
 
                 throw new IllegalArgumentException("Hotdrop Id already exists");
@@ -93,7 +94,7 @@ public class AuthServiceImpl implements AuthService {
 
             if (!hotdropId.matches("^[a-zA-Z0-9]+$")) {
 
-                log.warn("Registration rejected: hotdropId {} contains invalid symbols",
+                log.warn("Cannot register: username {} contains invalid symbols.",
                         hotdropId);
 
                 throw new IllegalArgumentException(
@@ -118,7 +119,7 @@ public class AuthServiceImpl implements AuthService {
 
             userRepo.save(user);
 
-            log.info("Unverified user updated successfully for email: {}",
+            log.info("Updated unverified user for email: {}",
                     email);
 
             String token =
@@ -134,7 +135,7 @@ public class AuthServiceImpl implements AuthService {
                     verificationLink
             );
 
-            log.info("New verification email sent to: {}", email);
+            log.info("Sent verification email to: {}", email);
 
             return userMapper.toResponseDto(user);
         }
@@ -144,7 +145,7 @@ public class AuthServiceImpl implements AuthService {
 
         if (!hotdropId.matches("^[a-zA-Z0-9]+$")) {
 
-            log.warn("Registration rejected: hotdropId {} contains invalid symbols",
+            log.warn("Cannot register: username {} contains invalid symbols.",
                     hotdropId);
 
             throw new IllegalArgumentException(
@@ -155,7 +156,7 @@ public class AuthServiceImpl implements AuthService {
 
         if (userRepo.existsByHotdropId(hotdropId)) {
 
-            log.warn("Registration rejected: hotdropId {} is already in use",
+            log.warn("Cannot register: username {} is already taken.",
                     hotdropId);
 
             throw new IllegalArgumentException("Hotdrop Id already exists");
@@ -164,7 +165,7 @@ public class AuthServiceImpl implements AuthService {
 
         Role userRole = roleRepo.findByRoleName(RoleType.USER)
                 .orElseThrow(() -> {
-                    log.error("Registration failed: default USER role not found");
+                    log.error("Cannot register: user role not found in database.");
 
                     return new RuntimeException("Default role not found");
                 });
@@ -187,7 +188,7 @@ public class AuthServiceImpl implements AuthService {
                         .build()
         );
 
-        log.info("New user created with ID: {}",
+        log.info("Created user with ID: {}",
                 user.getId());
 
 
@@ -203,7 +204,7 @@ public class AuthServiceImpl implements AuthService {
                 verificationLink
         );
 
-        log.info("Registration successful for user: {}. Verification email sent to: {}",
+        log.info("Registered user {}. Sent verification email to: {}",
                 user.getHotdropId(),
                 user.getEmail());
 
@@ -223,7 +224,7 @@ public class AuthServiceImpl implements AuthService {
 
         if (user.isEmailVerified()) {
 
-            log.warn("Re-verification rejected: email {} is already verified",
+            log.warn("Email {} is already verified.",
                     email);
 
             throw new IllegalArgumentException("Email already verified");
@@ -241,16 +242,16 @@ public class AuthServiceImpl implements AuthService {
                 verificationLink
         );
 
-        log.info("New verification email sent to: {}", email);
+        log.info("Sent verification email to: {}", email);
 
     }
     @Override
     @Transactional
     public String verifyEmail(String token) {
-        log.info("Verifying email with verification token");
+        log.info("Verifying email token.");
 
         if (!jwtService.validateEmailToken(token)) {
-            log.error("Email verification failed: token is expired or invalid");
+            log.error("Email verification failed: token is expired or invalid.");
             throw new IllegalArgumentException("Invalid or expired verification token.");
         }
 
@@ -258,30 +259,31 @@ public class AuthServiceImpl implements AuthService {
 
         User user = userRepo.findByEmail(email)
                 .orElseThrow(() -> {
-                    log.error("Email verification failed: no user found with email: {}", email);
+                    log.error("Email verification failed: no user found for email: {}", email);
                     return new IllegalArgumentException("User not found.");
                 });
 
         if (user.isEmailVerified()) {
-            log.info("Email {} is already verified", email);
+            log.info("Email {} is already verified.", email);
             return "Email is already verified.";
         }
 
         user.setEmailVerified(true);
         userRepo.save(user);
 
-        log.info("Email {} verified successfully for user: {}", email, user.getHotdropId());
+        log.info("Email {} verified for user: {}", email, user.getHotdropId());
         return "Email verified successfully!";
     }
 
     @Override
+
     public String login(LoginRequestDto loginRequestDto) {
-        log.info("Attempting login for: {}", loginRequestDto.getHotdropIdOrEmail());
+        log.info("User logging in: {}", loginRequestDto.getHotdropIdOrEmail());
 
         User user = userRepo.findByHotdropId(loginRequestDto.getHotdropIdOrEmail())
                 .or(() -> userRepo.findByEmail(loginRequestDto.getHotdropIdOrEmail()))
                 .orElseThrow(() -> {
-                    log.error("Login failed: no user found matching {}", loginRequestDto.getHotdropIdOrEmail());
+                    log.error("Login failed: no user found for {}", loginRequestDto.getHotdropIdOrEmail());
                     return new RuntimeException("Email or Hotdrop Id is not valid");
                 });
 
@@ -291,7 +293,7 @@ public class AuthServiceImpl implements AuthService {
         }
 
         if (user.isBanned()) {
-            log.error("Login failed: account is banned for user: {}", user.getHotdropId());
+            log.error("Login failed: user {} is banned.", user.getHotdropId());
             throw new RuntimeException("Your account has been banned.");
         }
 
@@ -301,18 +303,18 @@ public class AuthServiceImpl implements AuthService {
         user.setLastLoginAt(LocalDateTime.now());
         userRepo.save(user);
 
-        log.info("Login authenticated successfully for user: {}", user.getHotdropId());
+        log.info("User {} logged in successfully.", user.getHotdropId());
         return jwtService.generateToken(authentication);
     }
 
     @Override
     public LoginResponseDto getLoginResponseDetails(String hotdropIdOrEmail) {
-        log.info("Fetching login details for user: {}", hotdropIdOrEmail);
+        log.info("Getting login details for user: {}", hotdropIdOrEmail);
 
         User user = userRepo.findByHotdropId(hotdropIdOrEmail)
                 .or(() -> userRepo.findByEmail(hotdropIdOrEmail))
                 .orElseThrow(() -> {
-                    log.error("Failed to get login response details: user not found for {}", hotdropIdOrEmail);
+                    log.error("Cannot get login details: user not found for {}", hotdropIdOrEmail);
                     return new RuntimeException("User not found");
                 });
 
@@ -320,7 +322,7 @@ public class AuthServiceImpl implements AuthService {
                 .map(role -> role.getRoleName().name())
                 .toList();
 
-        log.info("Found login profile for user: {} with roles: {}", user.getHotdropId(), roles);
+        log.info("Found user {} with roles: {}", user.getHotdropId(), roles);
 
         return LoginResponseDto.builder()
                 .hotdropId(user.getHotdropId())
@@ -332,17 +334,18 @@ public class AuthServiceImpl implements AuthService {
 
     @Override
     @Transactional
+
     public void sendForgotPasswordOtp(ForgotPasswordRequestDto request) {
-        log.info("Processing forgot-password request for email: {}", request.getEmail());
+        log.info("Sending password reset code to: {}", request.getEmail());
 
         User user = userRepo.findByEmail(request.getEmail())
                 .orElseThrow(() -> {
-                    log.error("Forgot-password failed: no user found with email: {}", request.getEmail());
+                    log.error("Cannot reset password: no user found with email: {}", request.getEmail());
                     return new RuntimeException("No account registered with this email address.");
                 });
 
         if (user.isBanned()) {
-            log.error("Forgot-password failed: account is restricted for email: {}", request.getEmail());
+            log.error("Cannot reset password: user is banned for email: {}", request.getEmail());
             throw new RuntimeException("Account is restricted.");
         }
 
@@ -362,34 +365,34 @@ public class AuthServiceImpl implements AuthService {
                 .build());
 
         emailService.sendOTP(user.getEmail(), user.getFirstName(), otp);
-        log.info("Forgot-password OTP sent successfully to: {}", user.getEmail());
+        log.info("Sent password reset code to: {}", user.getEmail());
     }
 
     @Override
     @Transactional
     public void resetPasswordWithOtp(ResetPasswordDto request) {
-        log.info("Processing password reset with OTP for email: {}", request.getEmail());
+        log.info("Resetting password with code for: {}", request.getEmail());
 
         OtpVerification otpVerification = otpVerificationRepo.findByEmail(request.getEmail())
                 .orElseThrow(() -> {
-                    log.error("Password reset failed: OTP record not found for email: {}", request.getEmail());
+                    log.error("Cannot reset password: reset code not found for: {}", request.getEmail());
                     return new RuntimeException("OTP session not found or invalid request.");
                 });
 
         if (otpVerification.getExpiryDate().isBefore(LocalDateTime.now())) {
             otpVerificationRepo.delete(otpVerification);
-            log.error("Password reset failed: OTP expired for email: {}", request.getEmail());
+            log.error("Cannot reset password: reset code expired for: {}", request.getEmail());
             throw new RuntimeException("OTP has expired. Please request a new one.");
         }
 
         if (!passwordEncoder.matches(request.getOtp(), otpVerification.getOtpHash())) {
-            log.error("Password reset failed: invalid OTP code for email: {}", request.getEmail());
+            log.error("Cannot reset password: wrong reset code for: {}", request.getEmail());
             throw new RuntimeException("Invalid OTP entered.");
         }
 
         User user = userRepo.findByEmail(request.getEmail())
                 .orElseThrow(() -> {
-                    log.error("Password reset failed: user not found for email: {}", request.getEmail());
+                    log.error("Cannot reset password: user not found for email: {}", request.getEmail());
                     return new RuntimeException("User not found.");
                 });
 
@@ -397,11 +400,11 @@ public class AuthServiceImpl implements AuthService {
         userRepo.save(user);
 
         otpVerificationRepo.delete(otpVerification);
-        log.info("Password successfully updated for user: {}", user.getHotdropId());
+        log.info("Updated password for user: {}", user.getHotdropId());
     }
 @Transactional
     public void logout(String accessToken, String refreshToken) {
-        log.info("Processing logout request");
+        log.info("Logging out user.");
 
 
         if (accessToken != null && !accessToken.isBlank()) {
@@ -414,7 +417,7 @@ public class AuthServiceImpl implements AuthService {
 
             if (remainingTtl > 0) {
                 tokenBlacklistService.blacklistToken(cleanToken, remainingTtl);
-                log.info("Access token successfully blacklisted in Redis for {} ms", remainingTtl);
+                log.info("Blocked token for {} ms.", remainingTtl);
             }
         }
 
@@ -423,11 +426,11 @@ public class AuthServiceImpl implements AuthService {
             refreshTokenRepo.findByToken(refreshToken)
                     .ifPresent(token -> {
                         refreshTokenRepo.deleteByUser(token.getUser());
-                        log.info("Refresh token invalidated for user: {}", token.getUser().getHotdropId());
+                        log.info("Removed refresh token for user: {}", token.getUser().getHotdropId());
                     });
         }
 
-        log.info("Logout process completed");
+        log.info("User logged out successfully.");
     }
 
 

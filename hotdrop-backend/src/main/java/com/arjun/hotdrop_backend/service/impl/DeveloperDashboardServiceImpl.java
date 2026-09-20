@@ -26,7 +26,7 @@ public class DeveloperDashboardServiceImpl implements DeveloperDashboardService 
 
     @Transactional(readOnly = true)
     public DeveloperDashboardStatsDto getUserDashboardStats(String hotdropId) {
-        log.info("Calculating dashboard stats for developer: {}", hotdropId);
+        log.info("Calculating dashboard stats for user: {}", hotdropId);
 
         UUID userId = userRepository.findByHotdropId(hotdropId)
                 .orElseThrow(() -> new UsernameNotFoundException("User not found: " + hotdropId))

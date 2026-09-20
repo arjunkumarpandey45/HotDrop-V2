@@ -31,25 +31,25 @@ public class PostController {
     private final PostService postService;
     private final LinkTrackingScheduler linkTrackingScheduler;
 
-    @RateLimited
+    @RateLimited(capacity = 10, refillTokens = 10, refillDurationSeconds = 60)
     @PostMapping("/verify-link")
     public ResponseEntity<LinkVerificationResponseDto> verifyLink(
             @Valid @RequestBody LinkVerificationRequestDto requestDto) {
-        log.info("Checking live status for project URL: {}", requestDto.getUrl());
+        log.info("Checking project link: {}", requestDto.getUrl());
         LinkVerificationResponseDto response = postService.verifyProjectLink(requestDto.getUrl());
-        log.info("Project URL verification completed for: {}. Is Live: {}", requestDto.getUrl(), response.isLive());
+        log.info("Finished checking link {}. Live: {}", requestDto.getUrl(), response.isLive());
         return ResponseEntity.ok(response);
     }
 
     @PostMapping("/test-tracker")
     public ResponseEntity<String> triggerTrackerManual() {
-        log.info("Manual trigger received for background link tracking engine");
+        log.info("Manually triggered link check.");
         linkTrackingScheduler.startLiveTracking();
-        log.info("Background link tracking engine started successfully");
+        log.info("Started link check.");
         return ResponseEntity.ok("Tracking engine triggered successfully! Check your console logs. 🚀");
     }
 
-    @RateLimited
+    @RateLimited(capacity = 3, refillTokens = 3, refillDurationSeconds = 60)
     @PostMapping(value = "/create", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<ApiResponse<PostResponseDto>> createPost(
             @Valid @ModelAttribute CreatePostDto createPostDto,
@@ -57,10 +57,10 @@ public class PostController {
             @AuthenticationPrincipal UserDetails userDetails) {
 
         String userEmail = userDetails.getUsername();
-        log.info("Received request to create project post: '{}' from user: {}", createPostDto.getTitle(), userEmail);
+        log.info("Creating post '{}' for user: {}", createPostDto.getTitle(), userEmail);
 
         PostResponseDto savedPost = postService.createNewPost(createPostDto, files, userEmail);
-        log.info("Project post '{}' created successfully with ID: {} for user: {}", savedPost.getTitle(), savedPost.getId(), userEmail);
+        log.info("Created post '{}' with ID {} for user: {}", savedPost.getTitle(), savedPost.getId(), userEmail);
 
         return ResponseHandler.generateResponse(
                 HttpStatus.CREATED,
@@ -74,10 +74,10 @@ public class PostController {
             @PathVariable UUID postId,
             @AuthenticationPrincipal UserDetails userDetails) {
         String currentHotdropId = userDetails.getUsername();
-        log.info("Received request from user: {} to delete post with ID: {}", currentHotdropId, postId);
+        log.info("User {} is deleting post ID: {}", currentHotdropId, postId);
 
         postService.deleteExistingPost(postId, currentHotdropId);
-        log.info("Post with ID: {} deleted successfully by user: {}", postId, currentHotdropId);
+        log.info("Deleted post ID: {} for user: {}", postId, currentHotdropId);
 
         return ResponseHandler.generateResponse(
                 HttpStatus.OK,
@@ -85,7 +85,7 @@ public class PostController {
                 null
         );
     }
-
+    @RateLimited(capacity = 60, refillTokens = 60, refillDurationSeconds = 60)
     @GetMapping("/feed")
     public ResponseEntity<ApiResponse<PostListResponseDto>> getFeed(
             @RequestParam(defaultValue = "0") int page,
@@ -96,11 +96,11 @@ public class PostController {
             @AuthenticationPrincipal UserDetails userDetails) {
 
         String currentHotdropId = (userDetails != null) ? userDetails.getUsername() : null;
-        log.info("Fetching post feed: page={}, size={}, sortBy={}, direction={}, search='{}', viewer={}",
+        log.info("Getting feed: page={}, size={}, sortBy={}, direction={}, search='{}', viewer={}",
                 page, size, sortBy, direction, search, currentHotdropId);
 
         PostListResponseDto feed = postService.getAllPostsCompiledFeed(page, size, sortBy, direction, search, currentHotdropId);
-        log.info("Successfully fetched {} feed posts for page {}", feed.getPosts().size(), page);
+        log.info("Loaded {} posts for page {}", feed.getPosts().size(), page);
 
         return ResponseHandler.generateResponse(
                 HttpStatus.OK,
@@ -111,12 +111,12 @@ public class PostController {
 
     @GetMapping("get-post-by-postId/{postId}")
     public ResponseEntity<ApiResponse<PostResponseDto>> getPostViaPostId(@PathVariable String postId) {
-        log.info("Received request to fetch post by ID: {}", postId);
+        log.info("Getting post with ID: {}", postId);
         UUID validUuid;
         try {
             validUuid = UUID.fromString(postId);
         } catch (IllegalArgumentException e) {
-            log.error("Invalid post ID format supplied: {}", postId);
+            log.error("Invalid post ID format: {}", postId);
             return ResponseHandler.generateResponse(
                     HttpStatus.BAD_REQUEST,
                     "Provided Post ID format is invalid.",
@@ -135,10 +135,10 @@ public class PostController {
             );
         }
 
-        log.info("Post fetched successfully for ID: {}", validUuid);
+        log.info("Loaded post with ID: {}", validUuid);
         return ResponseHandler.generateResponse(HttpStatus.OK, "Post fetched successfully", post);
     }
-
+    @RateLimited(capacity = 30, refillTokens = 30, refillDurationSeconds = 60)
     @PostMapping("/like-post/{postId}")
     public ResponseEntity<ApiResponse<PostResponseDto>> likePost(
             @PathVariable UUID postId,
@@ -148,7 +148,7 @@ public class PostController {
         log.info("User {} toggling like on post ID: {}", hotdropId, postId);
 
         PostResponseDto updatedPost = postService.toggleLike(postId, hotdropId);
-        log.info("Like toggled on post ID: {} by user {}. Current likes: {}", postId, hotdropId, updatedPost.getLikeCount());
+        log.info("Updated like on post ID: {} by user {}. Likes: {}", postId, hotdropId, updatedPost.getLikeCount());
 
         return ResponseHandler.generateResponse(
                 HttpStatus.OK,
@@ -156,7 +156,7 @@ public class PostController {
                 updatedPost
         );
     }
-
+    @RateLimited(capacity = 10, refillTokens = 10, refillDurationSeconds = 60)
     @PostMapping("/comment-to-post/{postId}")
     public ResponseEntity<ApiResponse<CommentResponseDto>> comment(
             @PathVariable UUID postId,
@@ -167,7 +167,7 @@ public class PostController {
         log.info("User {} adding comment to post ID: {}", hotdropId, postId);
 
         CommentResponseDto commentDto = postService.addCommentToPost(postId, hotdropId, text);
-        log.info("Comment successfully added to post ID: {} by user {}", postId, hotdropId);
+        log.info("Added comment to post ID: {} by user {}", postId, hotdropId);
 
         return ResponseHandler.generateResponse(
                 HttpStatus.CREATED,
@@ -181,10 +181,10 @@ public class PostController {
             @PathVariable UUID commentId,
             @AuthenticationPrincipal UserDetails userDetails) {
         String hotdropId = userDetails.getUsername();
-        log.info("User {} requested deletion of comment ID: {}", hotdropId, commentId);
+        log.info("User {} is deleting comment ID: {}", hotdropId, commentId);
 
         postService.deleteComment(commentId, hotdropId);
-        log.info("Comment ID: {} deleted successfully by user: {}", commentId, hotdropId);
+        log.info("Deleted comment ID: {} by user: {}", commentId, hotdropId);
 
         return ResponseHandler.generateResponse(
                 HttpStatus.NO_CONTENT,
@@ -201,10 +201,10 @@ public class PostController {
             @AuthenticationPrincipal UserDetails userDetails) {
 
         String currentHotdropId = (userDetails != null) ? userDetails.getUsername() : null;
-        log.info("Fetching posts created by user ID: {}, page: {}, size: {}", userId, page, size);
+        log.info("Getting posts for user ID: {}, page: {}, size: {}", userId, page, size);
 
         PostListResponseDto paginatedPosts = postService.getPostsByUserIdPaged(userId, page, size, currentHotdropId);
-        log.info("Successfully fetched {} posts for user ID: {}", paginatedPosts.getPosts().size(), userId);
+        log.info("Loaded {} posts for user ID: {}", paginatedPosts.getPosts().size(), userId);
 
         return ResponseHandler.generateResponse(
                 HttpStatus.OK,
@@ -219,18 +219,18 @@ public class PostController {
             @AuthenticationPrincipal UserDetails userDetails) {
 
         String hotdropId = userDetails != null ? userDetails.getUsername() : null;
-        log.info("Fetching post by share URL: '{}' for viewer: {}", shareUrl, hotdropId);
+        log.info("Getting post with link '{}' for user: {}", shareUrl, hotdropId);
 
         PostResponseDto response = postService.getPostByShareUrl(shareUrl, hotdropId);
-        log.info("Post fetched successfully by share URL: '{}'", shareUrl);
+        log.info("Loaded post with link: '{}'", shareUrl);
         return ResponseEntity.ok(response);
     }
 
     @GetMapping("/get-comment-by-post-id/{postId}")
     public ResponseEntity<ApiResponse<List<CommentResponseDto>>> getCommentsByPostId(@PathVariable UUID postId) {
-        log.info("Fetching all comments for post ID: {}", postId);
+        log.info("Getting comments for post ID: {}", postId);
         List<CommentResponseDto> comments = postService.getCommentsByPostId(postId);
-        log.info("Fetched {} comments for post ID: {}", comments.size(), postId);
+        log.info("Loaded {} comments for post ID: {}", comments.size(), postId);
 
         return ResponseHandler.generateResponse(
                 HttpStatus.OK,
@@ -241,9 +241,9 @@ public class PostController {
 
     @GetMapping("/{postId}/get-who-likes-post")
     public ResponseEntity<ApiResponse<List<PostResponseDto.UserSummaryDto>>> getUsersWhoLikedPost(@PathVariable UUID postId) {
-        log.info("Fetching list of users who liked post ID: {}", postId);
+        log.info("Getting users who liked post ID: {}", postId);
         List<PostResponseDto.UserSummaryDto> likedUsers = postService.getUsersWhoLikedPost(postId);
-        log.info("Fetched {} users who liked post ID: {}", likedUsers.size(), postId);
+        log.info("Loaded {} users who liked post ID: {}", likedUsers.size(), postId);
 
         return ResponseHandler.generateResponse(
                 HttpStatus.OK,

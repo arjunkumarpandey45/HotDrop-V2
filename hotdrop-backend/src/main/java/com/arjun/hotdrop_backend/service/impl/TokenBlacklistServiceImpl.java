@@ -19,7 +19,7 @@ public class TokenBlacklistServiceImpl implements TokenBlacklistService {
 
         String key = BLACKLIST_PREFIX + token;
         redisTemplate.opsForValue().set(key, "blacklisted", Duration.ofMillis(remainingExpiryMillis));
-        log.info("JWT Token blacklisted in Redis for {} ms", remainingExpiryMillis);
+        log.info("Blocked token for {} ms.", remainingExpiryMillis);
     }
     public boolean isTokenBlacklisted(String token) {
         String key = BLACKLIST_PREFIX + token;

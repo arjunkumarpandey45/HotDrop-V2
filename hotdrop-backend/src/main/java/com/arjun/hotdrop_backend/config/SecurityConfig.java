@@ -71,7 +71,7 @@ private String frontendURL;
                 .exceptionHandling(exception -> exception
                         .authenticationEntryPoint(
                                 (request, response, authException) -> {
-                                    log.error("Authentication required to access [{}]: {}", request.getRequestURI(), authException.getMessage());
+                                    log.error("User must log in to visit [{}]: {}", request.getRequestURI(), authException.getMessage());
                                     response.setStatus(
                                             HttpStatus.UNAUTHORIZED.value()
                                     );
@@ -93,7 +93,7 @@ private String frontendURL;
                         )
                         .accessDeniedHandler(
                                 (request, response, accessDeniedException) -> {
-                                    log.error("Access forbidden for request [{}]: {}", request.getRequestURI(), accessDeniedException.getMessage());
+                                    log.error("Access denied for [{}]: {}", request.getRequestURI(), accessDeniedException.getMessage());
                                     response.setStatus(
                                             HttpStatus.FORBIDDEN.value()
                                     );

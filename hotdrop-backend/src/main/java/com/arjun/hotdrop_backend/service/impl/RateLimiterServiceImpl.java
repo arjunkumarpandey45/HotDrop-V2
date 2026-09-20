@@ -1,46 +1,67 @@
 package com.arjun.hotdrop_backend.service.impl;
 
-
-
 import com.arjun.hotdrop_backend.service.RateLimiterService;
 import io.github.bucket4j.Bandwidth;
-import io.github.bucket4j.Bucket;
+import io.github.bucket4j.BucketConfiguration;
 import io.github.bucket4j.Refill;
+import io.github.bucket4j.distributed.BucketProxy;
+import io.github.bucket4j.redis.lettuce.cas.LettuceBasedProxyManager;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
+import java.nio.charset.StandardCharsets;
 import java.time.Duration;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Supplier;
 
 @Slf4j
 @Service
+@RequiredArgsConstructor
 public class RateLimiterServiceImpl implements RateLimiterService {
 
-    private final Map<String, Bucket> cache = new ConcurrentHashMap<>();
+    private final LettuceBasedProxyManager<byte[]> proxyManager;
+    private static final String RATE_LIMIT_PREFIX = "rate:limit:";
 
-    public Bucket createNewBucket() {
-        log.info("Creating a new rate-limit token bucket (limit: 5 requests per minute)");
-        Refill refill = Refill.greedy(5, Duration.ofMinutes(1));
-        Bandwidth limit = Bandwidth.classic(5, refill);
-        return Bucket.builder()
-                .addLimit(limit)
-                .build();
+    public Supplier<BucketConfiguration> getConfiguration(int capacity, int refillTokens, int durationSeconds) {
+        return () -> {
+            Refill refill = Refill.greedy(refillTokens, Duration.ofSeconds(durationSeconds));
+            Bandwidth limit = Bandwidth.classic(capacity, refill);
+            return BucketConfiguration.builder()
+                    .addLimit(limit)
+                    .build();
+        };
     }
 
-    public Bucket resolveBucket(String key) {
-        log.info("Resolving rate-limit bucket for key: {}", key);
-        return cache.computeIfAbsent(key, k -> createNewBucket());
-    }
-
+    @Override
     public boolean tryConsume(String key) {
-        Bucket bucket = resolveBucket(key);
+        // Default fallback: 10 requests per 60 seconds
+        return tryConsume(key, 10, 10, 60);
+    }
+
+    @Override
+    public boolean tryConsume(String key, int capacity, int refillTokens, int durationSeconds) {
+        try {
+        String fullKey = RATE_LIMIT_PREFIX + key;
+        byte[] redisKeyBytes = fullKey.getBytes(StandardCharsets.UTF_8);
+
+        Supplier<BucketConfiguration> configuration = getConfiguration(capacity, refillTokens, durationSeconds);
+        BucketProxy bucket = proxyManager.builder().build(redisKeyBytes, configuration);
+
         boolean consumed = bucket.tryConsume(1);
+
         if (!consumed) {
-            log.error("Rate limit reached for key: {}. Request blocked.", key);
+            log.warn("Rate limit breached in Redis for key: {}. Request blocked.", fullKey);
         } else {
-            log.info("Rate limit check passed for key: {}", key);
+            log.info("Rate limit token consumed from Redis for key: {}", fullKey);
         }
         return consumed;
+        }
+        catch (Exception e) {
+
+        log.error("Redis rate limiter unavailable. Failing open for key: {}", key, e);
+        return true;
+    }
+
+
     }
 }

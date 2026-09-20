@@ -1,6 +1,7 @@
 package com.arjun.hotdrop_backend.controller;
 
 
+import com.arjun.hotdrop_backend.annotation.RateLimited;
 import com.arjun.hotdrop_backend.dto.*;
 import com.arjun.hotdrop_backend.service.UserService;
 import com.arjun.hotdrop_backend.utils.ResponseHandler;
@@ -24,16 +25,16 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class UserController {
    private final UserService userService;
-
+   @RateLimited(capacity = 30, refillTokens = 30, refillDurationSeconds = 60)
    @GetMapping("/search/{hotdropId}")
    public ResponseEntity<ApiResponse<UserResponseOnSearchDto>> searchUserProfile(
            @PathVariable String hotdropId,
            @AuthenticationPrincipal UserDetails userDetails) {
       String currentLoggedInHotdropId = (userDetails != null) ? userDetails.getUsername() : null;
-      log.info("Searching profile for user: {} (viewer: {})", hotdropId, currentLoggedInHotdropId);
+      log.info("Looking for user profile: {} (viewed by {})", hotdropId, currentLoggedInHotdropId);
 
       UserResponseOnSearchDto searchDto = userService.getUserByHotDropId(hotdropId, currentLoggedInHotdropId);
-      log.info("Profile found successfully for user: {}", hotdropId);
+      log.info("Found profile for user: {}", hotdropId);
 
       return ResponseHandler.generateResponse(
               HttpStatus.OK,
@@ -43,13 +44,14 @@ public class UserController {
    }
 
    @PostMapping("/follow")
+   @RateLimited(capacity = 20, refillTokens = 20, refillDurationSeconds = 60)
    public ResponseEntity<ApiResponse<FollowResponseDto>> toggleFollow(
            @RequestBody Map<String, String> requestBody,
            @AuthenticationPrincipal UserDetails userDetails) {
 
       String currentHotdropId = userDetails.getUsername();
       UUID userIdToFollow = UUID.fromString(requestBody.get("userIdToFollow"));
-      log.info("User {} requested to toggle follow for user ID: {}", currentHotdropId, userIdToFollow);
+      log.info("User {} wants to follow or unfollow user ID: {}", currentHotdropId, userIdToFollow);
 
       FollowResponseDto responseDto = userService.toggleFollowUser(userIdToFollow, currentHotdropId);
 
@@ -57,7 +59,7 @@ public class UserController {
               ? "Successfully followed @" + responseDto.getHotdropId()
               : "Successfully unfollowed @" + responseDto.getHotdropId();
 
-      log.info("User {} {}: @{}", currentHotdropId, responseDto.isFollowing() ? "followed" : "unfollowed", responseDto.getHotdropId());
+      log.info("User {} {} @{}", currentHotdropId, responseDto.isFollowing() ? "followed" : "unfollowed", responseDto.getHotdropId());
 
       return ResponseHandler.generateResponse(
               HttpStatus.OK,
@@ -72,28 +74,28 @@ public class UserController {
            @AuthenticationPrincipal UserDetails userDetails) {
 
       String currentHotdropId = (userDetails != null) ? userDetails.getUsername() : null;
-      log.info("Fetching followers for user ID: {} (viewer: {})", userId, currentHotdropId);
+      log.info("Getting followers for user ID: {} (viewed by {})", userId, currentHotdropId);
 
       List<FollowerUserDto> followers = userService.getUserFollowers(userId, currentHotdropId);
-      log.info("Fetched {} followers for user ID: {}", followers.size(), userId);
+      log.info("Found {} followers for user ID: {}", followers.size(), userId);
 
       return ResponseEntity.ok(followers);
    }
-
+   @RateLimited(capacity = 5, refillTokens = 5, refillDurationSeconds = 60)
    @PutMapping(value = "/update-profile/{userIdFromParams}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
    public ResponseEntity<ApiResponse<UserResponseDto>> updateProfile(
            @PathVariable UUID userIdFromParams,
            @ModelAttribute ProfileUpdateRequestDto requestDto,
            @AuthenticationPrincipal UserDetails userDetails) {
       String currentHotdropId = userDetails.getUsername();
-      log.info("Received profile update request for user ID: {} by: {}", userIdFromParams, currentHotdropId);
+      log.info("Updating profile for user ID: {} by: {}", userIdFromParams, currentHotdropId);
 
       UserResponseDto updatedProfile = userService.updateProfileDetails(
               userIdFromParams,
               currentHotdropId,
               requestDto
       );
-      log.info("Profile updated successfully for user: {}", currentHotdropId);
+      log.info("Updated profile for user: {}", currentHotdropId);
 
       return ResponseHandler.generateResponse(
               HttpStatus.OK,
@@ -105,32 +107,32 @@ public class UserController {
    @GetMapping("/me")
    public ResponseEntity<ApiResponse<MeResponseDto>> getMe(Authentication authentication) {
       if (authentication == null || !authentication.isAuthenticated()) {
-         log.error("Failed to fetch session: user is not authenticated");
+         log.error("Cannot load profile: user is not logged in.");
          return ResponseHandler.generateResponse(HttpStatus.UNAUTHORIZED, "User session not found or token missing", null);
       }
 
       String hotdropId = authentication.getName();
-      log.info("Fetching full profile details for logged-in user: {}", hotdropId);
+      log.info("Getting profile details for: {}", hotdropId);
 
       MeResponseDto response = userService.getMeByHotdropId(hotdropId);
-      log.info("Successfully fetched profile details for logged-in user: {}", hotdropId);
+      log.info("Loaded profile details for: {}", hotdropId);
 
       return ResponseHandler.generateResponse(HttpStatus.OK, "User found successfully", response);
    }
 
    @GetMapping("/{userId}/get-all-following")
    public ResponseEntity<List<UserResponseDto>> getFollowing(@PathVariable UUID userId) {
-      log.info("Fetching following list for user ID: {}", userId);
+      log.info("Getting following list for user ID: {}", userId);
       List<UserResponseDto> followingList = userService.getFollowingList(userId);
-      log.info("Fetched {} following users for user ID: {}", followingList.size(), userId);
+      log.info("Found {} users followed by user ID: {}", followingList.size(), userId);
       return ResponseEntity.ok(followingList);
    }
-
+   @RateLimited(capacity = 45, refillTokens = 45, refillDurationSeconds = 60)
    @GetMapping("/suggestions/{query}")
    public ResponseEntity<ApiResponse<List<PostResponseDto.UserSummaryDto>>> searchUsersSuggestions(@PathVariable String query) {
-      log.info("Searching user suggestions with query: '{}'", query);
+      log.info("Searching users matching: '{}'", query);
       List<PostResponseDto.UserSummaryDto> suggestions = userService.searchTop5Users(query);
-      log.info("Found {} user suggestions for query: '{}'", suggestions.size(), query);
+      log.info("Found {} matching users for: '{}'", suggestions.size(), query);
 
       return ResponseHandler.generateResponse(
               HttpStatus.OK,

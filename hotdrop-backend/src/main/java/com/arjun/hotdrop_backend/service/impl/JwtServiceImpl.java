@@ -33,26 +33,26 @@ public class JwtServiceImpl implements JwtService {
                     .parseSignedClaims(token)
                     .getPayload();
         } catch (Exception e) {
-            log.error("Failed to parse claims from token: {}", e.getMessage());
+            log.error("Could not read token: {}", e.getMessage());
             throw e;
         }
     }
 
     @Override
     public String extractHotdropId(String token) {
-        log.info("Extracting user hotdrop ID from token");
+        log.info("Getting username from token.");
         Claims claims = extractAllClaims(token);
         return claims.getSubject();
     }
 
     public String getEmailFromToken(String token) {
-        log.info("Extracting email from verification token");
+        log.info("Getting email from token.");
         Claims claims = extractAllClaims(token);
         return claims.getSubject();
     }
 
     public String generateEmailVerificationToken(String email) {
-        log.info("Generating email verification token for: {}", email);
+        log.info("Creating verification token for: {}", email);
         return Jwts.builder()
                 .subject(email)
                 .claim("purpose", "EMAIL_VERIFICATION")
@@ -63,17 +63,17 @@ public class JwtServiceImpl implements JwtService {
     }
 
     public boolean validateEmailToken(String token) {
-        log.info("Validating email verification token");
+        log.info("Checking verification token.");
         try {
             Claims claims = extractAllClaims(token);
             boolean isValid = "EMAIL_VERIFICATION".equals(claims.get("purpose"))
                     && claims.getExpiration().after(new Date());
             if (!isValid) {
-                log.error("Email verification token is either expired or wrong purpose");
+                log.error("Verification token is expired or invalid.");
             }
             return isValid;
         } catch (Exception e) {
-            log.error("Email verification token validation failed: {}", e.getMessage());
+            log.error("Failed to verify token: {}", e.getMessage());
             return false;
         }
     }
@@ -83,13 +83,13 @@ public class JwtServiceImpl implements JwtService {
             extractAllClaims(authToken);
             return true;
         } catch (Exception e) {
-            log.error("Invalid JWT access token: {}", e.getMessage());
+            log.error("Invalid token: {}", e.getMessage());
             return false;
         }
     }
 
     public String generateTokenFromHotdropId(String hotdropId) {
-        log.info("Generating new JWT token for hotdropId: {}", hotdropId);
+        log.info("Creating token for user: {}", hotdropId);
         return Jwts.builder()
                 .subject(hotdropId)
                 .issuedAt(new Date())
@@ -100,7 +100,7 @@ public class JwtServiceImpl implements JwtService {
 
     public String generateToken(Authentication authentication) {
         UserDetails userPrincipal = (UserDetails) authentication.getPrincipal();
-        log.info("Generating JWT access token for user: {}", userPrincipal.getUsername());
+        log.info("Creating token for user: {}", userPrincipal.getUsername());
 
         return Jwts.builder()
                 .subject(userPrincipal.getUsername())
@@ -116,14 +116,14 @@ public class JwtServiceImpl implements JwtService {
     }
     @Override
     public long getRemainingExpirationTime(String token) {
-        log.info("Calculating remaining expiration time for token");
+        log.info("Checking how long the token is valid for.");
         try {
 
             Claims claims = extractAllClaims(token);
             long diff = claims.getExpiration().getTime() - System.currentTimeMillis();
             return Math.max(0, diff);
         } catch (Exception e) {
-            log.warn("Token already expired or invalid, remaining time is 0: {}", e.getMessage());
+            log.warn("Token has already expired: {}", e.getMessage());
             return 0;
         }
     }

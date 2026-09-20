@@ -54,7 +54,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             return;
         }
         if (tokenBlacklistService.isTokenBlacklisted(jwt)) {
-            log.warn("Rejected request: JWT access token is blacklisted in Redis");
+            log.warn("Blocked request because the token is logged out.");
             response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
             response.setContentType("application/json");
             response.getWriter().write("{\"status\": 401, \"error\": \"Unauthorized\", \"message\": \"Session has expired or you have logged out. Please login again.\"}");
@@ -74,13 +74,13 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                     );
                     authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
                     SecurityContextHolder.getContext().setAuthentication(authToken);
-                    log.info("JWT authentication successful for user: {}", hotdropId);
+                    log.info("User {} logged in successfully.", hotdropId);
                 } else {
-                    log.error("JWT authentication failed: token is invalid for user: {}", hotdropId);
+                    log.error("Invalid token for user: {}", hotdropId);
                 }
             }
         } catch (Exception e) {
-            log.error("Error during JWT filter processing: {}", e.getMessage());
+            log.error("Failed to verify token: {}", e.getMessage());
         }
 
         filterChain.doFilter(request, response);

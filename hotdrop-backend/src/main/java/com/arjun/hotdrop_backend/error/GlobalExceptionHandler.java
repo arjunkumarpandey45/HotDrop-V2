@@ -42,7 +42,7 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ApiErrorResponseDto> handleBadCredentials(
             BadCredentialsException ex, HttpServletRequest request) {
 
-        log.error("Login failed due to invalid credentials at [{}]: {}", request.getRequestURI(), ex.getMessage());
+        log.error("Login failed with invalid credentials at [{}]: {}", request.getRequestURI(), ex.getMessage());
 
         ApiErrorResponseDto errorResponse = ApiErrorResponseDto.builder()
                 .status(HttpStatus.UNAUTHORIZED.value())
@@ -65,7 +65,7 @@ public class GlobalExceptionHandler {
                 .map(FieldError::getDefaultMessage)
                 .collect(Collectors.joining(", "));
 
-        log.error("Validation failed at [{}]: {}", request.getRequestURI(), errorMessage);
+        log.error("Input validation failed at [{}]: {}", request.getRequestURI(), errorMessage);
 
         ApiErrorResponseDto errorResponse = ApiErrorResponseDto.builder()
                 .status(HttpStatus.BAD_REQUEST.value())
@@ -105,7 +105,7 @@ public class GlobalExceptionHandler {
 
         String requestId = MDC.get("requestId");
 
-        log.error("Unexpected server error at [{}] | requestId={}: {}", request.getRequestURI(), requestId, ex.getMessage(), ex);
+        log.error("Unexpected error at [{}] (request ID {}): {}", request.getRequestURI(), requestId, ex.getMessage(), ex);
 
         ApiErrorResponseDto errorResponse = ApiErrorResponseDto.builder()
                 .status(HttpStatus.INTERNAL_SERVER_ERROR.value())
@@ -119,6 +119,16 @@ public class GlobalExceptionHandler {
                 errorResponse,
                 HttpStatus.INTERNAL_SERVER_ERROR
         );
+    }
+    @ExceptionHandler(RateLimitExceededException.class)
+    public ResponseEntity<Map<String, Object>> handleRateLimitExceeded(RateLimitExceededException ex) {
+        return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
+                .body(Map.of(
+                        "status", 429,
+                        "error", "Too Many Requests",
+                        "message", ex.getMessage(),
+                        "timestamp", LocalDateTime.now()
+                ));
     }
 
 }

@@ -29,7 +29,7 @@ public class RefreshTokenServiceImpl implements RefreshTokenService {
         log.info("Creating refresh token for user: {}", hotdropId);
         var user = userRepo.findByHotdropId(hotdropId)
                 .orElseThrow(() -> {
-                    log.error("Failed to create refresh token: user not found for {}", hotdropId);
+                    log.error("Cannot create refresh token: user not found for {}", hotdropId);
                     return new RuntimeException("User not found: " + hotdropId);
                 });
 
@@ -42,16 +42,16 @@ public class RefreshTokenServiceImpl implements RefreshTokenService {
                 .build();
 
         RefreshToken savedToken = refreshTokenRepo.save(refreshToken);
-        log.info("Refresh token created successfully for user: {}", hotdropId);
+        log.info("Created refresh token for user: {}", hotdropId);
         return savedToken;
     }
 
     @Override
     public RefreshToken verifyExpiration(RefreshToken token) {
-        log.info("Checking refresh token expiration for user: {}", token.getUser().getHotdropId());
+        log.info("Checking if refresh token expired for user: {}", token.getUser().getHotdropId());
         if (token.getExpiryDate().compareTo(Instant.now()) < 0) {
             refreshTokenRepo.delete(token);
-            log.error("Refresh token has expired for user: {}. Please log in again.", token.getUser().getHotdropId());
+            log.error("Refresh token expired for user: {}.", token.getUser().getHotdropId());
             throw new RuntimeException("Refresh token was expired. Please make a new signin request");
         }
         log.info("Refresh token is valid for user: {}", token.getUser().getHotdropId());

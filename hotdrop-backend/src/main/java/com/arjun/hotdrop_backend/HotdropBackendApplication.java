@@ -13,9 +13,9 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 public class HotdropBackendApplication {
 
 	public static void main(String[] args) {
-		log.info("Starting HotDrop Backend Application...");
+		log.info("Starting the server...");
 		SpringApplication.run(HotdropBackendApplication.class, args);
-		log.info("HotDrop Backend Application started successfully!");
+		log.info("Server started successfully.");
 	}
 
 }

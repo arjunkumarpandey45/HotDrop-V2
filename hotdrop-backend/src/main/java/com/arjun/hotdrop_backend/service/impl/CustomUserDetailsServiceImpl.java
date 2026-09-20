@@ -18,18 +18,18 @@ public class CustomUserDetailsServiceImpl implements CustomUserDetailsService {
 
     @Override
     public UserDetails loadUserByUsername(String hotdropIdOrEmail) {
-        log.info("Loading user details for authentication: {}", hotdropIdOrEmail);
+        log.info("Loading user details for: {}", hotdropIdOrEmail);
 
         User user = userRepo.findByHotdropId(hotdropIdOrEmail)
                 .or(() -> userRepo.findByEmail(hotdropIdOrEmail))
                 .orElseThrow(() -> {
-                    log.error("Authentication failed: user not found with username or email: {}", hotdropIdOrEmail);
+                    log.error("User not found with username or email: {}", hotdropIdOrEmail);
                     return new UsernameNotFoundException(
                             "User not found with hotdrop Id or email: " + hotdropIdOrEmail
                     );
                 });
 
-        log.info("User details loaded successfully for user: {}", user.getHotdropId());
+        log.info("Loaded user details for: {}", user.getHotdropId());
 
         return org.springframework.security.core.userdetails.User
                 .withUsername(user.getHotdropId())

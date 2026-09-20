@@ -1,5 +1,6 @@
 package com.arjun.hotdrop_backend.controller;
 
+import com.arjun.hotdrop_backend.annotation.RateLimited;
 import com.arjun.hotdrop_backend.dto.ApiResponse;
 import com.arjun.hotdrop_backend.dto.DeveloperDashboardStatsDto;
 
@@ -21,7 +22,7 @@ import org.springframework.web.bind.annotation.RestController;
 public class DeveloperDashboardController {
 
     private final DeveloperDashboardServiceImpl dashboardService;
-
+    @RateLimited(capacity = 15, refillTokens = 15, refillDurationSeconds = 60)
     @GetMapping("/stats")
     @Operation(summary = "Get current authenticated developer's dashboard metrics")
     public ResponseEntity<ApiResponse<DeveloperDashboardStatsDto>> getMyDashboardStats(

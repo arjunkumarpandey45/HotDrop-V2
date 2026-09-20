@@ -28,9 +28,6 @@ public interface UserRepo extends JpaRepository<User, UUID> {
 
     boolean existsByHotdropId(String hotdropId);
 
-    @Transactional
-    @Modifying
-    @Query("delete from User u where u.emailVerified=false and u.createdAt< :targetTime")
-    int deleteUnverifiedUsersOlderThan(@Param("targetTime") LocalDateTime targetTime);
+
 
 }

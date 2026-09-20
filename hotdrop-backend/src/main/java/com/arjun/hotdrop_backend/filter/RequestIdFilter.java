@@ -38,13 +38,13 @@ public class RequestIdFilter extends OncePerRequestFilter {
         try {
             MDC.put(MDC_KEY, requestId);
             response.setHeader(REQUEST_ID_HEADER, requestId);
-            log.info("Incoming request: {} {} (Request ID: {})", request.getMethod(), request.getRequestURI(), requestId);
+            log.info("Started {} {} (request ID: {})", request.getMethod(), request.getRequestURI(), requestId);
 
             filterChain.doFilter(request, response);
 
-            log.info("Completed request: {} {} (Status: {})", request.getMethod(), request.getRequestURI(), response.getStatus());
+            log.info("Finished {} {} with status {}", request.getMethod(), request.getRequestURI(), response.getStatus());
         } catch (Exception e) {
-            log.error("Request processing failed for {} {}: {}", request.getMethod(), request.getRequestURI(), e.getMessage());
+            log.error("Request failed for {} {}: {}", request.getMethod(), request.getRequestURI(), e.getMessage());
             throw e;
         } finally {
             MDC.remove(MDC_KEY);

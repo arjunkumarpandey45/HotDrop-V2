@@ -46,13 +46,13 @@ public class LinkTrackingScheduler {
 
     @Scheduled(fixedDelay = 600000)
     public void startLiveTracking() {
-        log.info("--- 🛡️ Upgraded Multi-threaded Tracking Started: {} ---", LocalDateTime.now());
+        log.info("Started checking project links at {}", LocalDateTime.now());
 
         try {
             List<Post> allPosts = transactionTemplate.execute(status -> postRepo.findAllWithActiveProjectLinks());
 
             if (allPosts == null || allPosts.isEmpty()) {
-                log.info("No active links found to monitor.");
+                log.info("No active project links to check.");
                 return;
             }
 
@@ -62,7 +62,7 @@ public class LinkTrackingScheduler {
                     .toList();
 
             Map<String, Boolean> trackingResults = new ConcurrentHashMap<>();
-            log.info("🔍 Parallel scanning of {} unique URLs...", uniqueLinks.size());
+            log.info("Checking {} unique project links...", uniqueLinks.size());
 
             int batchSize = 5;
             for (int i = 0; i < uniqueLinks.size(); i += batchSize) {
@@ -76,12 +76,12 @@ public class LinkTrackingScheduler {
                 CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).join();
 
                 if (end < uniqueLinks.size()) {
-                    log.info("⏳ Batch complete...");
+                    log.info("Finished checking batch of links.");
                     TimeUnit.SECONDS.sleep(3);
                 }
             }
 
-            log.info("💾 Flushing structural link updates down into PostgreSQL layer...");
+            log.info("Saving link status updates to database...");
             transactionTemplate.executeWithoutResult(status -> {
                 for (Post post : allPosts) {
                     String ownerEmail = post.getUser().getEmail();
@@ -90,8 +90,8 @@ public class LinkTrackingScheduler {
                     if (!previouslyDead && currentlyDead) {
                         try {
                             notificationService.sendNotification(
-                                    post.getUser(), // sender/system
-                                    post.getUser(), // recipient (post owner)
+                                    post.getUser(), // sender
+                                    post.getUser(), // recipient
                                     NotificationType.PROJECT_DEAD,
                                     "🚨 Alert: Your project '" + post.getTitle() + "' is unreachable!",
                                     post.getId()
@@ -100,9 +100,9 @@ public class LinkTrackingScheduler {
                             if (ownerEmail != null && !ownerEmail.isBlank()) {
                                 emailService.sendProjectDownAlert(ownerEmail, post.getTitle(), post.getProjectUrl());
                             }
-                            log.warn("⚠️ Dispatched PROJECT_DOWN notification for Post ID: {}", post.getId());
+                            log.warn("Sent project down notification for post ID: {}", post.getId());
                         } catch (Exception e) {
-                            log.error("Failed to send PROJECT_DOWN notification: {}", e.getMessage());
+                            log.error("Could not send project down notification: {}", e.getMessage());
                         }
                     }
 
@@ -118,9 +118,9 @@ public class LinkTrackingScheduler {
                             if (ownerEmail != null && !ownerEmail.isBlank()) {
                                 emailService.sendProjectUpAlert(ownerEmail, post.getTitle(), post.getProjectUrl());
                             }
-                            log.info("✅ Dispatched PROJECT_UP notification for Post ID: {}", post.getId());
+                            log.info("Sent project up notification for post ID: {}", post.getId());
                         } catch (Exception e) {
-                            log.error("Failed to send PROJECT_UP notification: {}", e.getMessage());
+                            log.error("Could not send project up notification: {}", e.getMessage());
                         }
                     }
                     post.setLinkDead(currentlyDead);
@@ -131,13 +131,13 @@ public class LinkTrackingScheduler {
                 postRepo.saveAll(allPosts);
             });
 
-            log.info("--- ✅ DB Batch Update Successful without proxy issues ---");
+            log.info("Saved all link status updates successfully.");
 
         } catch (InterruptedException ie) {
-            log.error("Tracking thread context interrupted unexpectedly: {}", ie.getMessage());
+            log.error("Link check was interrupted: {}", ie.getMessage());
             Thread.currentThread().interrupt();
         } catch (Exception e) {
-            log.error("Critical error inside tracking cron execution flow: {}", e.getMessage());
+            log.error("Failed to check project links: {}", e.getMessage());
         }
     }
 
@@ -162,14 +162,14 @@ public class LinkTrackingScheduler {
 
             if (response.statusCode() >= 200 && response.statusCode() < 400) {
                 results.put(link, false);
-                log.info("✅ [ALIVE] ({}) | Responded in {}s", link, String.format("%.2f", durationSec));
+                log.info("Link is up: {} (took {}s)", link, String.format("%.2f", durationSec));
             } else {
                 results.put(link, true);
-                log.info("❌ [BAD STATUS]: {} | Code: {}", link, response.statusCode());
+                log.info("Link returned bad status: {} (status code {})", link, response.statusCode());
             }
         } catch (Exception err) {
             results.put(link, true);
-            log.info("❌ [DEAD/TIMEOUT]: {} | Error: {}", link, err.getMessage());
+            log.info("Link is unreachable: {} ({})", link, err.getMessage());
         }
     }
 }

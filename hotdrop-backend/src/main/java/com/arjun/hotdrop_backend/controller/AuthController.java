@@ -26,35 +26,35 @@ public class AuthController {
     private final RefreshTokenService refreshTokenService;
     private final RefreshTokenRepo refreshTokenRepo;
     private final JwtService jwtService;
-
+    @RateLimited(capacity = 5, refillTokens = 5, refillDurationSeconds = 300)
     @PostMapping("/signup")
     public ResponseEntity<UserResponseDto> signup(@Valid @RequestBody RegisterRequestDto registerRequestDto) {
-        log.info("Received signup request for user: {} with email: {}", registerRequestDto.getHotdropId(), registerRequestDto.getEmail());
+        log.info("Signing up user {} with email: {}", registerRequestDto.getHotdropId(), registerRequestDto.getEmail());
         UserResponseDto responseDto = authService.register(registerRequestDto);
-        log.info("User registered successfully: {}", registerRequestDto.getHotdropId());
+        log.info("Registered user: {}", registerRequestDto.getHotdropId());
         return ResponseEntity.ok(responseDto);
     }
-@RateLimited
 @PostMapping("/resend-email")
+@RateLimited(capacity = 2, refillTokens = 2, refillDurationSeconds = 300)
 public ResponseEntity<String> resendVerifyEmail(@RequestBody ReVerificationEmailDto reVerificationEmailDto){
-    log.info("Received re-verification email request : {}", reVerificationEmailDto.getEmail());
+    log.info("Resending verification email to: {}", reVerificationEmailDto.getEmail());
         authService.reVerifyEmail(reVerificationEmailDto.getEmail());
-    log.info("Verification link Successfully sent to : {}", reVerificationEmailDto.getEmail());
+    log.info("Sent verification link to: {}", reVerificationEmailDto.getEmail());
         return ResponseEntity.ok("Verification Link Sent To Your Email");
 }
-    @RateLimited
+    @RateLimited(capacity = 3, refillTokens = 3, refillDurationSeconds = 60)
     @GetMapping("/verify-email")
     public ResponseEntity<String> verifyEmail(@RequestParam String token) {
-        log.info("Received request to verify email address");
+        log.info("Verifying email address.");
         String message = authService.verifyEmail(token);
         log.info("Email verification result: {}", message);
         return ResponseEntity.ok(message);
     }
 
-    @RateLimited
+    @RateLimited(capacity = 10, refillTokens = 10, refillDurationSeconds = 60)
     @PostMapping("/login")
     public ResponseEntity<LoginResponseDto> login(@Valid @RequestBody LoginRequestDto loginRequestDto) {
-        log.info("Received login request for: {}", loginRequestDto.getHotdropIdOrEmail());
+        log.info("Logging in user: {}", loginRequestDto.getHotdropIdOrEmail());
         String jwtToken = authService.login(loginRequestDto);
         LoginResponseDto responseDto = authService.getLoginResponseDetails(loginRequestDto.getHotdropIdOrEmail());
         var refreshToken = refreshTokenService.createRefreshToken(responseDto.getHotdropId());
@@ -71,10 +71,10 @@ public ResponseEntity<String> resendVerifyEmail(@RequestBody ReVerificationEmail
                 .header(HttpHeaders.SET_COOKIE, refreshCookie.toString())
                 .body(responseDto);
     }
-
+    @RateLimited(capacity = 20, refillTokens = 20, refillDurationSeconds = 60)
     @PostMapping("/refresh")
     public ResponseEntity<?> refreshToken(HttpServletRequest request) {
-        log.info("Received request to refresh access token");
+        log.info("Refreshing access token.");
         String refreshTokenFromCookie = null;
 
         if (request.getCookies() != null) {
@@ -87,7 +87,7 @@ public ResponseEntity<String> resendVerifyEmail(@RequestBody ReVerificationEmail
         }
 
         if (refreshTokenFromCookie == null || refreshTokenFromCookie.isEmpty()) {
-            log.error("Failed to refresh token: refresh token cookie is missing");
+            log.error("Cannot refresh token because the cookie is missing.");
             return ResponseEntity.badRequest().body("Refresh Token is missing!");
         }
 
@@ -100,44 +100,44 @@ public ResponseEntity<String> resendVerifyEmail(@RequestBody ReVerificationEmail
                     ResponseCookie newAccessCookie = ResponseCookie.from("accessToken", newAccessToken)
                             .httpOnly(true).secure(false).path("/").maxAge(15 * 60).sameSite("Strict").build();
 
-                    log.info("Access token refreshed successfully for user: {}", user.getHotdropId());
+                    log.info("Refreshed access token for user: {}", user.getHotdropId());
                     return ResponseEntity.ok()
                             .header(HttpHeaders.SET_COOKIE, newAccessCookie.toString())
                             .body("Token refreshed successfully!");
                 })
                 .orElseThrow(() -> {
-                    log.error("Failed to refresh token: token not found in database");
+                    log.error("Cannot refresh token because it was not found.");
                     return new RuntimeException("Refresh token is not in database!");
                 });
     }
 
-    @RateLimited
+    @RateLimited(capacity = 3, refillTokens = 3, refillDurationSeconds = 300)
     @PostMapping("/forgot-password")
     public ResponseEntity<String> forgotPassword(@Valid @RequestBody ForgotPasswordRequestDto requestDto) {
-        log.info("Received forgot-password request for email: {}", requestDto.getEmail());
+        log.info("Sending password reset code to: {}", requestDto.getEmail());
         authService.sendForgotPasswordOtp(requestDto);
-        log.info("Forgot-password OTP sent successfully to email: {}", requestDto.getEmail());
+        log.info("Sent password reset code to: {}", requestDto.getEmail());
         return ResponseEntity.ok("OTP sent to Your E-Mail ");
     }
 
-    @RateLimited
+    @RateLimited(capacity = 4, refillTokens = 4, refillDurationSeconds = 60)
     @PostMapping("/verify-otp")
     public ResponseEntity<String> resetPassword(@Valid @RequestBody ResetPasswordDto resetPasswordDto) {
-        log.info("Received password reset request with OTP for email: {}", resetPasswordDto.getEmail());
+        log.info("Resetting password for: {}", resetPasswordDto.getEmail());
         authService.resetPasswordWithOtp(resetPasswordDto);
-        log.info("Password reset successfully for email: {}", resetPasswordDto.getEmail());
+        log.info("Password reset successfully for: {}", resetPasswordDto.getEmail());
         return ResponseEntity.ok("Password reset successfully");
     }
 
-    @RateLimited
+    @RateLimited(capacity = 3, refillTokens = 3, refillDurationSeconds = 60)
     @PostMapping("/logout")
     public ResponseEntity<String> logout(HttpServletRequest request) {
-        log.info("Received logout request");
+        log.info("Logging out user.");
 
         String refreshTokenFromCookie = null;
         String accessTokenFromCookie = null;
 
-        // Dono cookies extract karein
+        // Read both cookies
         if (request.getCookies() != null) {
             for (var cookie : request.getCookies()) {
                 if ("refreshToken".equals(cookie.getName())) {
@@ -154,7 +154,7 @@ public ResponseEntity<String> resendVerifyEmail(@RequestBody ReVerificationEmail
         ResponseCookie clearAccessCookie = ResponseCookie.from("accessToken", "")
                 .maxAge(0)
                 .httpOnly(true)
-                .secure(false) //in production set true
+                .secure(false) // Set to true in production
                 .path("/")
                 .sameSite("Strict")
                 .build();
@@ -162,12 +162,12 @@ public ResponseEntity<String> resendVerifyEmail(@RequestBody ReVerificationEmail
         ResponseCookie clearRefreshCookie = ResponseCookie.from("refreshToken", "")
                 .maxAge(0)
                 .httpOnly(true)
-                .secure(false)//in production set true
+                .secure(false) // Set to true in production
                 .path("/")
                 .sameSite("Strict")
                 .build();
 
-        log.info("User logged out successfully and cookies cleared");
+        log.info("User logged out successfully.");
         return ResponseEntity.ok()
                 .header(HttpHeaders.SET_COOKIE, clearAccessCookie.toString())
                 .header(HttpHeaders.SET_COOKIE, clearRefreshCookie.toString())

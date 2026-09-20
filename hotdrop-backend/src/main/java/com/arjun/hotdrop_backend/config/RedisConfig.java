@@ -21,7 +21,7 @@ public class RedisConfig {
     @Bean
     public RedisCacheConfiguration redisCacheConfiguration() {
         ObjectMapper objectMapper = new ObjectMapper();
-        objectMapper.registerModule(new JavaTimeModule()); // LocalDateTime support ke liye
+        objectMapper.registerModule(new JavaTimeModule()); // Support date and time types
         objectMapper.activateDefaultTyping(
                 LaissezFaireSubTypeValidator.instance,
                 ObjectMapper.DefaultTyping.NON_FINAL,

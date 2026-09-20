@@ -37,16 +37,16 @@ public class EmailServiceImpl implements EmailService {
 
             helper.setText(htmlContent, true);
             mailSender.send(message);
-            log.info("Verification email successfully sent to: {}", toEmail);
+            log.info("Sent verification email to: {}", toEmail);
         } catch (Exception e) {
-            log.error("Failed to send verification email to {}: {}", toEmail, e.getMessage(), e);
+            log.error("Could not send verification email to {}: {}", toEmail, e.getMessage(), e);
             throw new RuntimeException("Failed to send verification email", e);
         }
     }
 
     @Async
     public void sendProjectDownAlert(String recipientEmail, String projectTitle, String projectUrl) {
-        log.info("Sending project down alert email to: {} for project: '{}'", recipientEmail, projectTitle);
+        log.info("Sending project down email to: {} for '{}'", recipientEmail, projectTitle);
         String subject = "🚨Action Required: Your HotDrop project is DOWN!";
         String content = """
             <div style="font-family: Arial, sans-serif; max-width: 600px; margin: auto; padding: 20px; border: 1px solid #fee2e2; border-radius: 12px; background-color: #fffaf0;">
@@ -67,7 +67,7 @@ public class EmailServiceImpl implements EmailService {
 
     @Async
     public void sendProjectUpAlert(String recipientEmail, String projectTitle, String projectUrl) {
-        log.info("Sending project restored alert email to: {} for project: '{}'", recipientEmail, projectTitle);
+        log.info("Sending project online email to: {} for '{}'", recipientEmail, projectTitle);
         String subject = "✅ Resolved: Your HotDrop project is LIVE!";
         String content = """
             <div style="font-family: Arial, sans-serif; max-width: 600px; margin: auto; padding: 20px; border: 1px solid #d1fae5; border-radius: 12px; background-color: #f0fdf4;">
@@ -86,7 +86,7 @@ public class EmailServiceImpl implements EmailService {
     }
 
     private void sendHtmlMail(String to, String subject, String htmlBody) {
-        log.info("Preparing to send email to: {} with subject: '{}'", to, subject);
+        log.info("Sending email to: {} with subject: '{}'", to, subject);
         try {
             MimeMessage message = mailSender.createMimeMessage();
             MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
@@ -96,16 +96,16 @@ public class EmailServiceImpl implements EmailService {
             helper.setFrom("hotdrop1229@gmail.com", "HotDrop");
 
             mailSender.send(message);
-            log.info("Email dispatched successfully to: {}", to);
+            log.info("Sent email to: {}", to);
         } catch (Exception e) {
-            log.error("Failed to send email to {}: {}", to, e.getMessage(), e);
+            log.error("Could not send email to {}: {}", to, e.getMessage(), e);
         }
     }
 
     @Override
     @Async
     public void sendOTP(String toEmail, String name, String otpCode) {
-        log.info("Sending OTP email to: {}", toEmail);
+        log.info("Sending verification code email to: {}", toEmail);
         try {
             MimeMessage message = mailSender.createMimeMessage();
             MimeMessageHelper helper = new MimeMessageHelper(message, false, "UTF-8");
@@ -128,10 +128,10 @@ public class EmailServiceImpl implements EmailService {
 
             helper.setText(htmlContent, true);
             mailSender.send(message);
-            log.info("OTP email successfully sent to: {}", toEmail);
+            log.info("Sent verification code email to: {}", toEmail);
 
         } catch (Exception e) {
-            log.error("Failed to send OTP email to {}: {}", toEmail, e.getMessage(), e);
+            log.error("Could not send verification code email to {}: {}", toEmail, e.getMessage(), e);
         }
     }
 }
