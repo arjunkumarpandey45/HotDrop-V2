@@ -14,4 +14,5 @@ public interface JwtService {
     boolean validateJwtToken(String authToken);
     String generateTokenFromHotdropId(String hotdropId);
     String generateEmailVerificationToken(String email);
+    long getRemainingExpirationTime(String token);
 }

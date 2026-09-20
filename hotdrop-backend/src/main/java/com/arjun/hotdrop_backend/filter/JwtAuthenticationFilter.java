@@ -2,6 +2,7 @@ package com.arjun.hotdrop_backend.filter;
 
 import com.arjun.hotdrop_backend.service.JwtService;
 
+import com.arjun.hotdrop_backend.service.TokenBlacklistService;
 import io.micrometer.common.lang.NonNull;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -27,6 +28,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final JwtService jwtService;
     private final UserDetailsService userDetailsService;
+    private final TokenBlacklistService tokenBlacklistService;
 
     @Override
     protected void doFilterInternal(
@@ -51,7 +53,13 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             filterChain.doFilter(request, response);
             return;
         }
-
+        if (tokenBlacklistService.isTokenBlacklisted(jwt)) {
+            log.warn("Rejected request: JWT access token is blacklisted in Redis");
+            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+            response.setContentType("application/json");
+            response.getWriter().write("{\"status\": 401, \"error\": \"Unauthorized\", \"message\": \"Session has expired or you have logged out. Please login again.\"}");
+            return;
+        }
         try {
             hotdropId = jwtService.extractHotdropId(jwt);
 

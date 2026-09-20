@@ -14,6 +14,7 @@ import com.arjun.hotdrop_backend.utils.SlugifyUtil;
 import com.arjun.hotdrop_backend.utils.UserAgentProvider;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.jspecify.annotations.NonNull;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
@@ -285,11 +286,22 @@ public class PostServiceImpl implements PostService {
     )
     public PostListResponseDto getAllPostsCompiledFeed(int page, int size, String sortBy, String direction, String search, String currentHotdropId) {
         log.info("Fetching compiled feed: page={}, size={}, sortBy={}, direction={}, search='{}'", page, size, sortBy, direction, search);
+        String dbSortColumn = "created_at";
+        if (sortBy != null) {
+            if (sortBy.equalsIgnoreCase("createdAt") || sortBy.equalsIgnoreCase("created_at")) {
+                dbSortColumn = "created_at";
+            } else if (sortBy.equalsIgnoreCase("likeCount") || sortBy.equalsIgnoreCase("like_count") || sortBy.equalsIgnoreCase("likes")) {
+                dbSortColumn = "like_count";
+            } else if (sortBy.equalsIgnoreCase("commentCount") || sortBy.equalsIgnoreCase("comment_count") || sortBy.equalsIgnoreCase("comments")) {
+                dbSortColumn = "comment_count";
+            } else if (sortBy.equalsIgnoreCase("title")) {
+                dbSortColumn = "title";
+            }
+        }
 
-        Sort sort = direction.equalsIgnoreCase(Sort.Direction.ASC.name())
-                ? Sort.by(sortBy).ascending()
-                : Sort.by(sortBy).descending();
-
+        Sort sort = direction != null && direction.equalsIgnoreCase(Sort.Direction.ASC.name())
+                ? Sort.by(dbSortColumn).ascending()
+                : Sort.by(dbSortColumn).descending();
         Pageable pageable = PageRequest.of(page, size, sort);
 
         String cleanedKeyword = (search == null || search.isBlank()) ? null : search.trim();
@@ -309,6 +321,22 @@ public class PostServiceImpl implements PostService {
                 .totalPages(postPage.getTotalPages())
                 .isLastPage(postPage.isLast())
                 .build();
+    }
+
+    private static @NonNull String getString(String sortBy) {
+        String validSortProperty = "createdAt";
+        if (sortBy != null) {
+            if (sortBy.equalsIgnoreCase("created_at") || sortBy.equalsIgnoreCase("createdAt")) {
+                validSortProperty = "createdAt";
+            } else if (sortBy.equalsIgnoreCase("like_count") || sortBy.equalsIgnoreCase("likeCount") || sortBy.equalsIgnoreCase("likes")) {
+                validSortProperty = "likeCount";
+            } else if (sortBy.equalsIgnoreCase("comment_count") || sortBy.equalsIgnoreCase("commentCount") || sortBy.equalsIgnoreCase("comments")) {
+                validSortProperty = "commentCount";
+            } else if (sortBy.equalsIgnoreCase("title")) {
+                validSortProperty = "title";
+            }
+        }
+        return validSortProperty;
     }
 
     @Override

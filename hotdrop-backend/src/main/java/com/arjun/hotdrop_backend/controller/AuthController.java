@@ -133,26 +133,39 @@ public ResponseEntity<String> resendVerifyEmail(@RequestBody ReVerificationEmail
     @PostMapping("/logout")
     public ResponseEntity<String> logout(HttpServletRequest request) {
         log.info("Received logout request");
+
         String refreshTokenFromCookie = null;
+        String accessTokenFromCookie = null;
+
+        // Dono cookies extract karein
         if (request.getCookies() != null) {
             for (var cookie : request.getCookies()) {
                 if ("refreshToken".equals(cookie.getName())) {
                     refreshTokenFromCookie = cookie.getValue();
-                    break;
+                } else if ("accessToken".equals(cookie.getName())) {
+                    accessTokenFromCookie = cookie.getValue();
                 }
             }
         }
 
-        authService.logout(refreshTokenFromCookie);
+
+        authService.logout(accessTokenFromCookie, refreshTokenFromCookie);
+
         ResponseCookie clearAccessCookie = ResponseCookie.from("accessToken", "")
                 .maxAge(0)
                 .httpOnly(true)
-                .secure(false).path("/").sameSite("Strict").build();
+                .secure(false) //in production set true
+                .path("/")
+                .sameSite("Strict")
+                .build();
 
         ResponseCookie clearRefreshCookie = ResponseCookie.from("refreshToken", "")
                 .maxAge(0)
                 .httpOnly(true)
-                .secure(false).path("/").sameSite("Strict").build();
+                .secure(false)//in production set true
+                .path("/")
+                .sameSite("Strict")
+                .build();
 
         log.info("User logged out successfully and cookies cleared");
         return ResponseEntity.ok()

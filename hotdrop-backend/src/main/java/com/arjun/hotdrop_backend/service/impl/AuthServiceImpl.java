@@ -15,6 +15,7 @@ import com.arjun.hotdrop_backend.service.AuthService;
 import com.arjun.hotdrop_backend.service.EmailService;
 import com.arjun.hotdrop_backend.service.JwtService;
 
+import com.arjun.hotdrop_backend.service.TokenBlacklistService;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -39,8 +40,9 @@ public class AuthServiceImpl implements AuthService {
     private String frontendURL;
     private final UserRepo userRepo;
     private final RoleRepo roleRepo;
-    private final PasswordEncoder passwordEncoder;
 
+    private final PasswordEncoder passwordEncoder;
+    private final TokenBlacklistService tokenBlacklistService;
     private final EmailService emailService;
     private final AuthenticationManager authenticationManager;
     private final OtpVerificationRepo otpVerificationRepo;
@@ -397,11 +399,25 @@ public class AuthServiceImpl implements AuthService {
         otpVerificationRepo.delete(otpVerification);
         log.info("Password successfully updated for user: {}", user.getHotdropId());
     }
-
-    @Override
-    @Transactional
-    public void logout(String refreshToken) {
+@Transactional
+    public void logout(String accessToken, String refreshToken) {
         log.info("Processing logout request");
+
+
+        if (accessToken != null && !accessToken.isBlank()) {
+
+            String cleanToken = accessToken.startsWith("Bearer ")
+                    ? accessToken.substring(7)
+                    : accessToken;
+
+            long remainingTtl = jwtService.getRemainingExpirationTime(cleanToken);
+
+            if (remainingTtl > 0) {
+                tokenBlacklistService.blacklistToken(cleanToken, remainingTtl);
+                log.info("Access token successfully blacklisted in Redis for {} ms", remainingTtl);
+            }
+        }
+
 
         if (refreshToken != null && !refreshToken.isEmpty()) {
             refreshTokenRepo.findByToken(refreshToken)
@@ -410,10 +426,9 @@ public class AuthServiceImpl implements AuthService {
                         log.info("Refresh token invalidated for user: {}", token.getUser().getHotdropId());
                     });
         }
+
         log.info("Logout process completed");
     }
-
-
 
 
 

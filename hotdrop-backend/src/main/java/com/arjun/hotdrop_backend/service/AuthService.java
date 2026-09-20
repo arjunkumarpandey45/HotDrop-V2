@@ -10,6 +10,6 @@ public interface AuthService {
     LoginResponseDto getLoginResponseDetails(String hotdropIdOrEmail);
     void sendForgotPasswordOtp(ForgotPasswordRequestDto request);
     void resetPasswordWithOtp(ResetPasswordDto request);
-    void logout(String refreshToken);
+    void logout(String accessToken, String refreshToken);
 
 }

@@ -90,7 +90,7 @@ public class PostController {
     public ResponseEntity<ApiResponse<PostListResponseDto>> getFeed(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
-            @RequestParam(defaultValue = "created_at") String sortBy,
+            @RequestParam(defaultValue = "createdAt") String sortBy,
             @RequestParam(defaultValue = "DESC") String direction,
             @RequestParam(required = false) String search,
             @AuthenticationPrincipal UserDetails userDetails) {

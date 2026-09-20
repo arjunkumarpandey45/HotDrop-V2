@@ -114,4 +114,17 @@ public class JwtServiceImpl implements JwtService {
         byte[] keyBytes = Decoders.BASE64.decode(secretKey);
         return Keys.hmacShaKeyFor(keyBytes);
     }
+    @Override
+    public long getRemainingExpirationTime(String token) {
+        log.info("Calculating remaining expiration time for token");
+        try {
+
+            Claims claims = extractAllClaims(token);
+            long diff = claims.getExpiration().getTime() - System.currentTimeMillis();
+            return Math.max(0, diff);
+        } catch (Exception e) {
+            log.warn("Token already expired or invalid, remaining time is 0: {}", e.getMessage());
+            return 0;
+        }
+    }
 }
