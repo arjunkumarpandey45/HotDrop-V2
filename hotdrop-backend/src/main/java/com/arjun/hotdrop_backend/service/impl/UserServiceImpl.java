@@ -15,6 +15,10 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -137,8 +141,13 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public List<FollowerUserDto> getUserFollowers(UUID profileUserId, String currentHotdropId) {
-        log.info("Getting followers for user: {}", profileUserId);
+    @Cacheable(
+            value = "userFollowersList",
+            key = "{#profileUserId, #currentHotdropId, #page, #size}",
+            unless = "#result == null"
+    )
+    public PagedResponse<FollowerUserDto> getUserFollowers(UUID profileUserId, String currentHotdropId, int page, int size) {
+        log.info("Getting followers for user: {}, page: {}, size: {}", profileUserId, page, size);
 
         User targetProfileUser = userRepo.findById(profileUserId)
                 .orElseThrow(() -> {
@@ -151,10 +160,11 @@ public class UserServiceImpl implements UserService {
             currentUser = userRepo.findByHotdropId(currentHotdropId).orElse(null);
         }
 
-        List<Follow> followersList = followRepo.findByFollowing(targetProfileUser);
+        Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt"));
+        Page<Follow> followPage = followRepo.findByFollowing(targetProfileUser, pageable);
         final User loggedInUser = currentUser;
 
-        List<FollowerUserDto> result = followersList.stream().map(follow -> {
+        List<FollowerUserDto> result = followPage.getContent().stream().map(follow -> {
             User followerUser = follow.getFollower();
 
             boolean isFollowingBack = false;
@@ -170,10 +180,10 @@ public class UserServiceImpl implements UserService {
                     .profileImageUrl(followerUser.getProfileImageUrl())
                     .isFollowing(isFollowingBack)
                     .build();
-        }).collect(Collectors.toList());
+        }).toList();
 
         log.info("Found {} followers for user: {}", result.size(), profileUserId);
-        return result;
+        return PagedResponse.from(followPage, result);
     }
 
     @Override
@@ -398,9 +408,9 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    @Cacheable(value = "userFollowingList", key = "#userId", unless = "#result == null")
-    public List<UserResponseDto> getFollowingList(UUID userId) {
-        log.info("Getting accounts followed by user: {}", userId);
+    @Cacheable(value = "userFollowingList", key = "{#userId, #page, #size}", unless = "#result == null")
+    public PagedResponse<UserResponseDto> getFollowingList(UUID userId, int page, int size) {
+        log.info("Getting accounts followed by user: {}, page: {}, size: {}", userId, page, size);
 
         User currentUser = userRepo.findById(userId)
                 .orElseThrow(() -> {
@@ -408,12 +418,15 @@ public class UserServiceImpl implements UserService {
                     return new RuntimeException("User not found");
                 });
 
-        List<Follow> follows = followRepo.findAllByFollower(currentUser);
-        log.info("Found {} accounts followed by user: {}", follows.size(), currentUser.getHotdropId());
+        Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt"));
+        Page<Follow> followPage = followRepo.findByFollower(currentUser, pageable);
+        log.info("Found {} accounts followed by user: {}", followPage.getNumberOfElements(), currentUser.getHotdropId());
 
-        return follows.stream()
+        List<UserResponseDto> result = followPage.getContent().stream()
                 .map(follow -> userMapper.toBasicResponseDto(follow.getFollowing()))
-                .collect(Collectors.toList());
+                .toList();
+
+        return PagedResponse.from(followPage, result);
     }
     @Cacheable(
             value = "userSearchTop5",

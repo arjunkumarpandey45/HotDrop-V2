@@ -69,17 +69,23 @@ public class UserController {
    }
 
    @GetMapping("/{userId}/get-all-followers")
-   public ResponseEntity<List<FollowerUserDto>> getFollowers(
+   public ResponseEntity<ApiResponse<PagedResponse<FollowerUserDto>>> getFollowers(
            @PathVariable UUID userId,
+           @RequestParam(defaultValue = "0") int page,
+           @RequestParam(defaultValue = "10") int size,
            @AuthenticationPrincipal UserDetails userDetails) {
 
       String currentHotdropId = (userDetails != null) ? userDetails.getUsername() : null;
-      log.info("Getting followers for user ID: {} (viewed by {})", userId, currentHotdropId);
+      log.info("Getting followers for user ID: {}, page: {}, size: {} (viewed by {})", userId, page, size, currentHotdropId);
 
-      List<FollowerUserDto> followers = userService.getUserFollowers(userId, currentHotdropId);
-      log.info("Found {} followers for user ID: {}", followers.size(), userId);
+      PagedResponse<FollowerUserDto> followers = userService.getUserFollowers(userId, currentHotdropId, page, size);
+      log.info("Loaded {} followers for user ID: {}", followers.getContent().size(), userId);
 
-      return ResponseEntity.ok(followers);
+      return ResponseHandler.generateResponse(
+              HttpStatus.OK,
+              "Followers fetched successfully",
+              followers
+      );
    }
    @RateLimited(capacity = 5, refillTokens = 5, refillDurationSeconds = 60)
    @PutMapping(value = "/update-profile/{userIdFromParams}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
@@ -121,11 +127,18 @@ public class UserController {
    }
 
    @GetMapping("/{userId}/get-all-following")
-   public ResponseEntity<List<UserResponseDto>> getFollowing(@PathVariable UUID userId) {
-      log.info("Getting following list for user ID: {}", userId);
-      List<UserResponseDto> followingList = userService.getFollowingList(userId);
-      log.info("Found {} users followed by user ID: {}", followingList.size(), userId);
-      return ResponseEntity.ok(followingList);
+   public ResponseEntity<ApiResponse<PagedResponse<UserResponseDto>>> getFollowing(
+           @PathVariable UUID userId,
+           @RequestParam(defaultValue = "0") int page,
+           @RequestParam(defaultValue = "10") int size) {
+      log.info("Getting following list for user ID: {}, page: {}, size: {}", userId, page, size);
+      PagedResponse<UserResponseDto> followingList = userService.getFollowingList(userId, page, size);
+      log.info("Loaded {} users followed by user ID: {}", followingList.getContent().size(), userId);
+      return ResponseHandler.generateResponse(
+              HttpStatus.OK,
+              "Following list fetched successfully",
+              followingList
+      );
    }
    @RateLimited(capacity = 45, refillTokens = 45, refillDurationSeconds = 60)
    @GetMapping("/suggestions/{query}")

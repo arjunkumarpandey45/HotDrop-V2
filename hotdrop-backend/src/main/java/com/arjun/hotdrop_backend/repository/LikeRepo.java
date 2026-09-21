@@ -3,14 +3,15 @@ package com.arjun.hotdrop_backend.repository;
 import com.arjun.hotdrop_backend.entity.Like;
 import com.arjun.hotdrop_backend.entity.Post;
 import com.arjun.hotdrop_backend.entity.User;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
-
-import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+
 @Repository
 public interface LikeRepo extends JpaRepository<Like, UUID> {
 
@@ -19,7 +20,7 @@ public interface LikeRepo extends JpaRepository<Like, UUID> {
 
     boolean existsByUserIdAndPostId(UUID userId, UUID postId);
 
-    List<Like> findByPost(Post post);
 
-    ;
+
+    Page<Like> findByPost(Post post, Pageable pageable);
 }

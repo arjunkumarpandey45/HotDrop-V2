@@ -33,6 +33,26 @@ import PreviewModal from "../../components/modals/PreviewModal";
 import API from "../../api/Api";
 import dp from "../../assets/dp.jpg";
 import { AnimatePresence } from "framer-motion";
+import LoadMoreTrigger from "../../components/common/LoadMoreTrigger";
+
+const shuffleArray = (array) => {
+  const shuffled = [...array];
+  for (let i = shuffled.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+  }
+  return shuffled;
+};
+
+const shuffleInChunks = (array, chunkSize = 5) => {
+  if (!Array.isArray(array) || array.length === 0) return [];
+  const result = [];
+  for (let i = 0; i < array.length; i += chunkSize) {
+    const chunk = array.slice(i, i + chunkSize);
+    result.push(...shuffleArray(chunk));
+  }
+  return result;
+};
 
 function AllPost() {
   const { user } = useAuthStore();
@@ -96,10 +116,26 @@ function AllPost() {
   const [page, setPage] = useState(0);
   const [hasMore, setHasMore] = useState(true);
 
+  const isFetchingRef = useRef(false);
+  const pageRef = useRef(0);
+  const hasMoreRef = useRef(true);
+
   const fetchGlobalFeed = useCallback(async (pageNum = 0, search = "") => {
+    // If requesting next page and no more items, strictly abort
+    if (pageNum > 0 && !hasMoreRef.current) {
+      isFetchingRef.current = false;
+      return;
+    }
+
+    // Set lock synchronously before any async operations
+    isFetchingRef.current = true;
+
     try {
-      if (pageNum === 0) setLoading(true);
-      else setFetchingMore(true);
+      if (pageNum === 0) {
+        setLoading(true);
+      } else {
+        setFetchingMore(true);
+      }
 
       let fetchedPosts = [];
       let isLast = true;
@@ -116,77 +152,119 @@ function AllPost() {
 
       const payload = res.data?.data || res.data;
       fetchedPosts = payload?.posts || (Array.isArray(payload) ? payload : []);
-      isLast = payload?.isLastPage ?? (payload?.last ?? (fetchedPosts.length < 10));
+      isLast =
+        typeof payload?.isLastPage === "boolean"
+          ? payload.isLastPage
+          : typeof payload?.lastPage === "boolean"
+          ? payload.lastPage
+          : typeof payload?.last === "boolean"
+          ? payload.last
+          : payload?.pageNumber !== undefined && payload?.totalPages !== undefined
+          ? payload.pageNumber >= payload.totalPages - 1
+          : fetchedPosts.length < 10;
 
       if (Array.isArray(fetchedPosts)) {
-        setPosts((prev) => {
-          if (pageNum === 0) return fetchedPosts;
+        const chunkShuffled = shuffleInChunks(fetchedPosts, 5);
 
-          const postMap = new Map(prev.map((p) => [(p.id || p._id), p]));
-          fetchedPosts.forEach((p) => {
+        setPosts((prev) => {
+          if (pageNum === 0) return chunkShuffled;
+
+          const postMap = new Map(prev.map((p) => [p.id || p._id, p]));
+          const uniqueNewPosts = chunkShuffled.filter((p) => {
             const key = p.id || p._id;
-            if (key && !postMap.has(key)) {
-              postMap.set(key, p);
-            }
+            return key && !postMap.has(key);
           });
 
-          return Array.from(postMap.values());
+          return [...prev, ...uniqueNewPosts];
         });
 
-        setHasMore(!isLast);
+        const nextHasMore = !isLast;
+        setHasMore(nextHasMore);
+        hasMoreRef.current = nextHasMore;
+        setPage(pageNum);
+        pageRef.current = pageNum;
       } else {
         if (pageNum === 0) setPosts([]);
         setHasMore(false);
+        hasMoreRef.current = false;
       }
     } catch (error) {
       console.error("Fetch feed error:", error);
-      toast.error("Failed to load project feed.");
+      // Suppress 429 rate-limit toast spam during background pagination
+      if (error?.response?.status !== 429) {
+        toast.error("Failed to load project feed.", {
+          toastId: "feed-fetch-error",
+        });
+      }
     } finally {
       setLoading(false);
       setFetchingMore(false);
+      if (pageNum === 0) {
+        isFetchingRef.current = false;
+      } else {
+        setTimeout(() => {
+          isFetchingRef.current = false;
+        }, 250);
+      }
     }
   }, []);
 
+  const loadNextPage = useCallback(() => {
+    if (isFetchingRef.current || !hasMoreRef.current || loading || fetchingMore) {
+      return;
+    }
+    const nextPage = pageRef.current + 1;
+    fetchGlobalFeed(nextPage, searchQuery);
+  }, [loading, fetchingMore, fetchGlobalFeed, searchQuery]);
+
   useEffect(() => {
+    pageRef.current = 0;
+    hasMoreRef.current = true;
+    setHasMore(true);
+    setPage(0);
+    isFetchingRef.current = false;
     fetchGlobalFeed(0, searchQuery);
   }, [fetchGlobalFeed, searchQuery]);
 
+  const [sentinelNode, setSentinelNode] = useState(null);
+
+  // Observer sentinel for seamless infinite scrolling
   useEffect(() => {
-    const container = feedContainerRef.current;
+    if (!sentinelNode || !hasMore || loading) return;
 
-    const handleScroll = () => {
-      let shouldFetch = false;
-
-      if (container) {
-        const { scrollTop, scrollHeight, clientHeight } = container;
-        if (scrollTop + clientHeight >= scrollHeight - 250) {
-          shouldFetch = true;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0]?.isIntersecting && !isFetchingRef.current && hasMoreRef.current) {
+          loadNextPage();
         }
+      },
+      {
+        root: feedContainerRef.current || null,
+        rootMargin: "350px 0px",
+        threshold: 0,
       }
+    );
 
-      const winScrollHeight = document.documentElement.scrollHeight;
-      const winCurrentHeight = window.innerHeight + document.documentElement.scrollTop;
-      if (winCurrentHeight >= winScrollHeight - 250) {
-        shouldFetch = true;
-      }
-
-      if (shouldFetch && hasMore && !loading && !fetchingMore) {
-        setPage((prevPage) => {
-          const nextPage = prevPage + 1;
-          fetchGlobalFeed(nextPage, searchQuery);
-          return nextPage;
-        });
-      }
-    };
-
-    window.addEventListener("scroll", handleScroll);
-    if (container) container.addEventListener("scroll", handleScroll);
+    observer.observe(sentinelNode);
 
     return () => {
-      window.removeEventListener("scroll", handleScroll);
-      if (container) container.removeEventListener("scroll", handleScroll);
+      observer.disconnect();
     };
-  }, [hasMore, loading, fetchingMore, fetchGlobalFeed, searchQuery]);
+  }, [sentinelNode, hasMore, loading, loadNextPage]);
+
+  // Container onScroll listener
+  const handleContainerScroll = useCallback(
+    (e) => {
+      const el = e.currentTarget;
+      if (!el || isFetchingRef.current || !hasMoreRef.current || fetchingMore || loading) return;
+
+      const { scrollTop, scrollHeight, clientHeight } = el;
+      if (scrollTop + clientHeight >= scrollHeight - 350) {
+        loadNextPage();
+      }
+    },
+    [loadNextPage, fetchingMore, loading]
+  );
 
   const formatTime = (dateString) => {
     if (!dateString) return "just now";
@@ -358,14 +436,18 @@ function AllPost() {
   }
 
   return (
-    <div className="h-[calc(100vh-4.25rem)] bg-[#f8fafc] px-2 sm:px-4 overflow-hidden">
+    <div className="h-[calc(100dvh-9rem)] md:h-[calc(100dvh-4.25rem)] bg-[#f8fafc] px-2 sm:px-4 overflow-hidden">
       <div className="max-w-7xl mx-auto h-full grid grid-cols-1 lg:grid-cols-4 gap-6 lg:gap-8 items-start">
 
         <div className="hidden lg:block h-full overflow-y-auto pt-2 pb-6 pr-1 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
           <Sidebar />
         </div>
 
-        <div className="col-span-1 lg:col-span-2 h-full overflow-y-auto pt-2 pb-6 space-y-6 sm:space-y-8 pr-1 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+        <div 
+          ref={feedContainerRef}
+          onScroll={handleContainerScroll}
+          className="col-span-1 lg:col-span-2 h-full overflow-y-auto pt-2 pb-6 space-y-6 sm:space-y-8 pr-1 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
+        >
 
           <div className="bg-white rounded-3xl p-3 px-3.5 border border-slate-200/80 shadow-sm flex items-center justify-between gap-2.5">
             <div className="flex items-center gap-2 overflow-x-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden py-0.5 flex-1 min-w-0">
@@ -639,23 +721,16 @@ function AllPost() {
             })
           )}
 
-          {fetchingMore && (
-            <div className="py-8 text-center flex flex-col items-center justify-center gap-2">
-              <div className="w-6 h-6 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
-              <span className="font-black text-blue-600 text-[10px] uppercase tracking-widest animate-pulse">
-                Fetching more project...
-              </span>
-            </div>
-          )}
-
-          {!hasMore && posts.length > 0 && (
-            <div className="py-12 text-center text-slate-400">
-              <div className="w-10 h-10 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-2 text-slate-400">
-                <Sparkles size={18} />
-              </div>
-              <p className="text-[10px] font-black uppercase tracking-[0.4em]">You've reached the end of the feed</p>
-            </div>
-          )}
+          <LoadMoreTrigger
+            hasMore={hasMore}
+            loadingMore={fetchingMore}
+            onLoadMore={loadNextPage}
+            sentinelRef={setSentinelNode}
+            mode="both"
+            label="Load More Projects"
+            showEndMessage={posts.length > 0}
+            endMessage="You've reached the end of the feed"
+          />
 
         </div>
 

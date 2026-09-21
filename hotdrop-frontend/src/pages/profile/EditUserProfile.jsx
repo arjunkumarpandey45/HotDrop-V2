@@ -29,6 +29,7 @@ import FollowingModal from "../../components/modals/FollowingModal";
 import ShareProfileModal from "../../components/modals/ShareProfileModal";
 import UserPost from "../post/UserPost";
 import dp from "../../assets/dp.jpg";
+import { mergeDeduplicated } from "../../hooks/usePaginatedFetch";
 
 const Github = ({ size = 13, className = "" }) => (
   <svg
@@ -133,6 +134,9 @@ function EditUserProfile() {
   const [isFollowing, setIsFollowing] = useState(false);
   const [isFollower, setIsFollower] = useState(false);
   const [followLoading, setFollowLoading] = useState(false);
+  const [postsPage, setPostsPage] = useState(0);
+  const [postsHasMore, setPostsHasMore] = useState(false);
+  const [postsLoadingMore, setPostsLoadingMore] = useState(false);
 
   const myUserId = getEntityId(loggedInUser);
   const searchedUserId = getEntityId(searchedUser);
@@ -157,6 +161,44 @@ function EditUserProfile() {
     if (isOwnProfile) {
       setSearchedUser(null);
       setFetchError(null);
+      const myId = getEntityId(loggedInUser);
+      if (myId) {
+        axios
+          .get(`/posts/get-user-post/${myId}`, {
+            params: { page: 0, size: 10 },
+          })
+          .then((postsRes) => {
+            const postsPayload =
+              postsRes.data?.data || postsRes.data?.posts || postsRes.data;
+            const fetchedPosts = Array.isArray(postsPayload)
+              ? postsPayload
+              : Array.isArray(postsPayload?.content)
+              ? postsPayload.content
+              : Array.isArray(postsPayload?.posts)
+              ? postsPayload.posts
+              : [];
+
+            const total = postsPayload?.totalElements ?? fetchedPosts.length;
+            const isLast =
+              typeof postsPayload?.isLastPage === "boolean"
+                ? postsPayload.isLastPage
+                : typeof postsPayload?.last === "boolean"
+                ? postsPayload.last
+                : fetchedPosts.length < 10;
+
+            useAuthStore.setState((state) => ({
+              user: state.user
+                ? { ...state.user, posts: fetchedPosts, postCount: total }
+                : null,
+              userPosts: fetchedPosts,
+            }));
+            setPostsPage(0);
+            setPostsHasMore(!isLast);
+          })
+          .catch((postsErr) => {
+            console.warn("Failed to fetch my paginated posts:", postsErr);
+          });
+      }
       return;
     }
 
@@ -194,25 +236,37 @@ function EditUserProfile() {
         const targetUserId = getEntityId(userData);
         if (targetUserId) {
           try {
-            const postsRes = await axios.get(`/posts/get-user-post/${targetUserId}`);
+            const postsRes = await axios.get(`/posts/get-user-post/${targetUserId}`, {
+              params: { page: 0, size: 10 },
+            });
             const postsPayload =
               postsRes.data?.data || postsRes.data?.posts || postsRes.data;
             const fetchedPosts = Array.isArray(postsPayload)
               ? postsPayload
+              : Array.isArray(postsPayload?.content)
+              ? postsPayload.content
               : Array.isArray(postsPayload?.posts)
               ? postsPayload.posts
-              : null;
+              : [];
 
-            if (fetchedPosts) {
-              userData = {
-                ...userData,
-                posts: fetchedPosts,
-                postCount: fetchedPosts.length,
-              };
-            }
+            const total = postsPayload?.totalElements ?? fetchedPosts.length;
+            const isLast =
+              typeof postsPayload?.isLastPage === "boolean"
+                ? postsPayload.isLastPage
+                : typeof postsPayload?.last === "boolean"
+                ? postsPayload.last
+                : fetchedPosts.length < 10;
+
+            userData = {
+              ...userData,
+              posts: fetchedPosts,
+              postCount: total,
+            };
+            setPostsPage(0);
+            setPostsHasMore(!isLast);
           } catch (postsErr) {
             console.warn(
-              `Failed to fetch posts from /posts/user/${targetUserId}:`,
+              `Failed to fetch posts from /posts/get-user-post/${targetUserId}:`,
               postsErr
             );
           }
@@ -226,10 +280,13 @@ function EditUserProfile() {
         const myUserId = getEntityId(loggedInUser);
         if (myUserId && targetUserId) {
           try {
-            const followingRes = await axios.get(`/users/${myUserId}/get-all-following`);
-            const followingList = Array.isArray(followingRes.data)
-              ? followingRes.data
-              : followingRes.data?.data || followingRes.data?.following || [];
+            const followingRes = await axios.get(`/users/${myUserId}/get-all-following`, {
+              params: { page: 0, size: 100 },
+            });
+            const followingPayload = followingRes.data?.data || followingRes.data;
+            const followingList = Array.isArray(followingPayload)
+              ? followingPayload
+              : followingPayload?.content || followingPayload?.following || [];
 
             const isFoundInFollowing = followingList.some((u) => {
               const uId = getEntityId(u);
@@ -248,10 +305,13 @@ function EditUserProfile() {
           }
 
           try {
-            const followersRes = await axios.get(`/users/${myUserId}/get-all-followers`);
-            const followersList = Array.isArray(followersRes.data)
-              ? followersRes.data
-              : followersRes.data?.data || followersRes.data?.followers || [];
+            const followersRes = await axios.get(`/users/${myUserId}/get-all-followers`, {
+              params: { page: 0, size: 100 },
+            });
+            const followersPayload = followersRes.data?.data || followersRes.data;
+            const followersList = Array.isArray(followersPayload)
+              ? followersPayload
+              : followersPayload?.content || followersPayload?.followers || [];
 
             const isFoundInFollowers = followersList.some((u) => {
               const uId = getEntityId(u);
@@ -393,6 +453,49 @@ function EditUserProfile() {
       }
     } finally {
       setFollowLoading(false);
+    }
+  };
+
+  const handleLoadMorePosts = async () => {
+    const targetUserId = getEntityId(displayUser);
+    if (!targetUserId || postsLoadingMore || !postsHasMore) return;
+
+    try {
+      setPostsLoadingMore(true);
+      const nextPage = postsPage + 1;
+      const res = await axios.get(`/posts/get-user-post/${targetUserId}`, {
+        params: { page: nextPage, size: 10 },
+      });
+      const postsPayload = res.data?.data || res.data;
+      const incomingPosts = Array.isArray(postsPayload)
+        ? postsPayload
+        : postsPayload?.content || postsPayload?.posts || [];
+
+      const isLast =
+        typeof postsPayload?.isLastPage === "boolean"
+          ? postsPayload.isLastPage
+          : typeof postsPayload?.last === "boolean"
+          ? postsPayload.last
+          : incomingPosts.length < 10;
+
+      const existingPosts = displayUser?.posts || [];
+      const updatedPosts = mergeDeduplicated(existingPosts, incomingPosts);
+
+      if (isOwnProfile) {
+        useAuthStore.setState((state) => ({
+          user: state.user ? { ...state.user, posts: updatedPosts } : null,
+          userPosts: updatedPosts,
+        }));
+      } else {
+        setSearchedUser((prev) => (prev ? { ...prev, posts: updatedPosts } : prev));
+      }
+
+      setPostsPage(nextPage);
+      setPostsHasMore(!isLast);
+    } catch (err) {
+      console.error("Failed to load more posts:", err);
+    } finally {
+      setPostsLoadingMore(false);
     }
   };
 
@@ -787,6 +890,9 @@ function EditUserProfile() {
           postsOverride={displayUser?.posts}
           hideOptions={!isOwnProfile}
           ownerOverride={displayUser}
+          hasMore={postsHasMore}
+          loadingMore={postsLoadingMore}
+          onLoadMore={handleLoadMorePosts}
         />
       </div>
 

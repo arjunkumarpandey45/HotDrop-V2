@@ -227,7 +227,7 @@ public class PostServiceImpl implements PostService {
     @Override
     @Transactional
     @CacheEvict(
-            value = {"compiledFeed", "postDetails", "postByShareUrl", "userPostsPaged"},
+            value = {"compiledFeed", "postDetails", "postByShareUrl", "userPostsPaged", "postComments", "postLikedUsers"},
             allEntries = true
     )
     public void deleteExistingPost(UUID postId, String currentHotdropId) {
@@ -357,7 +357,7 @@ public class PostServiceImpl implements PostService {
     @Override
     @Transactional
     @CacheEvict(
-            value = {"compiledFeed", "postDetails", "postByShareUrl", "userPostsPaged"},
+            value = {"compiledFeed", "postDetails", "postByShareUrl", "userPostsPaged", "postLikedUsers"},
             allEntries = true
     )
     public PostResponseDto toggleLike(UUID postId, String hotdropId) {
@@ -498,7 +498,7 @@ public class PostServiceImpl implements PostService {
             key = "{#userId, #page, #size, #currentHotdropId}",
             unless = "#result == null"
     )
-    public PostListResponseDto getPostsByUserIdPaged(UUID userId, int page, int size, String currentHotdropId) {
+    public PagedResponse<PostResponseDto> getPostsByUserIdPaged(UUID userId, int page, int size, String currentHotdropId) {
         log.info("Getting posts for user {} with page {} and size {}", userId, page, size);
 
         if (!userRepo.existsById(userId)) {
@@ -506,7 +506,7 @@ public class PostServiceImpl implements PostService {
             throw new RuntimeException("Target user not found");
         }
 
-        Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
+        Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt"));
         Page<Post> postPage = postRepo.findByUserId(userId, pageable);
 
         List<PostResponseDto> postResponseDtos = postPage.getContent().stream()
@@ -515,14 +515,7 @@ public class PostServiceImpl implements PostService {
 
         log.info("Found {} posts for user: {}", postResponseDtos.size(), userId);
 
-        return PostListResponseDto.builder()
-                .posts(postResponseDtos)
-                .pageNumber(postPage.getNumber())
-                .pageSize(postPage.getSize())
-                .totalElements(postPage.getTotalElements())
-                .totalPages(postPage.getTotalPages())
-                .isLastPage(postPage.isLast())
-                .build();
+        return PagedResponse.from(postPage, postResponseDtos);
     }
 
     @Override
@@ -557,11 +550,11 @@ public class PostServiceImpl implements PostService {
     @Transactional(readOnly = true)
     @Cacheable(
             value = "postComments",
-            key = "#postId",
+            key = "{#postId, #page, #size}",
             unless = "#result == null"
     )
-    public List<CommentResponseDto> getCommentsByPostId(UUID postId) {
-        log.info("Getting comments for post: {}", postId);
+    public PagedResponse<CommentResponseDto> getCommentsByPostId(UUID postId, int page, int size) {
+        log.info("Getting comments for post: {}, page: {}, size: {}", postId, page, size);
 
         postRepo.findById(postId)
                 .orElseThrow(() -> {
@@ -569,10 +562,11 @@ public class PostServiceImpl implements PostService {
                     return new RuntimeException("Post not found with ID: " + postId);
                 });
 
-        List<Comment> comments = commentRepo.findByPostIdOrderByCreatedAtDesc(postId);
-        log.info("Found {} comments for post: {}", comments.size(), postId);
+        Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt"));
+        Page<Comment> commentPage = commentRepo.findByPostId(postId, pageable);
+        log.info("Found {} comments for post: {}", commentPage.getNumberOfElements(), postId);
 
-        return comments.stream()
+        List<CommentResponseDto> commentDtos = commentPage.getContent().stream()
                 .map(comment -> {
                     User commenter = comment.getUser();
                     var userSummary = PostResponseDto.UserSummaryDto.builder()
@@ -588,12 +582,20 @@ public class PostServiceImpl implements PostService {
                             .user(userSummary)
                             .build();
                 })
-                .collect(Collectors.toList());
+                .toList();
+
+        return PagedResponse.from(commentPage, commentDtos);
     }
 
+    @Override
     @Transactional(readOnly = true)
-    public List<PostResponseDto.UserSummaryDto> getUsersWhoLikedPost(UUID postId) {
-        log.info("Getting users who liked post: {}", postId);
+    @Cacheable(
+            value = "postLikedUsers",
+            key = "{#postId, #page, #size}",
+            unless = "#result == null"
+    )
+    public PagedResponse<PostResponseDto.UserSummaryDto> getUsersWhoLikedPost(UUID postId, int page, int size) {
+        log.info("Getting users who liked post: {}, page: {}, size: {}", postId, page, size);
 
         Post post = postRepo.findById(postId)
                 .orElseThrow(() -> {
@@ -601,10 +603,11 @@ public class PostServiceImpl implements PostService {
                     return new RuntimeException("Post not found with ID: " + postId);
                 });
 
-        List<Like> likes = likeRepo.findByPost(post);
-        log.info("Found {} users who liked post: {}", likes.size(), postId);
+        Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "id"));
+        Page<Like> likePage = likeRepo.findByPost(post, pageable);
+        log.info("Found {} users who liked post: {}", likePage.getNumberOfElements(), postId);
 
-        return likes.stream()
+        List<PostResponseDto.UserSummaryDto> likedUsers = likePage.getContent().stream()
                 .map(like -> {
                     User user = like.getUser();
                     return PostResponseDto.UserSummaryDto.builder()
@@ -616,5 +619,7 @@ public class PostServiceImpl implements PostService {
                             .build();
                 })
                 .toList();
+
+        return PagedResponse.from(likePage, likedUsers);
     }
 }

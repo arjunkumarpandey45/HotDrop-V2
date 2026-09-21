@@ -29,8 +29,16 @@ import { AnimatePresence, motion } from "framer-motion";
 import { Link, useNavigate } from "react-router-dom";
 import dp from "../../assets/dp.jpg";
 import { useEffect, useState, useRef } from "react";
+import LoadMoreTrigger from "../../components/common/LoadMoreTrigger";
 
-function UserPost({ postsOverride, hideOptions, ownerOverride }) {
+function UserPost({
+  postsOverride,
+  hideOptions,
+  ownerOverride,
+  hasMore = false,
+  loadingMore = false,
+  onLoadMore,
+}) {
   const { user, userPosts } = useAuthStore();
   const navigate = useNavigate();
 
@@ -717,6 +725,17 @@ function UserPost({ postsOverride, hideOptions, ownerOverride }) {
           );
         })}
       </div>
+      {/* Paginated Load More Trigger */}
+      {(hasMore || loadingMore) && (
+        <div className="mt-6 flex justify-center w-full">
+          <LoadMoreTrigger
+            hasMore={hasMore}
+            loadingMore={loadingMore}
+            onLoadMore={onLoadMore}
+            label="Load More Projects"
+          />
+        </div>
+      )}
 
       <AnimatePresence>
         {hoveredPost && (

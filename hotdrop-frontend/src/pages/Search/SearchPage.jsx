@@ -35,6 +35,7 @@ import SearchModal from "../../components/modals/SearchModal";
 import API from "../../api/Api";
 import dp from "../../assets/dp.jpg";
 import { AnimatePresence } from "framer-motion";
+import LoadMoreTrigger from "../../components/common/LoadMoreTrigger";
 
 function SearchPage() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -96,6 +97,13 @@ function SearchPage() {
   const [page, setPage] = useState(0);
   const [hasMore, setHasMore] = useState(true);
 
+  const searchContainerRef = useRef(null);
+  const isFetchingRef = useRef(false);
+  const pageRef = useRef(0);
+  const hasMoreRef = useRef(true);
+  const scrollThrottleTimerRef = useRef(null);
+  const debounceUnlockTimerRef = useRef(null);
+
   useEffect(() => {
     setSearchInput(query);
   }, [query]);
@@ -105,8 +113,19 @@ function SearchPage() {
       setPosts([]);
       setLoading(false);
       setHasMore(false);
+      hasMoreRef.current = false;
+      isFetchingRef.current = false;
       return;
     }
+
+    // If requesting next page and no more items, strictly abort
+    if (pageNum > 0 && !hasMoreRef.current) {
+      isFetchingRef.current = false;
+      return;
+    }
+
+    // Set lock synchronously before any async operations
+    isFetchingRef.current = true;
 
     try {
       if (pageNum === 0) setLoading(true);
@@ -116,7 +135,6 @@ function SearchPage() {
       let isLast = true;
 
       try {
-
         const res = await API.get("/posts/feed", {
           params: {
             page: pageNum,
@@ -129,7 +147,16 @@ function SearchPage() {
 
         const payload = res.data?.data || res.data;
         fetchedPosts = payload?.posts || (Array.isArray(payload) ? payload : []);
-        isLast = payload?.isLastPage ?? (payload?.last ?? (fetchedPosts.length < 10));
+        isLast =
+          typeof payload?.isLastPage === "boolean"
+            ? payload.isLastPage
+            : typeof payload?.lastPage === "boolean"
+            ? payload.lastPage
+            : typeof payload?.last === "boolean"
+            ? payload.last
+            : payload?.pageNumber !== undefined && payload?.totalPages !== undefined
+            ? payload.pageNumber >= payload.totalPages - 1
+            : fetchedPosts.length < 10;
       } catch (feedErr) {
         console.warn("Fallback to /post/getallposts for search...", feedErr?.message);
         const fallbackRes = await API.get(`/post/getallposts?page=${pageNum + 1}&limit=10`);
@@ -151,7 +178,7 @@ function SearchPage() {
         setPosts((prev) => {
           if (pageNum === 0) return fetchedPosts;
 
-          const postMap = new Map(prev.map((p) => [(p.id || p._id), p]));
+          const postMap = new Map(prev.map((p) => [p.id || p._id, p]));
           fetchedPosts.forEach((p) => {
             const key = p.id || p._id;
             if (key && !postMap.has(key)) {
@@ -162,42 +189,105 @@ function SearchPage() {
           return Array.from(postMap.values());
         });
 
-        setHasMore(!isLast);
+        const nextHasMore = !isLast;
+        setHasMore(nextHasMore);
+        hasMoreRef.current = nextHasMore;
+        setPage(pageNum);
+        pageRef.current = pageNum;
       } else {
         if (pageNum === 0) setPosts([]);
         setHasMore(false);
+        hasMoreRef.current = false;
       }
     } catch (error) {
       console.error("Search fetch error:", error);
-      toast.error("Failed to load search results.");
+      // Suppress 429 rate-limit toast spam during background pagination
+      if (error?.response?.status !== 429) {
+        toast.error("Failed to load search results.", {
+          toastId: "search-fetch-error",
+        });
+      }
     } finally {
       setLoading(false);
       setFetchingMore(false);
+      isFetchingRef.current = false;
     }
   }, []);
 
+  const loadNextPage = useCallback(() => {
+    if (isFetchingRef.current || !hasMoreRef.current || loading || fetchingMore || !query) {
+      return;
+    }
+    // Lock synchronously immediately
+    isFetchingRef.current = true;
+    const nextPage = pageRef.current + 1;
+    fetchSearchResults(nextPage, query);
+  }, [loading, fetchingMore, fetchSearchResults, query]);
+
   useEffect(() => {
+    pageRef.current = 0;
+    hasMoreRef.current = true;
+    setHasMore(true);
     setPage(0);
+    isFetchingRef.current = false;
     fetchSearchResults(0, query);
   }, [query, fetchSearchResults]);
 
-  useEffect(() => {
-    const handleScroll = () => {
-      const scrollHeight = document.documentElement.scrollHeight;
-      const currentHeight = window.innerHeight + document.documentElement.scrollTop;
+  const [sentinelNode, setSentinelNode] = useState(null);
 
-      if (currentHeight >= scrollHeight - 200 && hasMore && !loading && !fetchingMore && query) {
-        setPage((prevPage) => {
-          const nextPage = prevPage + 1;
-          fetchSearchResults(nextPage, query);
-          return nextPage;
-        });
+  // Observer sentinel for seamless infinite scrolling
+  useEffect(() => {
+    if (!sentinelNode || !hasMore || loading || fetchingMore) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0]?.isIntersecting && !isFetchingRef.current && hasMoreRef.current) {
+          loadNextPage();
+        }
+      },
+      {
+        root: searchContainerRef.current || null,
+        rootMargin: "350px 0px",
+        threshold: 0,
+      }
+    );
+
+    observer.observe(sentinelNode);
+
+    return () => {
+      observer.disconnect();
+    };
+  }, [sentinelNode, hasMore, loading, fetchingMore, loadNextPage]);
+
+  // Container onScroll listener
+  const handleContainerScroll = useCallback(
+    (e) => {
+      const el = e.currentTarget;
+      if (!el || isFetchingRef.current || !hasMoreRef.current || fetchingMore || loading) return;
+
+      const { scrollTop, scrollHeight, clientHeight } = el;
+      if (scrollTop + clientHeight >= scrollHeight - 350) {
+        loadNextPage();
+      }
+    },
+    [loadNextPage, fetchingMore, loading]
+  );
+
+  // Window onScroll listener as fallback for window/body-level scrolling
+  useEffect(() => {
+    const handleWindowScroll = () => {
+      if (isFetchingRef.current || !hasMoreRef.current || fetchingMore || loading || !query) return;
+      const scrollY = window.scrollY || document.documentElement.scrollTop;
+      const windowHeight = window.innerHeight;
+      const docHeight = document.documentElement.scrollHeight;
+      if (scrollY + windowHeight >= docHeight - 350) {
+        loadNextPage();
       }
     };
 
-    window.addEventListener("scroll", handleScroll);
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, [hasMore, loading, fetchingMore, fetchSearchResults, query]);
+    window.addEventListener("scroll", handleWindowScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleWindowScroll);
+  }, [loadNextPage, fetchingMore, loading, query]);
 
   const handleSearchSubmit = (e) => {
     e.preventDefault();
@@ -338,14 +428,18 @@ function SearchPage() {
   const popularTags = ["React", "NextJS", "TailwindCSS", "NodeJS", "FullStack", "AI"];
 
   return (
-    <div className="h-[calc(100vh-4.25rem)] bg-[#f8fafc] px-2 sm:px-4 overflow-hidden">
+    <div className="h-[calc(100dvh-9rem)] md:h-[calc(100dvh-4.25rem)] bg-[#f8fafc] px-2 sm:px-4 overflow-hidden">
       <div className="max-w-7xl mx-auto h-full grid grid-cols-1 lg:grid-cols-4 gap-6 lg:gap-8 items-start">
 
         <div className="hidden lg:block h-full overflow-y-auto pt-2 pb-6 pr-1 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
           <Sidebar />
         </div>
 
-        <div className="col-span-1 lg:col-span-2 h-full overflow-y-auto pt-2 pb-6 space-y-6 sm:space-y-8 pr-1 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+        <div 
+          ref={searchContainerRef}
+          onScroll={handleContainerScroll}
+          className="col-span-1 lg:col-span-2 h-full overflow-y-auto pt-2 pb-6 space-y-6 sm:space-y-8 pr-1 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
+        >
 
           <div className="bg-white rounded-3xl p-4 sm:p-6 border border-slate-200/80 shadow-sm space-y-4">
             <div className="flex items-center justify-between">
@@ -692,14 +786,16 @@ function SearchPage() {
             })
           )}
 
-          {fetchingMore && (
-            <div className="py-8 text-center flex flex-col items-center justify-center gap-2">
-              <div className="w-6 h-6 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
-              <span className="font-black text-blue-600 text-[10px] uppercase tracking-widest animate-pulse">
-                Fetching more project...
-              </span>
-            </div>
-          )}
+          <LoadMoreTrigger
+            hasMore={hasMore}
+            loadingMore={fetchingMore}
+            onLoadMore={loadNextPage}
+            sentinelRef={setSentinelNode}
+            mode="auto"
+            label="Load More Projects"
+            showEndMessage={posts.length > 0}
+            endMessage="You've reached the end of search results"
+          />
 
         </div>
 

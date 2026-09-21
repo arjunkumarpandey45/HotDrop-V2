@@ -194,7 +194,7 @@ public class PostController {
     }
 
     @GetMapping("/get-user-post/{userId}")
-    public ResponseEntity<ApiResponse<PostListResponseDto>> getUserPosts(
+    public ResponseEntity<ApiResponse<PagedResponse<PostResponseDto>>> getUserPosts(
             @PathVariable UUID userId,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
@@ -203,8 +203,8 @@ public class PostController {
         String currentHotdropId = (userDetails != null) ? userDetails.getUsername() : null;
         log.info("Getting posts for user ID: {}, page: {}, size: {}", userId, page, size);
 
-        PostListResponseDto paginatedPosts = postService.getPostsByUserIdPaged(userId, page, size, currentHotdropId);
-        log.info("Loaded {} posts for user ID: {}", paginatedPosts.getPosts().size(), userId);
+        PagedResponse<PostResponseDto> paginatedPosts = postService.getPostsByUserIdPaged(userId, page, size, currentHotdropId);
+        log.info("Loaded {} posts for user ID: {}", paginatedPosts.getContent().size(), userId);
 
         return ResponseHandler.generateResponse(
                 HttpStatus.OK,
@@ -227,10 +227,13 @@ public class PostController {
     }
 
     @GetMapping("/get-comment-by-post-id/{postId}")
-    public ResponseEntity<ApiResponse<List<CommentResponseDto>>> getCommentsByPostId(@PathVariable UUID postId) {
-        log.info("Getting comments for post ID: {}", postId);
-        List<CommentResponseDto> comments = postService.getCommentsByPostId(postId);
-        log.info("Loaded {} comments for post ID: {}", comments.size(), postId);
+    public ResponseEntity<ApiResponse<PagedResponse<CommentResponseDto>>> getCommentsByPostId(
+            @PathVariable UUID postId,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+        log.info("Getting comments for post ID: {}, page: {}, size: {}", postId, page, size);
+        PagedResponse<CommentResponseDto> comments = postService.getCommentsByPostId(postId, page, size);
+        log.info("Loaded {} comments for post ID: {}", comments.getContent().size(), postId);
 
         return ResponseHandler.generateResponse(
                 HttpStatus.OK,
@@ -240,10 +243,13 @@ public class PostController {
     }
 
     @GetMapping("/{postId}/get-who-likes-post")
-    public ResponseEntity<ApiResponse<List<PostResponseDto.UserSummaryDto>>> getUsersWhoLikedPost(@PathVariable UUID postId) {
-        log.info("Getting users who liked post ID: {}", postId);
-        List<PostResponseDto.UserSummaryDto> likedUsers = postService.getUsersWhoLikedPost(postId);
-        log.info("Loaded {} users who liked post ID: {}", likedUsers.size(), postId);
+    public ResponseEntity<ApiResponse<PagedResponse<PostResponseDto.UserSummaryDto>>> getUsersWhoLikedPost(
+            @PathVariable UUID postId,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+        log.info("Getting users who liked post ID: {}, page: {}, size: {}", postId, page, size);
+        PagedResponse<PostResponseDto.UserSummaryDto> likedUsers = postService.getUsersWhoLikedPost(postId, page, size);
+        log.info("Loaded {} users who liked post ID: {}", likedUsers.getContent().size(), postId);
 
         return ResponseHandler.generateResponse(
                 HttpStatus.OK,

@@ -5,6 +5,8 @@ import { useAuthStore } from "../../store/useAuthStore";
 import { showCommentDeletedToast, showErrorToast } from "../../toast/Toast";
 import { useNavigate } from "react-router-dom";
 import dp from "../../assets/dp.jpg";
+import usePaginatedFetch, { mergeDeduplicated } from "../../hooks/usePaginatedFetch";
+import LoadMoreTrigger from "../common/LoadMoreTrigger";
 
 function CommentModal({
   post,
@@ -20,51 +22,44 @@ function CommentModal({
   const [deleteConfirm, setDeleteConfirm] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
-  const [loadingComments, setLoadingComments] = useState(true);
-  const [localComments, setLocalComments] = useState(Array.isArray(post?.comments) ? post.comments : []);
 
   const postId = post?.id || post?._id;
 
+  // Paginated comments fetch
+  const {
+    items: localComments,
+    setItems: setLocalComments,
+    loading: loadingComments,
+    loadingMore,
+    hasMore,
+    totalElements,
+    loadMore,
+    sentinelRef,
+    handleScroll,
+  } = usePaginatedFetch({
+    url: postId ? `/posts/get-comment-by-post-id/${postId}` : null,
+    pageSize: 10,
+    enabled: Boolean(postId),
+    initialItems: Array.isArray(post?.comments) ? post.comments : [],
+    onSuccess: (newItems, parsed) => {
+      if (setCommentPost) {
+        setCommentPost((prev) => {
+          if (!prev) return post;
+          return {
+            ...prev,
+            commentCount: parsed.totalElements,
+          };
+        });
+      }
+    },
+  });
+
+  // Keep synced if parent post comments change (e.g., initial load or comment added)
   useEffect(() => {
-    if (Array.isArray(post?.comments)) {
-      setLocalComments(post.comments);
+    if (Array.isArray(post?.comments) && post.comments.length > 0) {
+      setLocalComments((prev) => mergeDeduplicated(post.comments, prev));
     }
-  }, [post?.comments]);
-
-  useEffect(() => {
-    const fetchComments = async () => {
-      if (!postId) {
-        setLoadingComments(false);
-        return;
-      }
-      try {
-        setLoadingComments(true);
-
-        const res = await API.get(`/posts/get-comment-by-post-id/${postId}`);
-        const commentsList = res.data?.data;
-
-        if (Array.isArray(commentsList)) {
-          setLocalComments(commentsList);
-          if (setCommentPost) {
-            setCommentPost((prev) => {
-              if (!prev) return post;
-              return {
-                ...prev,
-                comments: commentsList,
-                commentCount: commentsList.length,
-              };
-            });
-          }
-        }
-      } catch (err) {
-        console.error("Fetch comments error:", err?.message);
-      } finally {
-        setLoadingComments(false);
-      }
-    };
-
-    fetchComments();
-  }, [postId]);
+  }, [post?.comments, setLocalComments]);
 
   const handleDeleteComment = async (commentId) => {
     if (isDeleting) return;
@@ -90,7 +85,6 @@ function CommentModal({
     }
 
     try {
-
       await API.delete(`/posts/delete-comment/${commentId}`);
       showCommentDeletedToast("Comment deleted!");
     } catch (error) {
@@ -134,14 +128,13 @@ function CommentModal({
     }
   };
 
-  const totalCount = localComments.length;
+  const totalCount = totalElements || localComments.length;
 
   return (
     <div 
       className="fixed inset-0 bg-slate-950/70 backdrop-blur-md z-[1500] flex items-center justify-center p-4 animate-in fade-in duration-200 select-none"
       onClick={onClose}
     >
-
       {deleteConfirm && (
         <div className="fixed inset-0 z-[1600] flex items-center justify-center p-4">
           <div
@@ -180,7 +173,6 @@ function CommentModal({
         className="bg-white w-full max-w-md h-[520px] rounded-3xl shadow-2xl flex flex-col overflow-hidden border border-slate-100 animate-in zoom-in-95 duration-200"
         onClick={(e) => e.stopPropagation()}
       >
-
         <div className="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
           <div className="flex items-center gap-2.5">
             <div className="p-2 bg-blue-50 rounded-xl text-blue-600">
@@ -198,16 +190,18 @@ function CommentModal({
           </button>
         </div>
 
-        <div className="flex-1 overflow-y-auto px-6 py-4 space-y-4">
+        <div
+          className="flex-1 overflow-y-auto px-6 py-4 space-y-4"
+          onScroll={(e) => handleScroll(e.currentTarget)}
+        >
           {loadingComments && localComments.length === 0 ? (
             <div className="h-full flex flex-col items-center justify-center text-blue-600 py-12">
               <Loader2 size={32} className="animate-spin mb-2" />
               <span className="text-xs font-bold uppercase tracking-wider text-slate-400">Loading comments...</span>
             </div>
           ) : localComments.length > 0 ? (
-            [...localComments]
-              .sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0))
-              .map((c, i) => {
+            <>
+              {localComments.map((c, i) => {
                 const cId = c.id || c._id || i;
                 const author = c.user || c.creator || {};
                 const authorAvatar = author.profilePicture || author.profileImageUrl || dp;
@@ -266,7 +260,6 @@ function CommentModal({
                               title="Delete comment"
                             >
                               <Trash2 size={13} />
-
                             </button>
                           )}
                         </div>
@@ -275,7 +268,17 @@ function CommentModal({
                     </div>
                   </div>
                 );
-              })
+              })}
+
+              {/* Infinite scroll sentinel & load more button */}
+              <LoadMoreTrigger
+                hasMore={hasMore}
+                loadingMore={loadingMore}
+                onLoadMore={loadMore}
+                sentinelRef={sentinelRef}
+                label="Load Older Comments"
+              />
+            </>
           ) : (
             <div className="h-full flex flex-col items-center justify-center py-12 text-slate-400 text-xs font-semibold">
               No comments yet. Be the first to comment!

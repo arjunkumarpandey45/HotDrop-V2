@@ -15,8 +15,8 @@ public interface PostService {
     PostResponseDto toggleLike(UUID postId, String hotdropId);
     CommentResponseDto addCommentToPost(UUID postId, String hotdropId, String text);
     void deleteComment(UUID commentId, String hotdropId);
-    PostListResponseDto getPostsByUserIdPaged(UUID userId, int page, int size, String currentHotdropId);
+    PagedResponse<PostResponseDto> getPostsByUserIdPaged(UUID userId, int page, int size, String currentHotdropId);
     PostResponseDto getPostByShareUrl(String shareUrl, String hotdropId);
-    List<CommentResponseDto> getCommentsByPostId(UUID postId);
-    List<PostResponseDto.UserSummaryDto> getUsersWhoLikedPost(UUID postId);
+    PagedResponse<CommentResponseDto> getCommentsByPostId(UUID postId, int page, int size);
+    PagedResponse<PostResponseDto.UserSummaryDto> getUsersWhoLikedPost(UUID postId, int page, int size);
 }
