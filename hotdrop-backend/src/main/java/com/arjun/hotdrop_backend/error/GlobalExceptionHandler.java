@@ -5,44 +5,73 @@ import lombok.extern.slf4j.Slf4j;
 import org.slf4j.MDC;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
-import java.nio.file.AccessDeniedException;
 import java.time.LocalDateTime;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 @Slf4j
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
-    @ExceptionHandler(RuntimeException.class)
-    public ResponseEntity<ApiErrorResponseDto> handleRuntimeException(
-            RuntimeException ex, HttpServletRequest request) {
+    private String getRequestId() {
+        String reqId = MDC.get("requestId");
+        return (reqId != null && !reqId.isBlank()) ? reqId : null;
+    }
 
-        log.error("Request failed at [{}]: {}", request.getRequestURI(), ex.getMessage());
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    public ResponseEntity<ApiErrorResponseDto> handleValidationExceptions(
+            MethodArgumentNotValidException ex, HttpServletRequest request) {
+
+        Map<String, String> errors = new LinkedHashMap<>();
+        for (FieldError fieldError : ex.getBindingResult().getFieldErrors()) {
+            errors.putIfAbsent(fieldError.getField(), fieldError.getDefaultMessage());
+        }
+
+        log.warn("Validation constraints breached at [{}] with {} errors", request.getRequestURI(), errors.size());
 
         ApiErrorResponseDto errorResponse = ApiErrorResponseDto.builder()
                 .status(HttpStatus.BAD_REQUEST.value())
-                .error("Bad Request / Business Logic Error")
+                .error("Validation Failed")
+                .message("Input validation constraints breached.")
+                .timestamp(LocalDateTime.now())
+                .path(request.getRequestURI())
+                .requestId(getRequestId())
+                .validationErrors(errors)
+                .build();
+
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
+    }
+
+    @ExceptionHandler(RateLimitExceededException.class)
+    public ResponseEntity<ApiErrorResponseDto> handleRateLimitExceeded(
+            RateLimitExceededException ex, HttpServletRequest request) {
+
+        log.warn("Rate limit breached at [{}]: {}", request.getRequestURI(), ex.getMessage());
+
+        ApiErrorResponseDto errorResponse = ApiErrorResponseDto.builder()
+                .status(HttpStatus.TOO_MANY_REQUESTS.value())
+                .error(HttpStatus.TOO_MANY_REQUESTS.getReasonPhrase())
                 .message(ex.getMessage())
                 .timestamp(LocalDateTime.now())
                 .path(request.getRequestURI())
+                .requestId(getRequestId())
                 .build();
 
-        return new ResponseEntity<>(errorResponse, HttpStatus.BAD_REQUEST);
+        return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS).body(errorResponse);
     }
 
     @ExceptionHandler(BadCredentialsException.class)
     public ResponseEntity<ApiErrorResponseDto> handleBadCredentials(
             BadCredentialsException ex, HttpServletRequest request) {
 
-        log.error("Login failed with invalid credentials at [{}]: {}", request.getRequestURI(), ex.getMessage());
+        log.warn("Authentication failed at [{}]: {}", request.getRequestURI(), ex.getMessage());
 
         ApiErrorResponseDto errorResponse = ApiErrorResponseDto.builder()
                 .status(HttpStatus.UNAUTHORIZED.value())
@@ -50,85 +79,80 @@ public class GlobalExceptionHandler {
                 .message("Invalid hotdropId/email or password credentials.")
                 .timestamp(LocalDateTime.now())
                 .path(request.getRequestURI())
+                .requestId(getRequestId())
                 .build();
 
-        return new ResponseEntity<>(errorResponse, HttpStatus.UNAUTHORIZED);
-    }
-
-    @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<ApiErrorResponseDto> handleValidationExceptions(
-            MethodArgumentNotValidException ex, HttpServletRequest request) {
-
-        String errorMessage = ex.getBindingResult()
-                .getFieldErrors()
-                .stream()
-                .map(FieldError::getDefaultMessage)
-                .collect(Collectors.joining(", "));
-
-        log.error("Input validation failed at [{}]: {}", request.getRequestURI(), errorMessage);
-
-        ApiErrorResponseDto errorResponse = ApiErrorResponseDto.builder()
-                .status(HttpStatus.BAD_REQUEST.value())
-                .error("Validation Failed")
-                .message(errorMessage)
-                .timestamp(LocalDateTime.now()) 
-                .path(request.getRequestURI())
-                .build();
-
-        return new ResponseEntity<>(errorResponse, HttpStatus.BAD_REQUEST);
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(errorResponse);
     }
 
     @ExceptionHandler(AccessDeniedException.class)
     public ResponseEntity<ApiErrorResponseDto> handleAccessDeniedException(
-            AccessDeniedException ex,
-            HttpServletRequest request) {
+            AccessDeniedException ex, HttpServletRequest request) {
 
-        log.error("Access denied at [{}]: {}", request.getRequestURI(), ex.getMessage());
+        log.warn("Access denied at [{}]: {}", request.getRequestURI(), ex.getMessage());
 
         ApiErrorResponseDto errorResponse = ApiErrorResponseDto.builder()
                 .status(HttpStatus.FORBIDDEN.value())
                 .error(HttpStatus.FORBIDDEN.getReasonPhrase())
-                .message("Please login to access this resource.")
+                .message("You do not have permission to access this resource.")
                 .timestamp(LocalDateTime.now())
                 .path(request.getRequestURI())
+                .requestId(getRequestId())
                 .build();
 
-        return new ResponseEntity<>(
-                errorResponse,
-                HttpStatus.FORBIDDEN
-        );
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(errorResponse);
+    }
+    @ExceptionHandler(ResourceNotFoundException.class)
+    public ResponseEntity<ApiErrorResponseDto> handleResourceNotFoundException(
+            ResourceNotFoundException ex, HttpServletRequest request) {
+
+        log.warn("Resource not found at [{}]: {}", request.getRequestURI(), ex.getMessage());
+
+        ApiErrorResponseDto errorResponse = ApiErrorResponseDto.builder()
+                .status(HttpStatus.NOT_FOUND.value())
+                .error(HttpStatus.NOT_FOUND.getReasonPhrase())
+                .message(ex.getMessage())
+                .timestamp(LocalDateTime.now())
+                .path(request.getRequestURI())
+                .requestId(getRequestId())
+                .build();
+
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(errorResponse);
+    }
+    @ExceptionHandler(RuntimeException.class)
+    public ResponseEntity<ApiErrorResponseDto> handleRuntimeException(
+            RuntimeException ex, HttpServletRequest request) {
+
+        log.warn("Business logic rule violation at [{}]: {}", request.getRequestURI(), ex.getMessage());
+
+        ApiErrorResponseDto errorResponse = ApiErrorResponseDto.builder()
+                .status(HttpStatus.BAD_REQUEST.value())
+                .error("Bad Request / Business Logic Error")
+                .message(ex.getMessage())
+                .timestamp(LocalDateTime.now())
+                .path(request.getRequestURI())
+                .requestId(getRequestId())
+                .build();
+
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
     }
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ApiErrorResponseDto> handleGlobalException(
             Exception ex, HttpServletRequest request) {
 
-        String requestId = MDC.get("requestId");
-
+        String requestId = getRequestId();
         log.error("Unexpected error at [{}] (request ID {}): {}", request.getRequestURI(), requestId, ex.getMessage(), ex);
 
         ApiErrorResponseDto errorResponse = ApiErrorResponseDto.builder()
                 .status(HttpStatus.INTERNAL_SERVER_ERROR.value())
                 .error(HttpStatus.INTERNAL_SERVER_ERROR.getReasonPhrase())
-                .message("An unexpected system error occurred.")
+                .message("An unexpected system error occurred. Reference ID: " + (requestId != null ? requestId : "N/A"))
                 .timestamp(LocalDateTime.now())
                 .path(request.getRequestURI())
+                .requestId(requestId)
                 .build();
 
-        return new ResponseEntity<>(
-                errorResponse,
-                HttpStatus.INTERNAL_SERVER_ERROR
-        );
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
     }
-    @ExceptionHandler(RateLimitExceededException.class)
-    public ResponseEntity<Map<String, Object>> handleRateLimitExceeded(RateLimitExceededException ex) {
-        return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
-                .body(Map.of(
-                        "status", 429,
-                        "error", "Too Many Requests",
-                        "message", ex.getMessage(),
-                        "timestamp", LocalDateTime.now()
-                ));
-    }
-
 }
