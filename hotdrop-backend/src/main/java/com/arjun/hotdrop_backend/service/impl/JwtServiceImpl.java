@@ -2,6 +2,7 @@ package com.arjun.hotdrop_backend.service.impl;
 
 import com.arjun.hotdrop_backend.service.JwtService;
 import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
@@ -17,7 +18,9 @@ import java.util.function.Function;
 @Slf4j
 @Service
 public class JwtServiceImpl implements JwtService {
-
+    private static final String CLAIM_PURPOSE = "purpose";
+    private static final String PURPOSE_ACCESS = "ACCESS_TOKEN";
+    private static final String PURPOSE_VERIFICATION = "EMAIL_VERIFICATION";
     @Value("${SECRET_KEY}")
     private String secretKey;
 
@@ -42,12 +45,18 @@ public class JwtServiceImpl implements JwtService {
     public String extractHotdropId(String token) {
         log.info("Getting username from token.");
         Claims claims = extractAllClaims(token);
+        if (!PURPOSE_ACCESS.equals(claims.get(CLAIM_PURPOSE))) {
+            throw new JwtException("Token is not a valid access token");
+        }
         return claims.getSubject();
     }
 
     public String getEmailFromToken(String token) {
         log.info("Getting email from token.");
         Claims claims = extractAllClaims(token);
+        if (!PURPOSE_VERIFICATION.equals(claims.get(CLAIM_PURPOSE))) {
+            throw new JwtException("Token is not an email verification token");
+        }
         return claims.getSubject();
     }
 
@@ -66,7 +75,7 @@ public class JwtServiceImpl implements JwtService {
         log.info("Checking verification token.");
         try {
             Claims claims = extractAllClaims(token);
-            boolean isValid = "EMAIL_VERIFICATION".equals(claims.get("purpose"))
+            boolean isValid = PURPOSE_VERIFICATION.equals(claims.get(CLAIM_PURPOSE))
                     && claims.getExpiration().after(new Date());
             if (!isValid) {
                 log.error("Verification token is expired or invalid.");
@@ -80,10 +89,11 @@ public class JwtServiceImpl implements JwtService {
 
     public boolean validateJwtToken(String authToken) {
         try {
-            extractAllClaims(authToken);
-            return true;
-        } catch (Exception e) {
-            log.error("Invalid token: {}", e.getMessage());
+            Claims claims = extractAllClaims(authToken);
+            return PURPOSE_ACCESS.equals(claims.get(CLAIM_PURPOSE))
+                    && claims.getExpiration().after(new Date());
+        } catch (JwtException | IllegalArgumentException e) {
+            log.warn("Invalid access token: {}", e.getMessage());
             return false;
         }
     }
@@ -92,22 +102,17 @@ public class JwtServiceImpl implements JwtService {
         log.info("Creating token for user: {}", hotdropId);
         return Jwts.builder()
                 .subject(hotdropId)
+                .claim(CLAIM_PURPOSE, PURPOSE_ACCESS)
                 .issuedAt(new Date())
                 .expiration(new Date(System.currentTimeMillis() + jwtExpirationMs))
                 .signWith(getSignInKey())
                 .compact();
     }
 
+    @Override
     public String generateToken(Authentication authentication) {
         UserDetails userPrincipal = (UserDetails) authentication.getPrincipal();
-        log.info("Creating token for user: {}", userPrincipal.getUsername());
-
-        return Jwts.builder()
-                .subject(userPrincipal.getUsername())
-                .issuedAt(new Date())
-                .expiration(new Date((new Date()).getTime() + jwtExpirationMs))
-                .signWith(getSignInKey())
-                .compact();
+        return generateTokenFromHotdropId(userPrincipal.getUsername());
     }
 
     private SecretKey getSignInKey() {

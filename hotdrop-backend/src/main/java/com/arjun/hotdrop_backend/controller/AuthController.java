@@ -13,6 +13,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -32,11 +33,11 @@ public class AuthController {
         log.info("Signing up user {} with email: {}", registerRequestDto.getHotdropId(), registerRequestDto.getEmail());
         UserResponseDto responseDto = authService.register(registerRequestDto);
         log.info("Registered user: {}", registerRequestDto.getHotdropId());
-        return ResponseEntity.ok(responseDto);
+        return ResponseEntity.status(HttpStatus.CREATED).body(responseDto);
     }
 @PostMapping("/resend-email")
 @RateLimited(capacity = 2, refillTokens = 2, refillDurationSeconds = 300)
-public ResponseEntity<String> resendVerifyEmail(@RequestBody ReVerificationEmailDto reVerificationEmailDto){
+public ResponseEntity<String> resendVerifyEmail(@Valid @RequestBody ReVerificationEmailDto reVerificationEmailDto){
     log.info("Resending verification email to: {}", reVerificationEmailDto.getEmail());
         authService.reVerifyEmail(reVerificationEmailDto.getEmail());
     log.info("Sent verification link to: {}", reVerificationEmailDto.getEmail());

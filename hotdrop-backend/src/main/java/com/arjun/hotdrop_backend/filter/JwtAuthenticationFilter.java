@@ -1,8 +1,9 @@
 package com.arjun.hotdrop_backend.filter;
 
+import com.arjun.hotdrop_backend.error.ApiErrorResponseDto;
 import com.arjun.hotdrop_backend.service.JwtService;
-
 import com.arjun.hotdrop_backend.service.TokenBlacklistService;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.micrometer.common.lang.NonNull;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -11,6 +12,8 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -20,6 +23,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
+import java.time.LocalDateTime;
 
 @Slf4j
 @Component
@@ -29,6 +33,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private final JwtService jwtService;
     private final UserDetailsService userDetailsService;
     private final TokenBlacklistService tokenBlacklistService;
+    private final ObjectMapper objectMapper;
 
     @Override
     protected void doFilterInternal(
@@ -37,36 +42,26 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             @NonNull FilterChain filterChain
     ) throws ServletException, IOException {
 
-        String jwt = null;
-        String hotdropId = null;
-
-        if (request.getCookies() != null) {
-            for (Cookie cookie : request.getCookies()) {
-                if ("accessToken".equals(cookie.getName())) {
-                    jwt = cookie.getValue();
-                    break;
-                }
-            }
-        }
+        String jwt = extractJwtFromCookie(request);
 
         if (jwt == null) {
             filterChain.doFilter(request, response);
             return;
         }
+
         if (tokenBlacklistService.isTokenBlacklisted(jwt)) {
-            log.warn("Blocked request because the token is logged out.");
-            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-            response.setContentType("application/json");
-            response.getWriter().write("{\"status\": 401, \"error\": \"Unauthorized\", \"message\": \"Session has expired or you have logged out. Please login again.\"}");
+            log.warn("Blocked request with blacklisted token at [{}]", request.getRequestURI());
+            writeUnauthorizedResponse(response, request.getRequestURI());
             return;
         }
+
         try {
-            hotdropId = jwtService.extractHotdropId(jwt);
+            if (jwtService.validateJwtToken(jwt)) {
+                String hotdropId = jwtService.extractHotdropId(jwt);
 
-            if (hotdropId != null && SecurityContextHolder.getContext().getAuthentication() == null) {
-                UserDetails userDetails = this.userDetailsService.loadUserByUsername(hotdropId);
+                if (hotdropId != null && SecurityContextHolder.getContext().getAuthentication() == null) {
+                    UserDetails userDetails = this.userDetailsService.loadUserByUsername(hotdropId);
 
-                if (jwtService.validateJwtToken(jwt)) {
                     UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
                             userDetails,
                             null,
@@ -74,21 +69,45 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                     );
                     authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
                     SecurityContextHolder.getContext().setAuthentication(authToken);
-                    log.info("User {} logged in successfully.", hotdropId);
-                } else {
-                    log.error("Invalid token for user: {}", hotdropId);
                 }
             }
         } catch (Exception e) {
-            log.error("Failed to verify token: {}", e.getMessage());
+            log.warn("Authentication failed for token: {}", e.getMessage());
         }
 
         filterChain.doFilter(request, response);
     }
 
+    private String extractJwtFromCookie(HttpServletRequest request) {
+        if (request.getCookies() == null) {
+            return null;
+        }
+        for (Cookie cookie : request.getCookies()) {
+            if ("accessToken".equals(cookie.getName())) {
+                return cookie.getValue();
+            }
+        }
+        return null;
+    }
+
+    private void writeUnauthorizedResponse(HttpServletResponse response, String path) throws IOException {
+        response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+        response.setContentType(MediaType.APPLICATION_JSON_VALUE);
+
+        ApiErrorResponseDto errorDto = ApiErrorResponseDto.builder()
+                .status(HttpStatus.UNAUTHORIZED.value())
+                .error(HttpStatus.UNAUTHORIZED.getReasonPhrase())
+                .message("Session has expired or logged out. Please login again.")
+                .timestamp(LocalDateTime.now())
+                .path(path)
+                .build();
+
+        response.getWriter().write(objectMapper.writeValueAsString(errorDto));
+    }
+
     @Override
-    protected boolean shouldNotFilter(HttpServletRequest request) throws ServletException {
+    protected boolean shouldNotFilter(HttpServletRequest request) {
         String path = request.getRequestURI();
-        return path.contains("/auth/") || path.contains("/public/") || path.contains("/actuator/");
+        return path.startsWith("/auth/") || path.startsWith("/public/") || path.startsWith("/actuator/");
     }
 }

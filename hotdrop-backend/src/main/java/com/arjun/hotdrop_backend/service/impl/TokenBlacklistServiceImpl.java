@@ -15,14 +15,27 @@ public class TokenBlacklistServiceImpl implements TokenBlacklistService {
     private static final String BLACKLIST_PREFIX = "jwt:blacklist:";
 
     public void blacklistToken(String token, long remainingExpiryMillis) {
-        if (remainingExpiryMillis <= 0) return;
-
+        if (token == null || token.isBlank() || remainingExpiryMillis <= 0) {
+            return;
+        }
+        try {
         String key = BLACKLIST_PREFIX + token;
         redisTemplate.opsForValue().set(key, "blacklisted", Duration.ofMillis(remainingExpiryMillis));
         log.info("Blocked token for {} ms.", remainingExpiryMillis);
+        } catch (Exception e) {
+            log.error("Failed to blacklist token in Redis: {}", e.getMessage());
+        }
     }
     public boolean isTokenBlacklisted(String token) {
+        if (token == null || token.isBlank()) {
+            return false;
+        }
+        try {
         String key = BLACKLIST_PREFIX + token;
-        return redisTemplate.hasKey(key);
+            return redisTemplate.hasKey(key);
+        } catch (Exception e) {
+            log.error("Error checking token blacklist status in Redis: {}", e.getMessage());
+            return false;
+        }
     }
 }

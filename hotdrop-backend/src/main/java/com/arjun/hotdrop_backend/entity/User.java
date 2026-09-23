@@ -66,8 +66,7 @@ private  String profileImagePublicId;
 
     @Column(nullable = false)
     private boolean emailVerified = false;
-    @Column(nullable = false)
-    private boolean isLoggedIn = false;
+
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
