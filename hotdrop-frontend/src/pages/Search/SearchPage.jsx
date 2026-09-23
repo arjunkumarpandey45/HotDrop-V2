@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { useAuthStore } from "../../store/useAuthStore";
 import { 
@@ -27,8 +27,6 @@ import PostTags from "../../components/post/PostTags";
 import { toast } from "react-toastify";
 import { showLikeToast, showCommentToast, showErrorToast, showDeadLinkToast } from "../../toast/Toast";
 import CommentModal from "../../components/modals/CommentModal";
-import LikeModal from "../../components/modals/LikeModal";
-import ShareModal from "../../components/modals/ShareModal";
 import ImageModal from "../../components/modals/ImageModal"; 
 import PreviewModal from "../../components/modals/PreviewModal";
 import SearchModal from "../../components/modals/SearchModal";
@@ -50,8 +48,6 @@ function SearchPage() {
   const [loading, setLoading] = useState(true);
   const [commentText, setCommentText] = useState("");
   const [commentPost, setCommentPost] = useState(null);
-  const [likePost, setLikePost] = useState(null);
-  const [sharePost, setSharePost] = useState(null);
   const [imagePost, setImagePost] = useState(null);
   const [modalIndex, setModalIndex] = useState(0);
   const [currentImage, setCurrentImage] = useState({});
@@ -94,15 +90,12 @@ function SearchPage() {
   };
 
   const [fetchingMore, setFetchingMore] = useState(false);
-  const [page, setPage] = useState(0);
   const [hasMore, setHasMore] = useState(true);
 
   const searchContainerRef = useRef(null);
   const isFetchingRef = useRef(false);
   const pageRef = useRef(0);
   const hasMoreRef = useRef(true);
-  const scrollThrottleTimerRef = useRef(null);
-  const debounceUnlockTimerRef = useRef(null);
 
   useEffect(() => {
     setSearchInput(query);
@@ -192,7 +185,6 @@ function SearchPage() {
         const nextHasMore = !isLast;
         setHasMore(nextHasMore);
         hasMoreRef.current = nextHasMore;
-        setPage(pageNum);
         pageRef.current = pageNum;
       } else {
         if (pageNum === 0) setPosts([]);
@@ -227,8 +219,8 @@ function SearchPage() {
   useEffect(() => {
     pageRef.current = 0;
     hasMoreRef.current = true;
+     
     setHasMore(true);
-    setPage(0);
     isFetchingRef.current = false;
     fetchSearchResults(0, query);
   }, [query, fetchSearchResults]);
@@ -628,7 +620,11 @@ function SearchPage() {
 
                     <button
                       type="button"
-                      onClick={() => setSharePost(post)}
+                      onClick={() => {
+                        const postUrl = `${window.location.origin}/post/${post.id || post._id}`;
+                        navigator.clipboard?.writeText(postUrl);
+                        toast.success("Post link copied to clipboard!");
+                      }}
                       className="p-2 rounded-xl text-slate-400 hover:text-blue-600 hover:bg-slate-50 transition-all cursor-pointer"
                       title="Share Project"
                     >
@@ -638,11 +634,10 @@ function SearchPage() {
 
                   {/* MEDIA AREA */}
                   {images.length > 0 && (
-                    <div 
-                      role="button"
-                      tabIndex={0}
+                    <button 
+                      type="button"
                       aria-label="View media details"
-                      className="relative mx-2 sm:mx-4 mt-2 sm:mt-3 bg-slate-950 rounded-2xl aspect-[16/9] flex items-center justify-center overflow-hidden border border-slate-900 cursor-pointer group/img"
+                      className="relative mx-2 sm:mx-4 mt-2 sm:mt-3 bg-slate-950 rounded-2xl aspect-[16/9] flex items-center justify-center overflow-hidden border border-slate-900 cursor-pointer group/img w-[calc(100%-1rem)] sm:w-[calc(100%-2rem)] p-0"
                       onClick={() => handleImageClick(post, imgIndex)}
                       onDoubleClick={() => triggerDoubleTap(post)}
                       onKeyDown={(e) => {
@@ -674,27 +669,31 @@ function SearchPage() {
 
                       {images.length > 1 && (
                         <div className="absolute inset-x-3 top-1/2 -translate-y-1/2 flex justify-between pointer-events-none">
-                          <button 
+                          <span 
+                            tabIndex={0}
+                            role="presentation"
                             onClick={(e) => { 
                               e.stopPropagation(); 
                               setCurrentImage(prev => ({ ...prev, [pId]: (imgIndex - 1 + images.length) % images.length }));
                             }} 
-                            className="pointer-events-auto bg-slate-900/70 hover:bg-blue-600 text-white p-2 rounded-2xl transition-all shadow-md backdrop-blur-md cursor-pointer"
+                            className="pointer-events-auto bg-slate-900/70 hover:bg-blue-600 text-white p-2 rounded-2xl transition-all shadow-md backdrop-blur-md cursor-pointer inline-flex items-center justify-center"
                           >
                             <ChevronLeft size={18} />
-                          </button>
-                          <button 
+                          </span>
+                          <span 
+                            tabIndex={0}
+                            role="presentation"
                             onClick={(e) => { 
                               e.stopPropagation(); 
                               setCurrentImage(prev => ({ ...prev, [pId]: (imgIndex + 1) % images.length }));
                             }} 
-                            className="pointer-events-auto bg-slate-900/70 hover:bg-blue-600 text-white p-2 rounded-2xl transition-all shadow-md backdrop-blur-md cursor-pointer"
+                            className="pointer-events-auto bg-slate-900/70 hover:bg-blue-600 text-white p-2 rounded-2xl transition-all shadow-md backdrop-blur-md cursor-pointer inline-flex items-center justify-center"
                           >
                             <ChevronRight size={18} />
-                          </button>
+                          </span>
                         </div>
                       )}
-                    </div>
+                    </button>
                   )}
 
                   {/* POST CONTENT BODY */}
@@ -709,9 +708,8 @@ function SearchPage() {
                     </div>
 
                     {projectLink && (
-                      <div 
-                        role="button"
-                        tabIndex={0}
+                      <button 
+                        type="button"
                         aria-label="Preview project link"
                         onClick={(e) => {
                           e.preventDefault();
@@ -727,7 +725,7 @@ function SearchPage() {
                             else showDeadLinkToast("This project link is currently down or unreachable");
                           }
                         }}
-                        className="group/link relative flex items-center justify-between p-[1px] rounded-2xl mb-3.5 transition-all duration-300 hover:scale-[1.01] active:scale-[0.99] cursor-pointer"
+                        className="group/link relative flex items-center justify-between p-[1px] rounded-2xl mb-3.5 transition-all duration-300 hover:scale-[1.01] active:scale-[0.99] cursor-pointer w-full text-left bg-transparent border-0"
                       >
                         <div className={`absolute inset-0 rounded-2xl opacity-20 group-hover/link:opacity-100 transition-opacity duration-500 bg-gradient-to-r ${isLinkDead ? "from-red-500 to-orange-500" : "from-blue-600 via-indigo-500 to-emerald-400"}`} /> 
                         <div className="relative w-full flex items-center justify-between bg-slate-50 border border-slate-200/80 rounded-[15px] px-3.5 py-2.5 shadow-sm">
@@ -757,7 +755,7 @@ function SearchPage() {
                             <ExternalLink size={13} className="text-slate-400 group-hover/link:text-blue-600 transition-colors" />
                           </div>
                         </div>
-                      </div>
+                      </button>
                     )}
 
                     <PostDescription description={post.description} />
@@ -775,17 +773,11 @@ function SearchPage() {
                             className={`transition-all duration-300 ${isLiked ? "fill-red-500 text-red-500 scale-110" : "text-slate-400 group-hover/like:text-red-500"}`} 
                           />
                         </button>
-                        <button 
-                          type="button"
-                          onClick={() => {
-                            if (!user) return setShowAuthModal(true);
-                            setLikePost(post);
-                          }} 
-                          aria-label="View users who liked this post"
-                          className="text-xs font-black text-slate-800 hover:text-blue-600 transition-colors cursor-pointer bg-transparent border-0 p-0"
+                        <span 
+                          className="text-xs font-black text-slate-800"
                         >
                           {post.likeCount ?? post.likes?.length ?? 0}
-                        </button>
+                        </span>
                       </div>
 
                       <button 
@@ -805,7 +797,11 @@ function SearchPage() {
                       <button 
                         type="button"
                         className="flex items-center gap-2 cursor-pointer group/share ml-auto bg-transparent border-0 p-0" 
-                        onClick={() => setSharePost(post)}
+                        onClick={() => {
+                          const postUrl = `${window.location.origin}/post/${post.id || post._id}`;
+                          navigator.clipboard?.writeText(postUrl);
+                          toast.success("Post link copied to clipboard!");
+                        }}
                       >
                         <Share2 size={20} className="text-slate-400 group-hover/share:text-blue-600 transition-colors" />
                         <span className="text-[11px] font-bold text-slate-500 group-hover/share:text-blue-600 hidden sm:inline">Share</span>
@@ -841,11 +837,11 @@ function SearchPage() {
       {/* AUTH REQUIRED MODAL */}
       {showAuthModal && (
         <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
-          <div 
-            role="button"
+          <button 
+            type="button"
             tabIndex={0}
             aria-label="Close sign in modal"
-            className="absolute inset-0 bg-slate-950/60 backdrop-blur-sm cursor-pointer" 
+            className="absolute inset-0 bg-slate-950/60 backdrop-blur-sm cursor-pointer border-0 p-0" 
             onClick={() => setShowAuthModal(false)}
             onKeyDown={(e) => {
               if (e.key === "Enter" || e.key === " " || e.key === "Escape") {
@@ -893,9 +889,7 @@ function SearchPage() {
           setModalIndex={setModalIndex} 
           handleLike={handleLike} 
           onClose={() => setImagePost(null)} 
-          setLikePost={setLikePost} 
           setCommentPost={setCommentPost} 
-          setSharePost={setSharePost} 
         />
       )}
 
@@ -926,11 +920,11 @@ function SearchPage() {
       {/* TECH TOPICS FILTER POPUP MODAL */}
       {showFilterModal && (
         <div className="fixed inset-0 z-[9999] flex items-center justify-center p-3 sm:p-6 select-none">
-          <div 
-            role="button"
+          <button 
+            type="button"
             tabIndex={0}
             aria-label="Close filter modal"
-            className="fixed inset-0 bg-slate-950/60 backdrop-blur-md animate-in fade-in duration-200 cursor-pointer"
+            className="fixed inset-0 bg-slate-950/60 backdrop-blur-md animate-in fade-in duration-200 cursor-pointer border-0 p-0"
             onClick={() => setShowFilterModal(false)}
             onKeyDown={(e) => {
               if (e.key === "Enter" || e.key === " " || e.key === "Escape") {

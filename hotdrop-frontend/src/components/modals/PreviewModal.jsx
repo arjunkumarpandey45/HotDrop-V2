@@ -34,14 +34,14 @@ const PreviewModal = ({ url, onClose }) => {
     <AnimatePresence>
       <div className="fixed inset-0 z-[9999] flex items-center justify-center p-0 sm:p-4 lg:p-6">
 
-        <motion.div
-          role="button"
+        <motion.button
+          type="button"
           tabIndex={0}
           aria-label="Close preview modal"
           initial={{ opacity: 0, backdropFilter: "blur(0px)" }}
           animate={{ opacity: 1, backdropFilter: "blur(12px)" }}
           exit={{ opacity: 0, backdropFilter: "blur(0px)" }}
-          className="absolute inset-0 bg-slate-950/85"
+          className="absolute inset-0 bg-slate-950/85 border-0 p-0"
           onClick={onClose}
           onKeyDown={(e) => {
             if (e.key === "Enter" || e.key === " " || e.key === "Escape") {

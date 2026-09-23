@@ -267,11 +267,11 @@ const Navbar = () => {
   return (
     <header className={`fixed left-0 right-0 top-0 z-50 px-3 sm:px-4 transition-all duration-300 ${scrolled ? "pt-2" : "pt-3 sm:pt-4"}`}>
       {(isProfileOpen || isSidebarOpen || isLoginPromptOpen || showSuggestions || isMobileNotificationOpen || isDesktopNotificationOpen || isMobileSettingsOpen) && (
-        <div
-          role="button"
+        <button
+          type="button"
           tabIndex={0}
           aria-label="Close menu overlays"
-          className="fixed inset-0 z-40 bg-slate-950/40 backdrop-blur-md transition-all duration-300 animate-in fade-in cursor-pointer"
+          className="fixed inset-0 z-40 bg-slate-950/40 backdrop-blur-md transition-all duration-300 animate-in fade-in cursor-pointer border-0 p-0"
           onClick={closeAllPopups}
           onKeyDown={(e) => {
             if (e.key === "Enter" || e.key === " " || e.key === "Escape") {

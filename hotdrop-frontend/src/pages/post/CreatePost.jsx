@@ -50,7 +50,7 @@ const PostPreview = ({ data, isOpen, onConfirm, onClose, loading }) => {
                         {data.images.length > 0 ? (
                             data.images.slice(0, 3).map((img, i) => (
                                 <div
-                                    key={i}
+                                    key={`${img.name || 'preview'}-${img.size || i}-${i}`}
                                     className="aspect-video rounded-xl overflow-hidden border border-slate-200/80 shadow-sm bg-slate-100"
                                 >
                                     <img
@@ -80,7 +80,7 @@ const PostPreview = ({ data, isOpen, onConfirm, onClose, loading }) => {
                         {data.tags ? (
                             data.tags.split(",").map((tag, idx) => (
                                 <span
-                                    key={idx}
+                                    key={`${tag.trim()}-${idx}`}
                                     className="inline-flex items-center gap-1 px-2.5 py-1 text-[11px] font-bold rounded-lg bg-blue-50 text-blue-600 border border-blue-100"
                                 >
                                     <Tag className="h-3 w-3" />
@@ -322,11 +322,11 @@ const CreatePost = ({ isOpen, onClose }) => {
 
     return (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-3 sm:p-4">
-            <div
-                role="button"
+            <button
+                type="button"
                 tabIndex={0}
                 aria-label="Close create post modal"
-                className="absolute inset-0 bg-slate-950/50 backdrop-blur-md animate-in fade-in duration-200 cursor-pointer"
+                className="absolute inset-0 bg-slate-950/50 backdrop-blur-md animate-in fade-in duration-200 cursor-pointer border-0 p-0"
                 onClick={handleCloseModal}
                 onKeyDown={(e) => {
                     if (e.key === "Enter" || e.key === " " || e.key === "Escape") {
@@ -452,7 +452,7 @@ const CreatePost = ({ isOpen, onClose }) => {
                         <div className="flex flex-wrap gap-1.5 pt-1">
                             {tags.map((tag, idx) => (
                                 <span
-                                    key={idx}
+                                    key={`${tag}-${idx}`}
                                     className="inline-flex items-center gap-1 px-2.5 py-0.5 text-[11px] font-bold rounded-lg bg-blue-50 text-blue-600 border border-blue-200"
                                 >
                                     #{tag}
@@ -488,7 +488,7 @@ const CreatePost = ({ isOpen, onClose }) => {
                         <div className="flex gap-2.5 flex-wrap">
                             {formData.images.map((img, i) => (
                                 <div
-                                    key={i}
+                                    key={`${img.name || 'upload'}-${img.size || i}-${i}`}
                                     className="relative w-20 h-16 rounded-xl overflow-hidden border border-slate-200 shadow-sm group"
                                 >
                                     <img

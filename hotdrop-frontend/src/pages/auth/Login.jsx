@@ -58,10 +58,8 @@ const Login = () => {
         }, 100);
 
 navigate("/", { replace: true });
-      } else {
-        if (result.status !== 429) {
-          showErrorToast(result.message || "Invalid credentials.");
-        }
+      } else if (result.status !== 429) {
+        showErrorToast(result.message || "Invalid credentials.");
       }
     } catch (error) {
       console.error("Login catch error:", error);

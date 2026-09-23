@@ -183,7 +183,7 @@ const showCommentDeletedToast = (msg = "Comment deleted.") => {
   );
 };
 
-const showSuccessToast = (msg) => {
+const showSuccessToast = (msg = "Success!") => {
   toast(
     <div className="relative flex items-center gap-3.5 pl-5 pr-4 py-3.5 font-sans overflow-hidden min-w-0 w-full">
       <div className="absolute left-0 top-0 bottom-0 w-1.5 bg-gradient-to-b from-emerald-400 via-teal-500 to-green-500" />
@@ -248,7 +248,7 @@ const showRateLimitToast = (msg = "Rate limit exceeded. Please wait before tryin
   );
 };
 
-const showErrorToast = (msg) => {
+const showErrorToast = (msg = "Action failed") => {
   if (Date.now() - lastRateLimitToastTime < 2000) {
     return;
   }
@@ -279,7 +279,7 @@ const showErrorToast = (msg) => {
   );
 };
 
-const showErrorToastForSIgnup = (msg) => {
+const showErrorToastForSIgnup = (msg = "Attention required") => {
   toast(
     <div className="relative flex items-center gap-3.5 pl-5 pr-4 py-3.5 font-sans overflow-hidden min-w-0 w-full">
       <div className="absolute left-0 top-0 bottom-0 w-1.5 bg-gradient-to-b from-amber-400 via-orange-500 to-yellow-500" />
@@ -307,8 +307,8 @@ const showErrorToastForSIgnup = (msg) => {
   );
 };
 
-const showSuccessToastForSignup = (msg) => {
-  const textToShow = msg || "Welcome to HotDrop!";
+const showSuccessToastForSignup = (msg = "Welcome to HotDrop!") => {
+  const textToShow = msg;
   toast(
     <div className="relative flex items-center gap-3.5 pl-5 pr-4 py-3.5 font-sans overflow-hidden min-w-0 w-full">
       <div className="absolute left-0 top-0 bottom-0 w-1.5 bg-gradient-to-b from-blue-500 via-indigo-500 to-cyan-500" />
@@ -393,8 +393,8 @@ const showProfileUpdatedToast = (msg = "Profile updated.") => {
   );
 };
 
-const showPostSuccessToast = (title) => {
-  const msg = title || "Build is live!";
+const showPostSuccessToast = (title = "Build is live!") => {
+  const msg = title;
   toast(
     <div className="relative flex items-center gap-3.5 pl-5 pr-4 py-3.5 font-sans overflow-hidden min-w-0 w-full">
       <div className="absolute left-0 top-0 bottom-0 w-1.5 bg-gradient-to-b from-orange-500 via-amber-500 to-yellow-400" />
@@ -422,11 +422,11 @@ const showPostSuccessToast = (title) => {
   );
 };
 
-const showPostErrorToast = (errorMsg) => {
+const showPostErrorToast = (errorMsg = "Error occurred!") => {
   if (Date.now() - lastRateLimitToastTime < 2000) {
     return;
   }
-  const msg = errorMsg || "Error occurred!";
+  const msg = errorMsg;
   toast(
     <div className="relative flex items-center gap-3.5 pl-5 pr-4 py-3.5 font-sans overflow-hidden min-w-0 w-full">
       <div className="absolute left-0 top-0 bottom-0 w-1.5 bg-gradient-to-b from-red-600 via-rose-600 to-pink-500" />

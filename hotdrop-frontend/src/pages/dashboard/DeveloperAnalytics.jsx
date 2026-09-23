@@ -10,7 +10,6 @@ import {
   FileText,
   RefreshCw,
   ArrowLeft,
-  Share2,
   Copy,
   Check,
   Globe,
@@ -510,9 +509,9 @@ MONITORING STATUS:
         {loading && (
           <div className="space-y-6 animate-pulse">
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
-              {[...Array(5)].map((_, i) => (
+              {[...new Array(5)].map((_, i) => (
                 <div
-                  key={i}
+                  key={`analytics-skeleton-${i}`}
                   className="h-32 rounded-2xl bg-white border border-slate-200/80 shadow-xs"
                 />
               ))}

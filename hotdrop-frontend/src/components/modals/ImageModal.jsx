@@ -195,11 +195,11 @@ function ImageModal({
   if (isMobile) {
     return (
       <div className="fixed inset-0 z-[99] flex items-center justify-center p-3 animate-in fade-in duration-200">
-        <div
-          role="button"
+        <button
+          type="button"
           tabIndex={0}
           aria-label="Close image modal"
-          className="fixed inset-0 bg-black/95 backdrop-blur-md"
+          className="fixed inset-0 bg-black/95 backdrop-blur-md border-0 p-0"
           onClick={onClose}
           onKeyDown={(e) => {
             if (e.key === "Enter" || e.key === " " || e.key === "Escape") {
@@ -249,11 +249,11 @@ function ImageModal({
 
   return (
     <div className="fixed inset-0 z-[99] flex items-center justify-center p-4 animate-in fade-in duration-200 select-none">
-      <div
-        role="button"
+      <button
+        type="button"
         tabIndex={0}
         aria-label="Close image modal"
-        className="fixed inset-0 bg-slate-950/90 backdrop-blur-md"
+        className="fixed inset-0 bg-slate-950/90 backdrop-blur-md border-0 p-0"
         onClick={() => {
           setMenuOpen(false);
           onClose();
@@ -485,9 +485,8 @@ function ImageModal({
                   Target Link
                 </span>
 
-                <div
-                  role="button"
-                  tabIndex={0}
+                <button
+                  type="button"
                   aria-label="Preview target link"
                   onClick={(e) => {
                     e.preventDefault();
@@ -507,7 +506,7 @@ function ImageModal({
                       }
                     }
                   }}
-                  className="group/link relative flex items-center cursor-pointer justify-between p-[1px] rounded-xl transition-all duration-300 hover:scale-[1.01]"
+                  className="group/link relative flex items-center cursor-pointer justify-between p-[1px] rounded-xl transition-all duration-300 hover:scale-[1.01] w-full text-left"
                 >
                   <div
                     className={`absolute inset-0 rounded-xl opacity-20 group-hover/link:opacity-100 transition-opacity duration-500 bg-gradient-to-r ${
@@ -550,7 +549,7 @@ function ImageModal({
                       <ExternalLink size={12} className="text-slate-400 group-hover/link:text-blue-600" />
                     </div>
                   </div>
-                </div>
+                </button>
               </div>
             </div>
 
@@ -633,11 +632,11 @@ function ImageModal({
 
       {deleteConfirm && (
         <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4 animate-in fade-in duration-200">
-          <div
-            role="button"
+          <button
+            type="button"
             tabIndex={0}
             aria-label="Close delete confirmation"
-            className="absolute inset-0 bg-slate-950/60 backdrop-blur-sm"
+            className="absolute inset-0 bg-slate-950/60 backdrop-blur-sm border-0 p-0"
             onClick={() => !isDeleting && setDeleteConfirm(false)}
             onKeyDown={(e) => {
               if (e.key === "Enter" || e.key === " " || e.key === "Escape") {

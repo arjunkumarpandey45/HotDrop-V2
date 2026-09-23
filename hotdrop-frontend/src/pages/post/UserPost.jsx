@@ -402,11 +402,10 @@ function UserPost({
           return (
             <div key={pId} className="w-full">
 
-              <div
-                role="button"
-                tabIndex={0}
+              <button
+                type="button"
                 aria-label="View drop details"
-                className="hidden md:block relative bg-slate-50 rounded-2xl overflow-hidden cursor-pointer aspect-[4/3] group shadow-sm hover:shadow-lg transition-all duration-200 border border-slate-200/60 select-none"
+                className="hidden md:block relative bg-slate-50 rounded-2xl overflow-hidden cursor-pointer aspect-[4/3] group shadow-sm hover:shadow-lg transition-all duration-200 border border-slate-200/60 select-none w-full p-0 text-left"
                 onClick={(e) => handleImageClick(e, post, imgIndex)}
                 onKeyDown={(e) => {
                   if (e.key === "Enter" || e.key === " ") {
@@ -449,7 +448,7 @@ function UserPost({
                     </div>
                   </div>
                 )}
-              </div>
+              </button>
 
               <div className="block md:hidden relative bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden flex flex-col">
 
@@ -510,11 +509,10 @@ function UserPost({
                   )}
                 </div>
 
-                <div
-                  role="button"
-                  tabIndex={0}
+                <button
+                  type="button"
                   aria-label="View drop details"
-                  className="relative bg-slate-50 cursor-pointer flex items-center justify-center aspect-[4/3] overflow-hidden select-none"
+                  className="relative bg-slate-50 cursor-pointer flex items-center justify-center aspect-[4/3] overflow-hidden select-none w-full p-0 border-0"
                   onClick={(e) => handleImageClick(e, post, imgIndex)}
                   onKeyDown={(e) => {
                     if (e.key === "Enter" || e.key === " ") {
@@ -546,25 +544,29 @@ function UserPost({
                   {user && images.length > 1 && (
                     <>
                       <div className="absolute inset-x-2 top-1/2 -translate-y-1/2 flex justify-between pointer-events-none z-20">
-                        <button
+                        <span
+                          tabIndex={0}
+                          role="presentation"
                           onClick={(e) => prevImage(e, pId, images.length)}
-                          className="pointer-events-auto bg-black/60 hover:bg-black/80 text-white p-1 rounded-full border border-white/30 shadow-md backdrop-blur-sm transition-transform hover:scale-105 cursor-pointer"
+                          className="pointer-events-auto bg-black/60 hover:bg-black/80 text-white p-1 rounded-full border border-white/30 shadow-md backdrop-blur-sm transition-transform hover:scale-105 cursor-pointer inline-flex items-center justify-center"
                         >
                           <ChevronLeft size={14} />
-                        </button>
+                        </span>
 
-                        <button
+                        <span
+                          tabIndex={0}
+                          role="presentation"
                           onClick={(e) => nextImage(e, pId, images.length)}
-                          className="pointer-events-auto bg-black/60 hover:bg-black/80 text-white p-1 rounded-full border border-white/30 shadow-md backdrop-blur-sm transition-transform hover:scale-105 cursor-pointer"
+                          className="pointer-events-auto bg-black/60 hover:bg-black/80 text-white p-1 rounded-full border border-white/30 shadow-md backdrop-blur-sm transition-transform hover:scale-105 cursor-pointer inline-flex items-center justify-center"
                         >
                           <ChevronRight size={14} />
-                        </button>
+                        </span>
                       </div>
 
                       <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex items-center gap-1.5 pointer-events-none z-20">
                         {images.map((_, i) => (
                           <div
-                            key={i}
+                            key={`${pId}-dot-${i}`}
                             className={`rounded-full border border-black/80 transition-all duration-200 ${
                               i === imgIndex
                                 ? "w-2.5 h-2.5 bg-white shadow-sm scale-110"
@@ -575,7 +577,7 @@ function UserPost({
                       </div>
                     </>
                   )}
-                </div>
+                </button>
 
                 <div className="p-4 flex flex-col flex-1">
 
@@ -589,9 +591,8 @@ function UserPost({
                     <PostTags tags={post.tags || post.tagsList || post.tag} postTitle={post.title} />
                   </div>
 
-                  <div
-                    role="button"
-                    tabIndex={0}
+                  <button
+                    type="button"
                     aria-label="Preview project link"
                     onClick={(e) => {
                       e.preventDefault();
@@ -619,7 +620,7 @@ function UserPost({
                         }
                       }
                     }}
-                    className="group/link relative flex items-center justify-between p-[1px] rounded-xl mb-4 transition-all duration-300 hover:scale-[1.01] active:scale-[0.99] cursor-pointer"
+                    className="group/link relative flex items-center justify-between p-[1px] rounded-xl mb-4 transition-all duration-300 hover:scale-[1.01] active:scale-[0.99] cursor-pointer w-full text-left bg-transparent border-0"
                   >
 
                     <div
@@ -685,7 +686,7 @@ function UserPost({
                         />
                       </div>
                     </div>
-                  </div>
+                  </button>
 
                   <div className="relative group/desc">
                     <p className="text-[12px] text-slate-900 pb-1 font-medium leading-relaxed">
@@ -833,11 +834,11 @@ function UserPost({
 
       {deleteConfirm && (
         <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4 animate-in fade-in duration-200">
-          <div
-            role="button"
+          <button
+            type="button"
             tabIndex={0}
             aria-label="Close delete confirmation"
-            className="absolute inset-0 bg-slate-950/60 backdrop-blur-md transition-opacity"
+            className="absolute inset-0 bg-slate-950/60 backdrop-blur-md transition-opacity border-0 p-0"
             onClick={() => !isDeleting && setDeleteConfirm(null)}
             onKeyDown={(e) => {
               if (e.key === "Enter" || e.key === " " || e.key === "Escape") {
@@ -889,11 +890,11 @@ function UserPost({
 
       {showAuthModal && (
         <div className="fixed inset-0 z-[999] flex items-center justify-center p-6">
-          <div
-            role="button"
+          <button
+            type="button"
             tabIndex={0}
             aria-label="Close sign in modal"
-            className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm"
+            className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm border-0 p-0"
             onClick={() => setShowAuthModal(false)}
             onKeyDown={(e) => {
               if (e.key === "Enter" || e.key === " " || e.key === "Escape") {

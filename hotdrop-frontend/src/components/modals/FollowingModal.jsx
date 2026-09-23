@@ -214,11 +214,11 @@ function FollowingModal({
 
   return (
     <div className="fixed inset-0 z-[500] flex items-center justify-center p-4 animate-in fade-in duration-200 select-none">
-      <div
-        role="button"
+      <button
+        type="button"
         tabIndex={0}
         aria-label="Close following modal"
-        className="fixed inset-0 bg-slate-950/60 backdrop-blur-md"
+        className="fixed inset-0 bg-slate-950/60 backdrop-blur-md border-0 p-0"
         onClick={onClose}
         onKeyDown={(e) => {
           if (e.key === "Enter" || e.key === " " || e.key === "Escape") {

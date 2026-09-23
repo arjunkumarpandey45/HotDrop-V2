@@ -55,7 +55,7 @@ const normalizeUrl = (url) => {
   return `https://${trimmed}`;
 };
 
-const URL_REGEX = /^(https?:\/\/)?([\w-]+\.)+[\w-]+(\/[\w-.\/?%&=]*)?$/i;
+const URL_REGEX = /^(https?:\/\/)?([\w-]+\.)+[\w-]+(\/[\w-./?%&=]*)?$/i;
 const GITHUB_REGEX = /^(https?:\/\/)?(www\.)?github\.com\/[a-zA-Z0-9_-]+\/?$/i;
 const LINKEDIN_REGEX = /^(https?:\/\/)?(www\.)?linkedin\.com\/(in|company)\/[a-zA-Z0-9_-]+\/?$/i;
 const LEETCODE_REGEX = /^(https?:\/\/)?(www\.)?leetcode\.com\/(u\/)?[a-zA-Z0-9_-]+\/?$/i;
@@ -108,28 +108,28 @@ function EditProfileModal({ isOpen, onClose, user, handleUpdate, loading }) {
   const validateForm = () => {
     const newErrors = {};
 
-    if (formData.githubUrl && formData.githubUrl.trim()) {
+    if (formData.githubUrl?.trim()) {
       const url = normalizeUrl(formData.githubUrl);
       if (!GITHUB_REGEX.test(url)) {
         newErrors.githubUrl = "Invalid GitHub link (e.g. github.com/username)";
       }
     }
 
-    if (formData.linkedinUrl && formData.linkedinUrl.trim()) {
+    if (formData.linkedinUrl?.trim()) {
       const url = normalizeUrl(formData.linkedinUrl);
       if (!LINKEDIN_REGEX.test(url)) {
         newErrors.linkedinUrl = "Invalid LinkedIn link (e.g. linkedin.com/in/username)";
       }
     }
 
-    if (formData.leetcodeUrl && formData.leetcodeUrl.trim()) {
+    if (formData.leetcodeUrl?.trim()) {
       const url = normalizeUrl(formData.leetcodeUrl);
       if (!LEETCODE_REGEX.test(url)) {
         newErrors.leetcodeUrl = "Invalid LeetCode link (e.g. leetcode.com/u/username)";
       }
     }
 
-    if (formData.portfolioUrl && formData.portfolioUrl.trim()) {
+    if (formData.portfolioUrl?.trim()) {
       const url = normalizeUrl(formData.portfolioUrl);
       if (!URL_REGEX.test(url)) {
         newErrors.portfolioUrl = "Invalid website or portfolio URL";
@@ -170,11 +170,11 @@ function EditProfileModal({ isOpen, onClose, user, handleUpdate, loading }) {
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-3 sm:p-4 animate-in fade-in duration-200">
-      <div
-        role="button"
+      <button
+        type="button"
         tabIndex={0}
         aria-label="Close edit profile modal"
-        className="fixed inset-0 bg-slate-900/60 backdrop-blur-md"
+        className="fixed inset-0 bg-slate-900/60 backdrop-blur-md border-0 p-0"
         onClick={onClose}
         onKeyDown={(e) => {
           if (e.key === "Enter" || e.key === " " || e.key === "Escape") {

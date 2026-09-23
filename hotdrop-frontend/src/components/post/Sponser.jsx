@@ -179,10 +179,10 @@ const Sponser = () => {
 
         <div className="flex items-center justify-between gap-3 pt-0.5">
           <div className="flex items-center gap-1.5">
-            {SPOTLIGHTS.map((_, idx) => (
+            {SPOTLIGHTS.map((spot, idx) => (
               <button
                 type="button"
-                key={idx}
+                key={spot.id}
                 onClick={() => setCurrentIndex(idx)}
                 className={`h-1.5 rounded-full transition-all duration-300 cursor-pointer ${
                   idx === currentIndex ? "w-5 bg-blue-600" : "w-1.5 bg-slate-200 hover:bg-slate-300"

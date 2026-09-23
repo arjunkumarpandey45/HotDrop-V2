@@ -46,7 +46,7 @@ spring:
       max-request-size: ${TOTAL_IMAGE_SIZE}
   datasource:
     url: ${POSTGRES_SQL_URI}
-    username: postgres
+    username: ${POSTGRES_SQL_USER}
     password: ${POSTGRES_SQL_PASS}
     driver-class-name: org.postgresql.Driver
 

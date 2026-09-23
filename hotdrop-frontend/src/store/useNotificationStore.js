@@ -111,7 +111,7 @@ export const useNotificationStore = create((set, get) => ({
   },
 
   initSocket: (user) => {
-    if (!user || !user.hotdropId) return;
+    if (!user?.hotdropId) return;
 
     get().fetchUnreadCount();
     get().fetchNotifications(0, 20);
@@ -122,7 +122,7 @@ export const useNotificationStore = create((set, get) => ({
       get().fetchNotifications(0, 20);
     }, 30000);
 
-    if (stompClient && stompClient.connected) return;
+    if (stompClient?.connected) return;
 
     try {
       const backendUrl = import.meta.env.VITE_BACKEND_URL || "http://localhost:8080";

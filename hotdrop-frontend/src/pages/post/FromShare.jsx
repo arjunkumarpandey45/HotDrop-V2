@@ -62,8 +62,8 @@ function FromShare() {
             const res2 = await API.get(`/posts/get-post-by-postId/${shareUrl}`);
             const payload2 = res2.data?.data || res2.data;
             postData = payload2?.post || payload2;
-          } catch (err2) {
-            console.error("Fetch single post fallback error:", err2);
+          } catch (error_) {
+            console.error("Fetch single post fallback error:", error_);
           }
         }
         setPost(postData);
@@ -233,9 +233,8 @@ function FromShare() {
 
           </div>
 
-          <div
-            role="button"
-            tabIndex={0}
+          <button
+            type="button"
             aria-label="View media details"
             className="relative bg-slate-50 border border-slate-200/70 group aspect-video w-full rounded-2xl flex items-center justify-center overflow-hidden cursor-pointer mb-3 shadow-inner p-0"
             onClick={() => {
@@ -265,30 +264,34 @@ function FromShare() {
             {images.length > 1 && (
               <>
                 <div className="absolute inset-x-2 top-1/2 -translate-y-1/2 flex justify-between pointer-events-none z-20">
-                  <button
+                  <span
+                    tabIndex={0}
+                    role="presentation"
                     onClick={(e) => {
                       e.stopPropagation();
                       setCurrentImageIndex((p) => (p - 1 + images.length) % images.length);
                     }}
-                    className="pointer-events-auto bg-black/60 hover:bg-black/80 text-white p-1 rounded-full border border-white/30 shadow-md backdrop-blur-sm transition-transform hover:scale-105 cursor-pointer"
+                    className="pointer-events-auto bg-black/60 hover:bg-black/80 text-white p-1 rounded-full border border-white/30 shadow-md backdrop-blur-sm transition-transform hover:scale-105 cursor-pointer inline-flex items-center justify-center"
                   >
                     <ChevronLeft size={14} />
-                  </button>
-                  <button
+                  </span>
+                  <span
+                    tabIndex={0}
+                    role="presentation"
                     onClick={(e) => {
                       e.stopPropagation();
                       setCurrentImageIndex((p) => (p + 1) % images.length);
                     }}
-                    className="pointer-events-auto bg-black/60 hover:bg-black/80 text-white p-1 rounded-full border border-white/30 shadow-md backdrop-blur-sm transition-transform hover:scale-105 cursor-pointer"
+                    className="pointer-events-auto bg-black/60 hover:bg-black/80 text-white p-1 rounded-full border border-white/30 shadow-md backdrop-blur-sm transition-transform hover:scale-105 cursor-pointer inline-flex items-center justify-center"
                   >
                     <ChevronRight size={14} />
-                  </button>
+                  </span>
                 </div>
 
                 <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex items-center gap-1.5 pointer-events-none z-20">
                   {images.map((_, i) => (
                     <div
-                      key={i}
+                      key={`${post?.id || 'share'}-dot-${i}`}
                       className={`rounded-full border border-black/80 transition-all duration-200 ${
                         i === currentImageIndex
                           ? "w-2.5 h-2.5 bg-white shadow-sm scale-110"
@@ -299,7 +302,7 @@ function FromShare() {
                 </div>
               </>
             )}
-          </div>
+          </button>
 
           <div className="flex flex-col">
 
@@ -310,9 +313,8 @@ function FromShare() {
               <PostTags tags={post.tags || post.tagsList || post.tag} postTitle={post.title} />
             </div>
 
-            <div
-              role="button"
-              tabIndex={0}
+            <button
+              type="button"
               aria-label="Preview project link"
               onClick={() => {
                 if (!isLinkDead && projectUrl) {
@@ -331,7 +333,7 @@ function FromShare() {
                   }
                 }
               }}
-              className="group/link relative flex items-center justify-between p-[1px] rounded-xl mb-3 transition-all duration-300 hover:scale-[1.01] cursor-pointer"
+              className="group/link relative flex items-center justify-between p-[1px] rounded-xl mb-3 transition-all duration-300 hover:scale-[1.01] cursor-pointer w-full text-left bg-transparent border-0"
             >
               <div
                 className={`absolute inset-0 rounded-xl opacity-20 group-hover/link:opacity-100 transition-opacity duration-500 bg-gradient-to-r ${
@@ -374,7 +376,7 @@ function FromShare() {
                   <ExternalLink size={12} className="text-slate-400 group-hover/link:text-blue-600" />
                 </div>
               </div>
-            </div>
+            </button>
 
             <p className="text-xs text-slate-600 leading-relaxed font-normal mb-4">
               {isExpanded ? post.description : `${post.description?.slice(0, maxLength)}`}
@@ -446,11 +448,11 @@ function FromShare() {
 
       {showAuthModal && (
         <div className="fixed inset-0 z-[999] flex items-center justify-center p-4">
-          <div 
-            role="button"
+          <button 
+            type="button"
             tabIndex={0}
             aria-label="Close sign in modal"
-            className="absolute inset-0 bg-slate-950/60 backdrop-blur-sm cursor-pointer" 
+            className="absolute inset-0 bg-slate-950/60 backdrop-blur-sm cursor-pointer border-0 p-0" 
             onClick={() => setShowAuthModal(false)}
             onKeyDown={(e) => {
               if (e.key === "Enter" || e.key === " " || e.key === "Escape") {

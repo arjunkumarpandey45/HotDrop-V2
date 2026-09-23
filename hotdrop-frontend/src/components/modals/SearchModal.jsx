@@ -137,11 +137,11 @@ function SearchModal({ isOpen, onClose, initialMode = "users" }) {
 
   return (
     <div className="fixed inset-0 z-[9999] flex items-start justify-center p-3 sm:p-6 pt-16 sm:pt-24 animate-in fade-in duration-200 select-none">
-      <div
-        role="button"
+      <button
+        type="button"
         tabIndex={0}
         aria-label="Close search modal"
-        className="fixed inset-0 bg-slate-950/60 backdrop-blur-md"
+        className="fixed inset-0 bg-slate-950/60 backdrop-blur-md border-0 p-0"
         onClick={onClose}
         onKeyDown={(e) => {
           if (e.key === "Enter" || e.key === " " || e.key === "Escape") {

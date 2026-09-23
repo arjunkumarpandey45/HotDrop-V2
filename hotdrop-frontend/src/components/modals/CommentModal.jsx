@@ -132,11 +132,11 @@ function CommentModal({
 
   return (
     <div className="fixed inset-0 z-[1500] flex items-center justify-center p-4 animate-in fade-in duration-200 select-none">
-      <div
-        role="button"
+      <button
+        type="button"
         tabIndex={0}
         aria-label="Close comments modal"
-        className="fixed inset-0 bg-slate-950/70 backdrop-blur-md"
+        className="fixed inset-0 bg-slate-950/70 backdrop-blur-md border-0 p-0"
         onClick={onClose}
         onKeyDown={(e) => {
           if (e.key === "Enter" || e.key === " " || e.key === "Escape") {
@@ -146,11 +146,11 @@ function CommentModal({
       />
       {deleteConfirm && (
         <div className="fixed inset-0 z-[1600] flex items-center justify-center p-4">
-          <div
-            role="button"
+          <button
+            type="button"
             tabIndex={0}
             aria-label="Close delete confirmation"
-            className="absolute inset-0 bg-slate-950/60 backdrop-blur-sm"
+            className="absolute inset-0 bg-slate-950/60 backdrop-blur-sm border-0 p-0"
             onClick={() => !isDeleting && setDeleteConfirm(null)}
             onKeyDown={(e) => {
               if (e.key === "Enter" || e.key === " " || e.key === "Escape") {
