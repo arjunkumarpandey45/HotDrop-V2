@@ -1,6 +1,8 @@
 package com.arjun.hotdrop_backend.service.impl;
 
 import com.arjun.hotdrop_backend.entity.RefreshToken;
+import com.arjun.hotdrop_backend.entity.User;
+import com.arjun.hotdrop_backend.error.ResourceNotFoundException;
 import com.arjun.hotdrop_backend.repository.RefreshTokenRepo;
 import com.arjun.hotdrop_backend.repository.UserRepo;
 import com.arjun.hotdrop_backend.service.RefreshTokenService;
@@ -8,6 +10,7 @@ import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
@@ -30,10 +33,10 @@ public class RefreshTokenServiceImpl implements RefreshTokenService {
         var user = userRepo.findByHotdropId(hotdropId)
                 .orElseThrow(() -> {
                     log.error("Cannot create refresh token: user not found for {}", hotdropId);
-                    return new RuntimeException("User not found: " + hotdropId);
+                    return new ResourceNotFoundException("User not found with id: " + hotdropId);
                 });
 
-        refreshTokenRepo.deleteByUser(user);
+
 
         RefreshToken refreshToken = RefreshToken.builder()
                 .user(user)
@@ -45,16 +48,22 @@ public class RefreshTokenServiceImpl implements RefreshTokenService {
         log.info("Created refresh token for user: {}", hotdropId);
         return savedToken;
     }
-
     @Override
-    public RefreshToken verifyExpiration(RefreshToken token) {
-        log.info("Checking if refresh token expired for user: {}", token.getUser().getHotdropId());
-        if (token.getExpiryDate().compareTo(Instant.now()) < 0) {
-            refreshTokenRepo.delete(token);
-            log.error("Refresh token expired for user: {}.", token.getUser().getHotdropId());
-            throw new RuntimeException("Refresh token was expired. Please make a new signin request");
+    @Transactional
+    public RefreshToken verifyAndRotate(String tokenString) {
+        RefreshToken refreshToken = refreshTokenRepo.findByToken(tokenString)
+                .orElseThrow(() -> new BadCredentialsException("Refresh token not found or invalid."));
+
+        if (refreshToken.getExpiryDate().isBefore(Instant.now())) {
+            refreshTokenRepo.delete(refreshToken);
+            log.warn("Expired refresh token rejected for user: {}", refreshToken.getUser().getHotdropId());
+            throw new BadCredentialsException("Refresh token has expired. Please login again.");
         }
-        log.info("Refresh token is valid for user: {}", token.getUser().getHotdropId());
-        return token;
+
+        User user = refreshToken.getUser();
+        refreshTokenRepo.delete(refreshToken);
+
+        return createRefreshToken(user.getHotdropId());
     }
+
 }

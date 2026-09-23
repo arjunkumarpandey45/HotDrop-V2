@@ -42,26 +42,32 @@ private String frontendURL;
                         sessionConfig.sessionCreationPolicy(
                                 SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
+                        .requestMatchers("/auth/**")
+                        .permitAll()
                         .requestMatchers(
-                                "/public/**",
-                                "/auth/**",
-                                "/posts/**",
-                                "/users/*/get-all-following",
-                                "/users/*/get-all-followers",
-                                "/users/search/**",
-                                "/actuator/**",
+                                "/",
+                                "/public/**","/actuator/health",
+                                "/actuator/prometheus",
                                 "/ws/**",
-                                "/"
-                        ).permitAll()
-                        .requestMatchers(
                                 "/v3/api-docs",
                                 "/v3/api-docs/**",
                                 "/swagger-ui/**",
                                 "/swagger-ui.html"
                         ).permitAll()
-                        .requestMatchers(
-                                HttpMethod.GET,
-                                "/posts/feed"
+                        .requestMatchers(HttpMethod.GET,
+                                "/users/*/get-all-following",
+                                "/users/*/get-all-followers",
+                                "/users/search/**",
+                                "/users/suggestions/**"
+                        ).permitAll()
+
+                        .requestMatchers(HttpMethod.GET,
+                                "/posts/feed",
+                                "/posts/get-post-by-postId/*",
+                                "/posts/get-user-post/*",
+                                "/posts/share-post/*",
+                                "/posts/get-comment-by-post-id/*",
+                                "/posts/*/get-who-likes-post"
                         ).permitAll()
                         .requestMatchers("/admin/**")
                         .hasRole("ADMIN")
@@ -128,7 +134,7 @@ private String frontendURL;
     }
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(List.of(frontendURL)); 
+        configuration.setAllowedOrigins(List.of(frontendURL));
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(List.of("*"));
         configuration.setAllowCredentials(true);

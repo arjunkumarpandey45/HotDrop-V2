@@ -6,8 +6,8 @@ public interface AuthService {
     UserResponseDto register(RegisterRequestDto registerRequestDto);
     void reVerifyEmail(String email);
     String verifyEmail(String token);
-    String login(LoginRequestDto loginRequestDto);
-    LoginResponseDto getLoginResponseDetails(String hotdropIdOrEmail);
+   AuthResultDto login(LoginRequestDto loginRequestDto);
+
     void sendForgotPasswordOtp(ForgotPasswordRequestDto request);
     void resetPasswordWithOtp(ResetPasswordDto request);
     void logout(String accessToken, String refreshToken);

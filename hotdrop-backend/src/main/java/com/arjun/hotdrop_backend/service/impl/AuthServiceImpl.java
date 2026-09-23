@@ -3,6 +3,7 @@ package com.arjun.hotdrop_backend.service.impl;
 
 import com.arjun.hotdrop_backend.dto.*;
 import com.arjun.hotdrop_backend.entity.OtpVerification;
+import com.arjun.hotdrop_backend.entity.RefreshToken;
 import com.arjun.hotdrop_backend.entity.Role;
 import com.arjun.hotdrop_backend.entity.User;
 import com.arjun.hotdrop_backend.enums.AuthProvider;
@@ -13,16 +14,14 @@ import com.arjun.hotdrop_backend.repository.OtpVerificationRepo;
 import com.arjun.hotdrop_backend.repository.RefreshTokenRepo;
 import com.arjun.hotdrop_backend.repository.RoleRepo;
 import com.arjun.hotdrop_backend.repository.UserRepo;
-import com.arjun.hotdrop_backend.service.AuthService;
-import com.arjun.hotdrop_backend.service.EmailService;
-import com.arjun.hotdrop_backend.service.JwtService;
+import com.arjun.hotdrop_backend.service.*;
 
-import com.arjun.hotdrop_backend.service.TokenBlacklistService;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -42,7 +41,7 @@ public class AuthServiceImpl implements AuthService {
     private String frontendURL;
     private final UserRepo userRepo;
     private final RoleRepo roleRepo;
-
+private final RefreshTokenService refreshTokenService;
     private final PasswordEncoder passwordEncoder;
     private final TokenBlacklistService tokenBlacklistService;
     private final EmailService emailService;
@@ -201,24 +200,25 @@ public class AuthServiceImpl implements AuthService {
 
     @Override
 
-    public String login(LoginRequestDto loginRequestDto) {
-        log.info("User logging in: {}", loginRequestDto.getHotdropIdOrEmail());
+    public AuthResultDto login(LoginRequestDto loginRequestDto) {
+        String identifier = loginRequestDto.getHotdropIdOrEmail().trim().toLowerCase();
+        log.info("User attempting login: {}", identifier);
 
-        User user = userRepo.findByHotdropId(loginRequestDto.getHotdropIdOrEmail())
-                .or(() -> userRepo.findByEmail(loginRequestDto.getHotdropIdOrEmail()))
+        User user = userRepo.findByHotdropId(identifier)
+                .or(() -> userRepo.findByEmail(identifier))
                 .orElseThrow(() -> {
-                    log.error("Login failed: no user found for {}", loginRequestDto.getHotdropIdOrEmail());
-                    return new RuntimeException("Email or Hotdrop Id is not valid");
+                    log.error("Login failed: no account found for identifier: {}", identifier);
+                    return new BadCredentialsException("Invalid Hotdrop ID/Email or password.");
                 });
 
         if (!user.isEmailVerified()) {
-            log.error("Login failed: email is not verified for user: {}", user.getHotdropId());
-            throw new RuntimeException("Please verify your email first");
+            log.warn("Email not verified for user: {}", user.getHotdropId());
+            throw new IllegalStateException("Please verify your email before logging in.");
         }
 
         if (user.isBanned()) {
-            log.error("Login failed: user {} is banned.", user.getHotdropId());
-            throw new RuntimeException("Your account has been banned.");
+            log.warn("Login blocked: user {} is banned.", user.getHotdropId());
+            throw new IllegalStateException("Your account has been banned.");
         }
 
         Authentication authentication = authenticationManager.authenticate(
@@ -226,35 +226,25 @@ public class AuthServiceImpl implements AuthService {
 
         user.setLastLoginAt(LocalDateTime.now());
         userRepo.save(user);
-
-        log.info("User {} logged in successfully.", user.getHotdropId());
-        return jwtService.generateToken(authentication);
-    }
-
-    @Override
-    public LoginResponseDto getLoginResponseDetails(String hotdropIdOrEmail) {
-        log.info("Getting login details for user: {}", hotdropIdOrEmail);
-
-        User user = userRepo.findByHotdropId(hotdropIdOrEmail)
-                .or(() -> userRepo.findByEmail(hotdropIdOrEmail))
-                .orElseThrow(() -> {
-                    log.error("Cannot get login details: user not found for {}", hotdropIdOrEmail);
-                    return new RuntimeException("User not found");
-                });
-
+        String accessToken = jwtService.generateToken(authentication);
+        RefreshToken refreshToken = refreshTokenService.createRefreshToken(user.getHotdropId());
         List<String> roles = user.getRoles().stream()
                 .map(role -> role.getRoleName().name())
                 .toList();
 
-        log.info("Found user {} with roles: {}", user.getHotdropId(), roles);
-
-        return LoginResponseDto.builder()
+        LoginResponseDto responseDto = LoginResponseDto.builder()
                 .hotdropId(user.getHotdropId())
                 .email(user.getEmail())
                 .roles(roles)
-                .isLoggedIn(true)
+                .build();
+        log.info("User {} logged in successfully.", user.getHotdropId());
+        return AuthResultDto.builder()
+                .accessToken(accessToken)
+                .refreshToken(refreshToken.getToken())
+                .userDetails(responseDto)
                 .build();
     }
+
 
     @Override
     @Transactional

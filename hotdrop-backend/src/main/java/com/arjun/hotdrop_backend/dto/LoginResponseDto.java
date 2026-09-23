@@ -11,6 +11,6 @@ public class LoginResponseDto {
 
     private String hotdropId;
     private String email;
-    private boolean isLoggedIn;
+
     private List<String> roles;
 }

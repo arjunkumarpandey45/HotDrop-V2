@@ -3,10 +3,11 @@ package com.arjun.hotdrop_backend.controller;
 import com.arjun.hotdrop_backend.annotation.RateLimited;
 import com.arjun.hotdrop_backend.dto.*;
 import com.arjun.hotdrop_backend.entity.RefreshToken;
-import com.arjun.hotdrop_backend.repository.RefreshTokenRepo;
 import com.arjun.hotdrop_backend.service.AuthService;
 import com.arjun.hotdrop_backend.service.JwtService;
 import com.arjun.hotdrop_backend.service.RefreshTokenService;
+
+import com.arjun.hotdrop_backend.utils.CookieUtils;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
@@ -18,6 +19,8 @@ import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Map;
+
 @Slf4j
 @RestController
 @RequestMapping("/auth")
@@ -25,7 +28,7 @@ import org.springframework.web.bind.annotation.*;
 public class AuthController {
     private final AuthService authService;
     private final RefreshTokenService refreshTokenService;
-    private final RefreshTokenRepo refreshTokenRepo;
+
     private final JwtService jwtService;
     @RateLimited(capacity = 5, refillTokens = 5, refillDurationSeconds = 300)
     @PostMapping("/signup")
@@ -56,60 +59,67 @@ public ResponseEntity<String> resendVerifyEmail(@Valid @RequestBody ReVerificati
     @PostMapping("/login")
     public ResponseEntity<LoginResponseDto> login(@Valid @RequestBody LoginRequestDto loginRequestDto) {
         log.info("Logging in user: {}", loginRequestDto.getHotdropIdOrEmail());
-        String jwtToken = authService.login(loginRequestDto);
-        LoginResponseDto responseDto = authService.getLoginResponseDetails(loginRequestDto.getHotdropIdOrEmail());
-        var refreshToken = refreshTokenService.createRefreshToken(responseDto.getHotdropId());
+        AuthResultDto authResult = authService.login(loginRequestDto);
+        ResponseCookie accessCookie = ResponseCookie.from("accessToken", authResult.getAccessToken())
+                .httpOnly(true)
+                .secure(false)//in production set true
+                .path("/")
+                .maxAge(15 * 60)
+                .sameSite("Strict")
+                .build();
 
-        ResponseCookie accessCookie = ResponseCookie.from("accessToken", jwtToken)
-                .httpOnly(true).secure(false).path("/").maxAge(15 * 60).sameSite("Strict").build();
+        ResponseCookie refreshCookie = ResponseCookie.from("refreshToken", authResult.getRefreshToken())
+                .httpOnly(true)
+                .secure(false)//in production set true
+                .path("/auth/refresh") // Cookie scope strictly refresh at endpoint
 
-        ResponseCookie refreshCookie = ResponseCookie.from("refreshToken", refreshToken.getToken())
-                .httpOnly(true).secure(false).path("/").maxAge(30 * 24 * 60 * 60).sameSite("Strict").build();
-
-        log.info("User logged in successfully: {}", responseDto.getHotdropId());
+                .maxAge(30 * 24 * 60 * 60)
+                .sameSite("Strict")
+                .build();
+        log.info("User logged in successfully: {}", authResult.getUserDetails().getHotdropId());
         return ResponseEntity.ok()
                 .header(HttpHeaders.SET_COOKIE, accessCookie.toString())
                 .header(HttpHeaders.SET_COOKIE, refreshCookie.toString())
-                .body(responseDto);
+                .body(authResult.getUserDetails());
     }
     @RateLimited(capacity = 20, refillTokens = 20, refillDurationSeconds = 60)
     @PostMapping("/refresh")
     public ResponseEntity<?> refreshToken(HttpServletRequest request) {
-        log.info("Refreshing access token.");
-        String refreshTokenFromCookie = null;
+       log.info("Refreshing access token.");
+        String refreshTokenFromCookie = CookieUtils.extractCookie(request, "refreshToken");
 
-        if (request.getCookies() != null) {
-            for (var cookie : request.getCookies()) {
-                if ("refreshToken".equals(cookie.getName())) {
-                    refreshTokenFromCookie = cookie.getValue();
-                    break;
-                }
-            }
+        if (refreshTokenFromCookie == null || refreshTokenFromCookie.isBlank()) {
+            log.warn("Cannot refresh token because the cookie is missing.");
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("message", "Refresh token is missing."));
         }
+        RefreshToken newRefreshToken = refreshTokenService.verifyAndRotate(refreshTokenFromCookie);
+        String newAccessToken = jwtService.generateTokenFromHotdropId(newRefreshToken.getUser().getHotdropId());
 
-        if (refreshTokenFromCookie == null || refreshTokenFromCookie.isEmpty()) {
-            log.error("Cannot refresh token because the cookie is missing.");
-            return ResponseEntity.badRequest().body("Refresh Token is missing!");
-        }
 
-        return refreshTokenRepo.findByToken(refreshTokenFromCookie)
-                .map(refreshTokenService::verifyExpiration)
-                .map(RefreshToken::getUser)
-                .map(user -> {
-                    String newAccessToken = jwtService.generateTokenFromHotdropId(user.getHotdropId());
+        ResponseCookie newAccessCookie = ResponseCookie.from("accessToken", newAccessToken)
+                .httpOnly(true)
+                .secure(false)
+                .path("/")
+                .maxAge(15 * 60)
+                .sameSite("Strict")
+                .build();
 
-                    ResponseCookie newAccessCookie = ResponseCookie.from("accessToken", newAccessToken)
-                            .httpOnly(true).secure(false).path("/").maxAge(15 * 60).sameSite("Strict").build();
 
-                    log.info("Refreshed access token for user: {}", user.getHotdropId());
-                    return ResponseEntity.ok()
-                            .header(HttpHeaders.SET_COOKIE, newAccessCookie.toString())
-                            .body("Token refreshed successfully!");
-                })
-                .orElseThrow(() -> {
-                    log.error("Cannot refresh token because it was not found.");
-                    return new RuntimeException("Refresh token is not in database!");
-                });
+        ResponseCookie newRefreshCookie = ResponseCookie.from("refreshToken", newRefreshToken.getToken())
+                .httpOnly(true)
+                .secure(false)
+                .path("/auth/refresh")
+                .maxAge(30 * 24 * 60 * 60)
+                .sameSite("Strict")
+                .build();
+
+        log.info("Refreshed access token successfully for user: {}", newRefreshToken.getUser().getHotdropId());
+
+        return ResponseEntity.ok()
+                .header(HttpHeaders.SET_COOKIE, newAccessCookie.toString())
+                .header(HttpHeaders.SET_COOKIE, newRefreshCookie.toString())
+                .body(Map.of("message", "Token refreshed successfully."));
     }
 
     @RateLimited(capacity = 3, refillTokens = 3, refillDurationSeconds = 300)
