@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useParams, useNavigate, Link } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import { useAuthStore } from "../../store/useAuthStore";
 import {
   Heart,
@@ -11,8 +11,8 @@ import {
   ExternalLink,
   ArrowLeft,
   Clock,
-  ShieldCheck,
 } from "lucide-react";
+import AuthRequiredModal from "../../components/modals/AuthRequiredModal";
 import { formatDistanceToNow } from "date-fns";
 import CommentModal from "../../components/modals/CommentModal";
 import LikeModal from "../../components/modals/LikeModal";
@@ -448,50 +448,10 @@ function FromShare() {
         </div>
       </div>
 
-      {showAuthModal && (
-        <div className="fixed inset-0 z-[999] flex items-center justify-center p-4">
-          <button 
-            type="button"
-            aria-label="Close sign in modal"
-            className="absolute inset-0 bg-slate-950/60 backdrop-blur-sm cursor-pointer border-0 p-0" 
-            onClick={() => setShowAuthModal(false)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" || e.key === " " || e.key === "Escape") {
-                setShowAuthModal(false);
-              }
-            }}
-          />
-          <div className="relative bg-white w-full max-w-xs rounded-2xl p-6 shadow-2xl text-center border border-slate-100 animate-in zoom-in-95 duration-200">
-            <div className="w-12 h-12 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center mx-auto mb-3">
-              <ShieldCheck size={24} />
-            </div>
-            <h2 className="text-base font-bold text-slate-900 mb-1">Sign in required</h2>
-            <p className="text-xs text-slate-500 mb-5 leading-relaxed">
-              Join the community to access and interact with this project.
-            </p>
-            <div className="flex flex-col gap-2">
-              <button
-                onClick={() => navigate("/login")}
-                className="w-full bg-blue-600 text-white text-xs font-bold py-2.5 rounded-xl hover:bg-blue-700 transition shadow-md shadow-blue-500/20"
-              >
-                Sign In
-              </button>
-              <button
-                onClick={() => setShowAuthModal(false)}
-                className="w-full bg-slate-100 text-slate-600 text-xs font-bold py-2.5 rounded-xl hover:bg-slate-200 transition"
-              >
-                Cancel
-              </button>
-            </div>
-            <p className="mt-4 text-[11px] text-slate-400 font-bold uppercase">
-              New here?{" "}
-              <Link to="/signup" className="text-blue-600 hover:underline">
-                Create account
-              </Link>
-            </p>
-          </div>
-        </div>
-      )}
+      <AuthRequiredModal
+        isOpen={showAuthModal}
+        onClose={() => setShowAuthModal(false)}
+      />
 
       <AnimatePresence>
         {previewUrl && (

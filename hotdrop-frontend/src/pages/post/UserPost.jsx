@@ -12,9 +12,8 @@ import {
   MoreVertical,
 
   Loader2,
-  ShieldCheck,
-
 } from "lucide-react";
+import AuthRequiredModal from "../../components/modals/AuthRequiredModal";
 import { formatDistanceToNow } from "date-fns";
 import ImageModal from "../../components/modals/ImageModal";
 import CommentModal from "../../components/modals/CommentModal";
@@ -26,7 +25,7 @@ import API from "../../api/Api";
 import { toast } from "react-toastify";
 import { showLikeToast, showCommentToast, showProjectDeletedToast, showErrorToast, showDeadLinkToast } from "../../toast/Toast";
 import { AnimatePresence, motion } from "framer-motion";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import dp from "../../assets/dp.jpg";
 import { useEffect, useState, useRef, useCallback } from "react";
 import LoadMoreTrigger from "../../components/common/LoadMoreTrigger";
@@ -40,7 +39,6 @@ function UserPost({
   onLoadMore,
 }) {
   const { user, userPosts } = useAuthStore();
-  const navigate = useNavigate();
 
   const [previewUrl, setPreviewUrl] = useState(null);
   const [commentText, setCommentText] = useState("");
@@ -889,48 +887,10 @@ function UserPost({
         </div>
       )}
 
-      {showAuthModal && (
-        <div className="fixed inset-0 z-[999] flex items-center justify-center p-6">
-          <button
-            type="button"
-            aria-label="Close sign in modal"
-            className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm border-0 p-0"
-            onClick={() => setShowAuthModal(false)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" || e.key === " " || e.key === "Escape") {
-                setShowAuthModal(false);
-              }
-            }}
-          />
-          <div className="relative bg-white w-full max-w-[300px] rounded-2xl p-6 shadow-xl text-center border border-slate-100 animate-in fade-in zoom-in duration-200">
-            <div className="w-12 h-12 bg-indigo-50 text-indigo-600 rounded-xl flex items-center justify-center mx-auto mb-4">
-              <ShieldCheck size={24} />
-            </div>
-            <h2 className="text-base font-bold text-slate-900 mb-1">Sign in required</h2>
-            <p className="text-[12px] text-slate-500 mb-6">Please login to access this Project.</p>
-            <div className="flex flex-col gap-2">
-              <button
-                onClick={() => navigate("/login")}
-                className="w-full bg-indigo-600 text-white text-[13px] font-semibold py-2.5 rounded-lg hover:bg-indigo-700 transition-all"
-              >
-                Sign In
-              </button>
-              <button
-                onClick={() => setShowAuthModal(false)}
-                className="w-full bg-slate-50 text-slate-600 text-[13px] font-semibold py-2.5 rounded-lg hover:bg-slate-100"
-              >
-                Cancel
-              </button>
-            </div>
-            <p className="mt-4 text-[11px] text-slate-400">
-              New here?{" "}
-              <Link to="/signup" className="text-indigo-600 font-bold hover:underline">
-                Create account
-              </Link>
-            </p>
-          </div>
-        </div>
-      )}
+      <AuthRequiredModal
+        isOpen={showAuthModal}
+        onClose={() => setShowAuthModal(false)}
+      />
 
       {imagePost && (
         <ImageModal
