@@ -103,6 +103,7 @@ const Navbar = () => {
   useEffect(() => {
     const q = searchQuery.trim().replace(/^@/, "");
     if (!q) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setSuggestions([]);
       setShowSuggestions(false);
       return;

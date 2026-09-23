@@ -259,6 +259,7 @@ export function usePaginatedFetch({
   useEffect(() => {
     if (!enabled || !url) {
       if (!enabled) {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         setLoading(false);
         setLoadingMore(false);
       }

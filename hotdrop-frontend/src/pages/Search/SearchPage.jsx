@@ -3,17 +3,17 @@ import { useSearchParams, useNavigate } from "react-router-dom";
 import { useAuthStore } from "../../store/useAuthStore";
 import { 
   Search,  
-  ShieldCheck, 
   Sparkles,
   Tag,
-  ArrowLeft,
-  SlidersHorizontal,
-  Boxes,
-  X
+  ArrowLeft
 } from "lucide-react";
 import Sidebar from "../../components/layout/Sidebar";
 import Sponser from "../../components/post/Sponser";
 import PostCard from "../../components/post/PostCard";
+import PostSkeleton from "../../components/common/PostSkeleton";
+import QuickTopicBar from "../../components/common/QuickTopicBar";
+import AuthRequiredModal from "../../components/modals/AuthRequiredModal";
+import TechFilterModal from "../../components/modals/TechFilterModal";
 import { toast } from "react-toastify";
 import { showLikeToast, showCommentToast, showErrorToast } from "../../toast/Toast";
 import CommentModal from "../../components/modals/CommentModal";
@@ -42,33 +42,6 @@ function SearchPage() {
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [showFilterModal, setShowFilterModal] = useState(false);
   const [isSearchModalOpen, setIsSearchModalOpen] = useState(false);
-
-  const quickTopics = [
-    "React", "NextJS", "MERN", "SpringBoot", "NodeJS", "TailwindCSS", "AI", "Python", "Java", "PostgreSQL"
-  ];
-
-  const allFilterCategories = [
-    {
-      id: "frontend",
-      category: "⚡ Frontend & Fullstack",
-      tags: ["React 19", "NextJS", "MERN", "TailwindCSS", "VueJS", "Angular", "TypeScript", "Svelte"]
-    },
-    {
-      id: "backend",
-      category: "🛡️ Backend & Frameworks",
-      tags: ["SpringBoot", "NodeJS", "Express", "Django", "FastAPI", "Java 21", "Python", "Go", "GraphQL"]
-    },
-    {
-      id: "database",
-      category: "🗄️ Database & Cloud",
-      tags: ["PostgreSQL", "MongoDB", "Redis", "Supabase", "Docker", "AWS", "Firebase"]
-    },
-    {
-      id: "ai",
-      category: "🤖 AI & Emerging Tech",
-      tags: ["OpenAI API", "LangChain", "PyTorch", "Agentic AI", "WebSockets", "Web3"]
-    }
-  ];
 
   const handleFilterTopic = (tag) => {
     const cleanTag = tag.replace(/[^a-zA-Z0-9]/g, "");
@@ -430,40 +403,11 @@ function SearchPage() {
               </button>
             </form>
 
-            <div className="pt-2 border-t border-slate-100 flex items-center justify-between gap-2.5">
-              <div className="flex items-center gap-2 overflow-x-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden py-0.5 flex-1 min-w-0">
-                <button
-                  type="button"
-                  onClick={() => setShowFilterModal(true)}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-black uppercase tracking-wider shrink-0 shadow-md shadow-blue-500/20 transition cursor-pointer"
-                >
-                  <SlidersHorizontal size={14} />
-                  <span>Filter</span>
-                </button>
-
-                <div className="h-4 w-[1px] bg-slate-200 shrink-0" />
-
-                {quickTopics.map((topic) => (
-                  <button
-                    key={topic}
-                    type="button"
-                    onClick={() => handleFilterTopic(topic)}
-                    className="px-2.5 py-1 rounded-xl bg-slate-50 hover:bg-blue-50 hover:text-blue-600 text-slate-700 text-[11px] font-extrabold whitespace-nowrap transition cursor-pointer shrink-0 border border-slate-200/70"
-                  >
-                    #{topic}
-                  </button>
-                ))}
-              </div>
-
-              <button
-                type="button"
-                onClick={() => setShowFilterModal(true)}
-                className="p-2 rounded-xl bg-slate-100 text-slate-700 hover:bg-blue-600 hover:text-white transition cursor-pointer shrink-0"
-                title="All Tech Topics Filter"
-              >
-                <Boxes size={16} />
-              </button>
-            </div>
+            <QuickTopicBar
+              onOpenFilter={() => setShowFilterModal(true)}
+              onSelectTopic={handleFilterTopic}
+              className="pt-2 border-t border-slate-100"
+            />
 
             {query && (
               <div className="flex items-center justify-between pt-1 border-t border-slate-100">
@@ -481,20 +425,7 @@ function SearchPage() {
           </div>
 
           {loading ? (
-            <div className="space-y-6">
-              {[1, 2].map((n) => (
-                <div key={n} className="bg-white rounded-3xl p-6 border border-slate-100 shadow-sm animate-pulse space-y-4">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-slate-200 rounded-full" />
-                    <div className="space-y-2 flex-1">
-                      <div className="h-3 bg-slate-200 rounded w-1/3" />
-                      <div className="h-2 bg-slate-200 rounded w-1/4" />
-                    </div>
-                  </div>
-                  <div className="w-full aspect-[16/9] bg-slate-200 rounded-2xl" />
-                </div>
-              ))}
-            </div>
+            <PostSkeleton count={2} />
           ) : !query.trim() ? (
 
             <div className="bg-white rounded-3xl p-10 text-center border border-slate-200/80 shadow-sm space-y-4">
@@ -579,44 +510,10 @@ function SearchPage() {
       </div>
 
       {/* AUTH REQUIRED MODAL */}
-      {showAuthModal && (
-        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
-          <button 
-            type="button"
-            aria-label="Close sign in modal"
-            className="absolute inset-0 bg-slate-950/60 backdrop-blur-sm cursor-pointer border-0 p-0" 
-            onClick={() => setShowAuthModal(false)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" || e.key === " " || e.key === "Escape") {
-                setShowAuthModal(false);
-              }
-            }}
-          />
-          <div className="relative bg-white w-full max-w-[320px] rounded-3xl p-6 shadow-2xl text-center border border-slate-100 animate-in zoom-in-95 duration-200">
-            <div className="w-12 h-12 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center mx-auto mb-4">
-              <ShieldCheck size={26} />
-            </div>
-            <h2 className="text-base font-black text-slate-900 mb-1 uppercase tracking-tight">Sign In Required</h2>
-            <p className="text-xs text-slate-500 mb-6 font-medium leading-relaxed">Please log in to interact with project on HotDrop.</p>
-            <div className="flex flex-col gap-2.5">
-              <button 
-                type="button"
-                onClick={() => navigate("/login")} 
-                className="w-full bg-blue-600 text-white text-xs font-black uppercase tracking-wider py-3 rounded-2xl hover:bg-blue-700 transition-all shadow-lg shadow-blue-500/20 cursor-pointer"
-              >
-                Sign In
-              </button>
-              <button 
-                type="button"
-                onClick={() => setShowAuthModal(false)} 
-                className="w-full bg-slate-100 text-slate-600 text-xs font-bold py-2.5 rounded-2xl hover:bg-slate-200 transition-all cursor-pointer"
-              >
-                Cancel
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <AuthRequiredModal
+        isOpen={showAuthModal}
+        onClose={() => setShowAuthModal(false)}
+      />
 
       {/* MODALS */}
       <AnimatePresence>
@@ -661,76 +558,11 @@ function SearchPage() {
       )}
 
       {/* TECH TOPICS FILTER POPUP MODAL */}
-      {showFilterModal && (
-        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-3 sm:p-6 select-none">
-          <button 
-            type="button"
-            aria-label="Close filter modal"
-            className="fixed inset-0 bg-slate-950/60 backdrop-blur-md animate-in fade-in duration-200 cursor-pointer border-0 p-0"
-            onClick={() => setShowFilterModal(false)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" || e.key === " " || e.key === "Escape") {
-                setShowFilterModal(false);
-              }
-            }}
-          />
-          <div 
-            className="relative bg-white w-full max-w-lg rounded-3xl overflow-hidden shadow-2xl border border-slate-100 animate-in zoom-in-95 duration-150 flex flex-col max-h-[85vh]"
-          >
-            <div className="p-4 px-5 border-b border-slate-100 flex justify-between items-center bg-slate-50/60">
-              <div className="flex items-center gap-2 text-slate-900">
-                <Boxes size={18} className="text-blue-600" />
-                <h3 className="font-extrabold text-sm uppercase tracking-wider text-slate-900">
-                  Filter Project by Tech Stack
-                </h3>
-              </div>
-              <button
-                type="button"
-                onClick={() => setShowFilterModal(false)}
-                className="p-1.5 text-slate-400 hover:bg-slate-200/60 hover:text-slate-700 rounded-full transition cursor-pointer"
-              >
-                <X size={18} />
-              </button>
-            </div>
-
-            <div className="p-4 bg-gradient-to-br from-blue-600 via-indigo-600 to-blue-700 text-white flex items-center justify-between gap-3 shadow-sm">
-              <div className="space-y-0.5">
-                <div className="flex items-center gap-1.5 text-amber-300 text-[10px] font-black uppercase">
-                  <Sparkles size={12} /> HotDrop Stack Filter
-                </div>
-                <p className="text-xs font-bold text-blue-100">
-                  Select any tech stack to discover matching live project! 🚀
-                </p>
-              </div>
-            </div>
-
-            <div className="p-4 overflow-y-auto space-y-4 max-h-[60vh]">
-              {allFilterCategories.map((cat) => (
-                <div key={cat.id} className="space-y-2">
-                  <span className="text-[11px] font-black text-slate-500 uppercase tracking-tight block">
-                    {cat.category}
-                  </span>
-                  <div className="flex flex-wrap gap-2">
-                    {cat.tags.map((tag) => (
-                      <button
-                        key={tag}
-                        type="button"
-                        onClick={() => {
-                          setShowFilterModal(false);
-                          handleFilterTopic(tag);
-                        }}
-                        className="bg-slate-50 hover:bg-blue-600 hover:text-white border border-slate-200/80 text-slate-800 text-xs font-extrabold px-3 py-1.5 rounded-xl transition-all duration-200 cursor-pointer shadow-2xs hover:scale-105 active:scale-95"
-                      >
-                        #{tag}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      )}
+      <TechFilterModal
+        isOpen={showFilterModal}
+        onClose={() => setShowFilterModal(false)}
+        onSelectTag={handleFilterTopic}
+      />
 
       {/* LIVE SEARCH & SUGGESTIONS MODAL */}
       <SearchModal 

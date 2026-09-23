@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components */
 import { useEffect, useRef, useState } from "react";
 import { toast } from "react-toastify";
 import { motion } from "framer-motion";

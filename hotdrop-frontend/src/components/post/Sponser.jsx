@@ -8,94 +8,88 @@ import {
   ArrowUpRight
 } from "lucide-react";
 
-const SPOTLIGHTS = [
+const THEMES = {
+  emerald: { bg: "bg-emerald-50/40 border-emerald-100", pill: "bg-emerald-100/80 text-emerald-800" },
+  blue: { bg: "bg-blue-50/40 border-blue-100", pill: "bg-blue-100/80 text-blue-800" },
+  amber: { bg: "bg-amber-50/40 border-amber-100", pill: "bg-amber-100/80 text-amber-900" },
+  teal: { bg: "bg-teal-50/40 border-teal-100", pill: "bg-teal-100/80 text-teal-800" },
+  sky: { bg: "bg-sky-50/40 border-sky-100", pill: "bg-sky-100/80 text-sky-800" },
+  orange: { bg: "bg-orange-50/40 border-orange-100", pill: "bg-orange-100/80 text-orange-800" },
+};
+
+const SPONSORS = [
   {
     id: "chatgpt",
+    name: "ChatGPT",
     badge: "Official AI Partner",
     tag: "OpenAI",
-    brand: "ChatGPT / OpenAI",
     title: "OpenAI GPT-4o & Reasoning",
     description: "Build next-gen multimodal apps with real-time speech, vision and frontier reasoning APIs.",
     ctaText: "Explore ChatGPT",
     ctaUrl: "https://chatgpt.com",
-    bgTint: "bg-emerald-50/40 border-emerald-100",
-    pillBg: "bg-emerald-100/80 text-emerald-800",
+    theme: "emerald",
     stats: "GPT-4o API",
   },
   {
     id: "gemini",
+    name: "Google Gemini",
     badge: "Featured AI Engine",
-    tag: "Google DeepMind",
-    brand: "Google Gemini",
+    tag: "DeepMind",
     title: "Multimodal Gemini 2.0 Pro",
     description: "Frontier multimodal AI with 2M token context, real-time audio-video streaming & deep reasoning.",
     ctaText: "Try Gemini AI",
     ctaUrl: "https://gemini.google.com",
-    bgTint: "bg-blue-50/40 border-blue-100",
-    pillBg: "bg-blue-100/80 text-blue-800",
+    theme: "blue",
     stats: "2M Context",
   },
   {
     id: "grok",
+    name: "xAI Grok",
     badge: "Frontier AI Partner",
     tag: "xAI",
-    brand: "xAI / Grok",
     title: "Grok 3 Reasoning Engine",
     description: "Real-time search, cosmic reasoning & ultra-low latency inference API engineered by xAI.",
     ctaText: "Access Grok",
     ctaUrl: "https://x.ai",
-    bgTint: "bg-amber-50/40 border-amber-100",
-    pillBg: "bg-amber-100/80 text-amber-900",
+    theme: "amber",
     stats: "Grok 3 API",
   },
   {
     id: "perplexity",
+    name: "Perplexity",
     badge: "Search & Discovery",
-    tag: "Perplexity",
-    brand: "Perplexity AI",
+    tag: "Search",
     title: "Perplexity Sonar & Pro Search",
     description: "Conversational answer engine with verified web citations and real-time knowledge grounding.",
     ctaText: "Search Perplexity",
     ctaUrl: "https://www.perplexity.ai",
-    bgTint: "bg-teal-50/40 border-teal-100",
-    pillBg: "bg-teal-100/80 text-teal-800",
+    theme: "teal",
     stats: "Sonar API",
   },
   {
     id: "meta-ai",
+    name: "Meta Llama",
     badge: "Open Source AI",
     tag: "Meta AI",
-    brand: "Meta AI",
     title: "Meta Llama 3.3 Open Models",
     description: "Open-source frontier intelligence powering community innovation and developer applications.",
     ctaText: "Explore Llama",
     ctaUrl: "https://ai.meta.com",
-    bgTint: "bg-sky-50/40 border-sky-100",
-    pillBg: "bg-sky-100/80 text-sky-800",
+    theme: "sky",
     stats: "Llama 3.3",
   },
   {
     id: "claude",
+    name: "Claude AI",
     badge: "Reasoning & Coding",
     tag: "Anthropic",
-    brand: "Claude AI",
     title: "Claude 3.7 Sonnet & Thinking",
     description: "Hybrid reasoning architecture for complex code refactoring, system design, and computer use.",
     ctaText: "Try Claude",
     ctaUrl: "https://claude.ai",
-    bgTint: "bg-orange-50/40 border-orange-100",
-    pillBg: "bg-orange-100/80 text-orange-800",
+    theme: "orange",
     stats: "Claude 3.7",
   },
-];
-
-const AI_PLATFORMS = [
-  { name: "ChatGPT", tag: "OpenAI", color: "text-emerald-700 bg-emerald-50 border-emerald-100" },
-  { name: "Google Gemini", tag: "DeepMind", color: "text-blue-700 bg-blue-50 border-blue-100" },
-  { name: "xAI Grok", tag: "xAI", color: "text-amber-700 bg-amber-50 border-amber-100" },
-  { name: "Perplexity", tag: "Search", color: "text-teal-700 bg-teal-50 border-teal-100" },
-  { name: "Meta Llama", tag: "Meta AI", color: "text-sky-700 bg-sky-50 border-sky-100" },
-  { name: "Claude AI", tag: "Anthropic", color: "text-orange-700 bg-orange-50 border-orange-100" },
 ];
 
 const Sponser = () => {
@@ -105,15 +99,16 @@ const Sponser = () => {
   useEffect(() => {
     if (isHovered) return;
     const timer = setInterval(() => {
-      setCurrentIndex((prev) => (prev + 1) % SPOTLIGHTS.length);
+      setCurrentIndex((prev) => (prev + 1) % SPONSORS.length);
     }, 4500);
     return () => clearInterval(timer);
   }, [isHovered]);
 
-  const current = SPOTLIGHTS[currentIndex];
+  const current = SPONSORS[currentIndex];
+  const theme = THEMES[current.theme] || THEMES.blue;
 
-  const handleNext = () => setCurrentIndex((prev) => (prev + 1) % SPOTLIGHTS.length);
-  const handlePrev = () => setCurrentIndex((prev) => (prev - 1 + SPOTLIGHTS.length) % SPOTLIGHTS.length);
+  const handleNext = () => setCurrentIndex((prev) => (prev + 1) % SPONSORS.length);
+  const handlePrev = () => setCurrentIndex((prev) => (prev - 1 + SPONSORS.length) % SPONSORS.length);
 
   return (
     <aside className="space-y-4 select-none">
@@ -158,9 +153,9 @@ const Sponser = () => {
           </div>
         </div>
 
-        <div className={`rounded-2xl border p-3.5 mb-3.5 transition-colors duration-500 ${current.bgTint}`}>
+        <div className={`rounded-2xl border p-3.5 mb-3.5 transition-colors duration-500 ${theme.bg}`}>
           <div className="flex items-center justify-between gap-2 mb-1.5">
-            <span className={`text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full ${current.pillBg}`}>
+            <span className={`text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full ${theme.pill}`}>
               {current.tag}
             </span>
             <span className="text-[10px] font-mono font-bold text-slate-500">
@@ -179,7 +174,7 @@ const Sponser = () => {
 
         <div className="flex items-center justify-between gap-3 pt-0.5">
           <div className="flex items-center gap-1.5">
-            {SPOTLIGHTS.map((spot, idx) => (
+            {SPONSORS.map((spot, idx) => (
               <button
                 type="button"
                 key={spot.id}
@@ -216,10 +211,10 @@ const Sponser = () => {
         </div>
 
         <div className="grid grid-cols-2 gap-2">
-          {AI_PLATFORMS.map((item, idx) => (
+          {SPONSORS.map((item, idx) => (
             <button
               type="button"
-              key={item.name}
+              key={item.id}
               onClick={() => setCurrentIndex(idx)}
               className={`flex flex-col justify-center p-2 rounded-xl border transition-all cursor-pointer group text-left ${
                 idx === currentIndex

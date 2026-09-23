@@ -107,6 +107,7 @@ function EditUserProfile() {
 
   useEffect(() => {
     if (isOwnProfile) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setSearchedUser(null);
       setFetchError(null);
       const myId = getEntityId(loggedInUser);

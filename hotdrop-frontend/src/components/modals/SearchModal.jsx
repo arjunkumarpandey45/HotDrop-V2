@@ -15,6 +15,7 @@ function SearchModal({ isOpen, onClose, initialMode = "users" }) {
 
   useEffect(() => {
     if (isOpen) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setSearchMode(initialMode);
       setTimeout(() => {
         inputRef.current?.focus();
@@ -29,6 +30,7 @@ function SearchModal({ isOpen, onClose, initialMode = "users" }) {
   useEffect(() => {
     const rawQ = searchQuery.trim();
     if (!rawQ) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setUserSuggestions([]);
       setProjectSuggestions([]);
       setLoading(false);
@@ -53,6 +55,7 @@ function SearchModal({ isOpen, onClose, initialMode = "users" }) {
 
           try {
             const res1 = await API.get(`/users/suggestions/${encodeURIComponent(cleanQ)}`);
+            const payload1 = res1.data?.data;
             if (Array.isArray(payload1)) {
               userList = payload1;
             } else if (payload1?.users) {
