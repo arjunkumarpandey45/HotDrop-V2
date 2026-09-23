@@ -15,15 +15,22 @@ function ShareProfileModal({ isOpen, onClose, user }) {
   };
 
   return (
-    <div
-      className="fixed inset-0 z-[100] bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-200"
-      onClick={onClose}
-    >
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 animate-in fade-in duration-200">
       <div
-        className="bg-white w-full max-w-sm rounded-2xl shadow-2xl p-6 border border-slate-100 animate-in zoom-in-95 duration-200 relative"
-        onClick={(e) => e.stopPropagation()}
-      >
+        role="button"
+        tabIndex={0}
+        aria-label="Close share profile modal"
+        className="fixed inset-0 bg-black/50 backdrop-blur-sm"
+        onClick={onClose}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " " || e.key === "Escape") {
+            onClose();
+          }
+        }}
+      />
+      <div className="relative z-10 bg-white w-full max-w-sm rounded-2xl shadow-2xl p-6 border border-slate-100 animate-in zoom-in-95 duration-200">
         <button
+          type="button"
           onClick={onClose}
           className="absolute top-4 right-4 text-slate-400 hover:text-slate-600 transition"
         >
@@ -45,6 +52,7 @@ function ShareProfileModal({ isOpen, onClose, user }) {
               {profileUrl}
             </span>
             <button
+              type="button"
               onClick={handleCopy}
               className="px-3 py-1.5 bg-slate-900 text-white rounded-lg text-xs font-semibold flex items-center gap-1.5 hover:bg-slate-800 transition"
             >

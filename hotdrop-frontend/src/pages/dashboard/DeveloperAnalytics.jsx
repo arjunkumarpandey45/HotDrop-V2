@@ -1064,7 +1064,7 @@ MONITORING STATUS:
 
               <div className="p-4 rounded-xl bg-slate-50 border border-slate-200/80 font-mono text-xs text-slate-800 space-y-2.5 leading-relaxed select-all">
                 <p className="text-blue-600 font-bold">
-                  // HOTDROP VERIFIED DEVELOPER SUMMARY
+                  {/* HOTDROP VERIFIED DEVELOPER SUMMARY */}
                 </p>
                 <p>
                   <strong>Developer:</strong> {[user?.firstName, user?.lastName].filter(Boolean).join(" ") || `@${user?.hotdropId || "developer"}`}

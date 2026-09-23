@@ -140,6 +140,7 @@ const Sponser = () => {
 
           <div className="flex items-center gap-1">
             <button
+              type="button"
               onClick={handlePrev}
               className="p-1 rounded-lg text-slate-400 hover:text-slate-800 hover:bg-slate-100 transition cursor-pointer"
               aria-label="Previous Spotlight"
@@ -147,6 +148,7 @@ const Sponser = () => {
               <ChevronLeft size={14} />
             </button>
             <button
+              type="button"
               onClick={handleNext}
               className="p-1 rounded-lg text-slate-400 hover:text-slate-800 hover:bg-slate-100 transition cursor-pointer"
               aria-label="Next Spotlight"
@@ -179,6 +181,7 @@ const Sponser = () => {
           <div className="flex items-center gap-1.5">
             {SPOTLIGHTS.map((_, idx) => (
               <button
+                type="button"
                 key={idx}
                 onClick={() => setCurrentIndex(idx)}
                 className={`h-1.5 rounded-full transition-all duration-300 cursor-pointer ${
@@ -214,10 +217,11 @@ const Sponser = () => {
 
         <div className="grid grid-cols-2 gap-2">
           {AI_PLATFORMS.map((item, idx) => (
-            <div
+            <button
+              type="button"
               key={item.name}
               onClick={() => setCurrentIndex(idx)}
-              className={`flex flex-col justify-center p-2 rounded-xl border transition-all cursor-pointer group ${
+              className={`flex flex-col justify-center p-2 rounded-xl border transition-all cursor-pointer group text-left ${
                 idx === currentIndex
                   ? "bg-blue-50/80 border-blue-300 shadow-2xs"
                   : "bg-slate-50 border-slate-100 hover:border-blue-200 hover:bg-blue-50/40"
@@ -229,7 +233,7 @@ const Sponser = () => {
               <span className="text-[10px] font-medium text-slate-400">
                 {item.tag}
               </span>
-            </div>
+            </button>
           ))}
         </div>
       </div>

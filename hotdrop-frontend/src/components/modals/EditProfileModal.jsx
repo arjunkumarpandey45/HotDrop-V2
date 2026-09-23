@@ -169,14 +169,20 @@ function EditProfileModal({ isOpen, onClose, user, handleUpdate, loading }) {
     }`;
 
   return (
-    <div
-      className="fixed inset-0 bg-slate-900/60 backdrop-blur-md z-[100] flex items-center justify-center p-3 sm:p-4 animate-in fade-in duration-200"
-      onClick={onClose}
-    >
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-3 sm:p-4 animate-in fade-in duration-200">
       <div
-        className="bg-white w-full max-w-lg rounded-3xl shadow-2xl flex flex-col max-h-[90vh] overflow-hidden border border-slate-100 animate-in zoom-in-95 duration-200"
-        onClick={(e) => e.stopPropagation()}
-      >
+        role="button"
+        tabIndex={0}
+        aria-label="Close edit profile modal"
+        className="fixed inset-0 bg-slate-900/60 backdrop-blur-md"
+        onClick={onClose}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " " || e.key === "Escape") {
+            onClose();
+          }
+        }}
+      />
+      <div className="relative z-10 bg-white w-full max-w-lg rounded-3xl shadow-2xl flex flex-col max-h-[90vh] overflow-hidden border border-slate-100 animate-in zoom-in-95 duration-200">
 
         <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-white/80 backdrop-blur-md shrink-0">
           <div className="flex items-center gap-2">
@@ -184,6 +190,7 @@ function EditProfileModal({ isOpen, onClose, user, handleUpdate, loading }) {
           </div>
           <div className="flex items-center gap-2">
             <button
+              type="button"
               onClick={onClose}
               className="p-1.5 rounded-full text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition"
             >

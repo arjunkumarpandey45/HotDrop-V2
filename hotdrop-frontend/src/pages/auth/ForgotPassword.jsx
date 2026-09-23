@@ -194,12 +194,13 @@ const ForgotPassword = () => {
 
               <form onSubmit={handleSendOtp} className="space-y-4">
                 <div>
-                  <label className="mb-1 ml-1 block text-[11px] font-semibold text-slate-700">
+                  <label htmlFor="forgot-email" className="mb-1 ml-1 block text-[11px] font-semibold text-slate-700">
                     Email Address
                   </label>
                   <div className="relative">
                     <Mail className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
                     <input
+                      id="forgot-email"
                       type="email"
                       name="email"
                       value={email}
@@ -256,7 +257,7 @@ const ForgotPassword = () => {
 
                 <div>
                   <div className="mb-1 flex items-center justify-between">
-                    <label className="ml-1 text-[11px] font-semibold text-slate-700">
+                    <label htmlFor="forgot-otp" className="ml-1 text-[11px] font-semibold text-slate-700">
                       OTP Code
                     </label>
                     <button
@@ -276,6 +277,7 @@ const ForgotPassword = () => {
                   <div className="relative">
                     <KeyRound className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
                     <input
+                      id="forgot-otp"
                       type="text"
                       name="otp"
                       value={otp}
@@ -288,7 +290,7 @@ const ForgotPassword = () => {
                 </div>
 
                 <div>
-                  <label className="mb-1 ml-1 block text-[11px] font-semibold text-slate-700">
+                  <label htmlFor="forgot-newPassword" className="mb-1 ml-1 block text-[11px] font-semibold text-slate-700">
                     New Password
                   </label>
                   <div className="relative">
@@ -302,6 +304,7 @@ const ForgotPassword = () => {
                       }`}
                     />
                     <input
+                      id="forgot-newPassword"
                       type={showNewPassword ? "text" : "password"}
                       name="newPassword"
                       value={newPassword}
@@ -331,7 +334,7 @@ const ForgotPassword = () => {
                 </div>
 
                 <div>
-                  <label className="mb-1 ml-1 block text-[11px] font-semibold text-slate-700">
+                  <label htmlFor="forgot-confirmPassword" className="mb-1 ml-1 block text-[11px] font-semibold text-slate-700">
                     Confirm New Password
                   </label>
                   <div className="relative">
@@ -345,6 +348,7 @@ const ForgotPassword = () => {
                       }`}
                     />
                     <input
+                      id="forgot-confirmPassword"
                       type={showConfirmPassword ? "text" : "password"}
                       name="confirmPassword"
                       value={confirmPassword}

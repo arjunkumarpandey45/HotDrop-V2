@@ -136,18 +136,25 @@ function SearchModal({ isOpen, onClose, initialMode = "users" }) {
   const activeCleanQuery = searchQuery.replace(/^@/, "").trim();
 
   return (
-    <div
-      className="fixed inset-0 z-[9999] bg-slate-950/60 backdrop-blur-md flex items-start justify-center p-3 sm:p-6 pt-16 sm:pt-24 animate-in fade-in duration-200 select-none"
-      onClick={onClose}
-    >
+    <div className="fixed inset-0 z-[9999] flex items-start justify-center p-3 sm:p-6 pt-16 sm:pt-24 animate-in fade-in duration-200 select-none">
       <div
-        className="bg-white w-full max-w-lg rounded-3xl shadow-2xl border border-slate-100 overflow-hidden animate-in zoom-in-95 duration-150 flex flex-col"
-        onClick={(e) => e.stopPropagation()}
-      >
+        role="button"
+        tabIndex={0}
+        aria-label="Close search modal"
+        className="fixed inset-0 bg-slate-950/60 backdrop-blur-md"
+        onClick={onClose}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " " || e.key === "Escape") {
+            onClose();
+          }
+        }}
+      />
+      <div className="relative z-10 bg-white w-full max-w-lg rounded-3xl shadow-2xl border border-slate-100 overflow-hidden animate-in zoom-in-95 duration-150 flex flex-col">
 
         <div className="flex items-center justify-between p-3 px-4 border-b border-slate-100 bg-slate-50/60">
           <div className="inline-flex bg-slate-200/70 p-1 rounded-xl">
             <button
+              type="button"
               onClick={() => setSearchMode("users")}
               className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
                 searchMode === "users"
@@ -158,6 +165,7 @@ function SearchModal({ isOpen, onClose, initialMode = "users" }) {
                HotDrop ID
             </button>
             <button
+              type="button"
               onClick={() => setSearchMode("projects")}
               className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
                 searchMode === "projects"
@@ -188,6 +196,7 @@ function SearchModal({ isOpen, onClose, initialMode = "users" }) {
           />
           {searchQuery && (
             <button
+              type="button"
               onClick={() => setSearchQuery("")}
               className="p-1 text-slate-400 hover:text-slate-600 rounded-full transition cursor-pointer"
             >
@@ -218,10 +227,11 @@ function SearchModal({ isOpen, onClose, initialMode = "users" }) {
                 const fullName = [s.firstName, s.lastName].filter(Boolean).join(" ");
 
                 return (
-                  <div
+                  <button
+                    type="button"
                     key={s.id || s._id || index}
                     onClick={() => handleSelectUser(handle)}
-                    className="flex items-center gap-3 p-2.5 px-3 rounded-2xl cursor-pointer hover:bg-blue-50/80 transition group border border-transparent hover:border-blue-100"
+                    className="w-full text-left flex items-center gap-3 p-2.5 px-3 rounded-2xl cursor-pointer hover:bg-blue-50/80 transition group border border-transparent hover:border-blue-100"
                   >
                     <img
                       src={avatar}
@@ -239,11 +249,12 @@ function SearchModal({ isOpen, onClose, initialMode = "users" }) {
                       )}
                     </div>
                     <ArrowRight size={15} className="text-slate-300 group-hover:text-blue-600 transition" />
-                  </div>
+                  </button>
                 );
               })}
 
               <button
+                type="button"
                 onClick={() => handleSelectUser(activeCleanQuery)}
                 className="w-full mt-2 p-2.5 px-3 bg-blue-50 hover:bg-blue-100/80 text-blue-600 rounded-2xl text-xs font-bold transition flex items-center justify-between cursor-pointer border border-blue-100"
               >
@@ -265,10 +276,11 @@ function SearchModal({ isOpen, onClose, initialMode = "users" }) {
                     : null;
 
                   return (
-                    <div
+                    <button
+                      type="button"
                       key={post.id || post._id || index}
                       onClick={() => handleSelectProject(post.title || activeCleanQuery)}
-                      className="flex items-center justify-between p-2.5 px-3 rounded-2xl cursor-pointer hover:bg-slate-50 transition group border border-transparent hover:border-slate-100"
+                      className="w-full text-left flex items-center justify-between p-2.5 px-3 rounded-2xl cursor-pointer hover:bg-slate-50 transition group border border-transparent hover:border-slate-100"
                     >
                       <div className="flex items-center gap-3 truncate">
                         <div className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0 overflow-hidden bg-slate-100 border border-slate-200 shadow-2xs">
@@ -290,10 +302,11 @@ function SearchModal({ isOpen, onClose, initialMode = "users" }) {
                         </div>
                       </div>
                       <ArrowRight size={15} className="text-slate-300 group-hover:text-blue-600 transition" />
-                    </div>
+                    </button>
                   );
                 })}
                 <button
+                  type="button"
                   onClick={() => handleSelectProject(activeCleanQuery)}
                   className="w-full mt-2 py-2.5 bg-blue-600 text-white rounded-xl text-xs font-black uppercase tracking-wider hover:bg-blue-700 transition flex items-center justify-center gap-1.5 cursor-pointer shadow-md shadow-blue-500/20"
                 >
@@ -304,6 +317,7 @@ function SearchModal({ isOpen, onClose, initialMode = "users" }) {
               <div className="text-center py-8 space-y-3">
                 <p className="text-slate-400 text-xs font-medium">No direct project match for "{activeCleanQuery}"</p>
                 <button
+                  type="button"
                   onClick={() => handleSelectProject(activeCleanQuery)}
                   className="px-4 py-2 bg-blue-600 text-white rounded-xl text-xs font-bold hover:bg-blue-700 transition cursor-pointer"
                 >

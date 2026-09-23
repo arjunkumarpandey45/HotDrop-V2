@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { useAuthStore } from "../../store/useAuthStore";
 import { 
@@ -606,8 +606,9 @@ function SearchPage() {
                 >
                   {/* HEADER */}
                   <div className="p-4 sm:p-5 flex items-center justify-between border-b border-slate-100/60">
-                    <div 
-                      className="flex items-center gap-3 cursor-pointer group/user"
+                    <button 
+                      type="button"
+                      className="flex items-center gap-3 cursor-pointer group/user text-left bg-transparent border-0 p-0"
                       onClick={() => navigate(`/user/userprofile/${ownerHandle}`)}
                     >
                       <img 
@@ -623,9 +624,10 @@ function SearchPage() {
                           <Clock size={11} /> {formatTime(post.createdAt)}
                         </div>
                       </div>
-                    </div>
+                    </button>
 
                     <button
+                      type="button"
                       onClick={() => setSharePost(post)}
                       className="p-2 rounded-xl text-slate-400 hover:text-blue-600 hover:bg-slate-50 transition-all cursor-pointer"
                       title="Share Project"
@@ -637,9 +639,18 @@ function SearchPage() {
                   {/* MEDIA AREA */}
                   {images.length > 0 && (
                     <div 
+                      role="button"
+                      tabIndex={0}
+                      aria-label="View media details"
                       className="relative mx-2 sm:mx-4 mt-2 sm:mt-3 bg-slate-950 rounded-2xl aspect-[16/9] flex items-center justify-center overflow-hidden border border-slate-900 cursor-pointer group/img"
                       onClick={() => handleImageClick(post, imgIndex)}
                       onDoubleClick={() => triggerDoubleTap(post)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" || e.key === " ") {
+                          e.preventDefault();
+                          handleImageClick(post, imgIndex);
+                        }
+                      }}
                     >
                       <img 
                         src={images[imgIndex]?.url} 
@@ -699,12 +710,23 @@ function SearchPage() {
 
                     {projectLink && (
                       <div 
+                        role="button"
+                        tabIndex={0}
+                        aria-label="Preview project link"
                         onClick={(e) => {
                           e.preventDefault();
                           if (!user) return setShowAuthModal(true);
                           if (!isLinkDead) setPreviewUrl(projectLink);
                           else showDeadLinkToast("This project link is currently down or unreachable");
                         }}     
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter" || e.key === " ") {
+                            e.preventDefault();
+                            if (!user) return setShowAuthModal(true);
+                            if (!isLinkDead) setPreviewUrl(projectLink);
+                            else showDeadLinkToast("This project link is currently down or unreachable");
+                          }
+                        }}
                         className="group/link relative flex items-center justify-between p-[1px] rounded-2xl mb-3.5 transition-all duration-300 hover:scale-[1.01] active:scale-[0.99] cursor-pointer"
                       >
                         <div className={`absolute inset-0 rounded-2xl opacity-20 group-hover/link:opacity-100 transition-opacity duration-500 bg-gradient-to-r ${isLinkDead ? "from-red-500 to-orange-500" : "from-blue-600 via-indigo-500 to-emerald-400"}`} /> 
@@ -741,25 +763,34 @@ function SearchPage() {
                     <PostDescription description={post.description} />
 
                     <div className="flex items-center gap-6 sm:gap-8 border-t border-slate-100 pt-3.5 mt-1">
-                      <div className="flex items-center gap-2 cursor-pointer group/like" onClick={() => handleLike(post)}>
-                        <Heart 
-                          size={22} 
-                          className={`transition-all duration-300 ${isLiked ? "fill-red-500 text-red-500 scale-110" : "text-slate-400 group-hover/like:text-red-500"}`} 
-                        />
-                        <span 
-                          onClick={(e) => {
-                            e.stopPropagation();
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => handleLike(post)}
+                          aria-label={isLiked ? "Unlike post" : "Like post"}
+                          className="flex items-center cursor-pointer group/like bg-transparent border-0 p-0"
+                        >
+                          <Heart 
+                            size={22} 
+                            className={`transition-all duration-300 ${isLiked ? "fill-red-500 text-red-500 scale-110" : "text-slate-400 group-hover/like:text-red-500"}`} 
+                          />
+                        </button>
+                        <button 
+                          type="button"
+                          onClick={() => {
                             if (!user) return setShowAuthModal(true);
                             setLikePost(post);
                           }} 
-                          className="text-xs font-black text-slate-800 hover:text-blue-600 transition-colors"
+                          aria-label="View users who liked this post"
+                          className="text-xs font-black text-slate-800 hover:text-blue-600 transition-colors cursor-pointer bg-transparent border-0 p-0"
                         >
                           {post.likeCount ?? post.likes?.length ?? 0}
-                        </span>
+                        </button>
                       </div>
 
-                      <div 
-                        className="flex items-center gap-2 cursor-pointer group/comment" 
+                      <button 
+                        type="button"
+                        className="flex items-center gap-2 cursor-pointer group/comment bg-transparent border-0 p-0" 
                         onClick={() => { 
                           if (!user) return setShowAuthModal(true); 
                           setCommentPost(post); 
@@ -769,15 +800,16 @@ function SearchPage() {
                         <span className="text-xs font-black text-slate-800">
                           {post.commentCount ?? post.comments?.length ?? 0}
                         </span>
-                      </div>
+                      </button>
 
-                      <div 
-                        className="flex items-center gap-2 cursor-pointer group/share ml-auto" 
+                      <button 
+                        type="button"
+                        className="flex items-center gap-2 cursor-pointer group/share ml-auto bg-transparent border-0 p-0" 
                         onClick={() => setSharePost(post)}
                       >
                         <Share2 size={20} className="text-slate-400 group-hover/share:text-blue-600 transition-colors" />
                         <span className="text-[11px] font-bold text-slate-500 group-hover/share:text-blue-600 hidden sm:inline">Share</span>
-                      </div>
+                      </button>
                     </div>
 
                   </div>
@@ -809,7 +841,18 @@ function SearchPage() {
       {/* AUTH REQUIRED MODAL */}
       {showAuthModal && (
         <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-slate-950/60 backdrop-blur-sm" onClick={() => setShowAuthModal(false)} />
+          <div 
+            role="button"
+            tabIndex={0}
+            aria-label="Close sign in modal"
+            className="absolute inset-0 bg-slate-950/60 backdrop-blur-sm cursor-pointer" 
+            onClick={() => setShowAuthModal(false)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || e.key === " " || e.key === "Escape") {
+                setShowAuthModal(false);
+              }
+            }}
+          />
           <div className="relative bg-white w-full max-w-[320px] rounded-3xl p-6 shadow-2xl text-center border border-slate-100 animate-in zoom-in-95 duration-200">
             <div className="w-12 h-12 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center mx-auto mb-4">
               <ShieldCheck size={26} />
@@ -818,12 +861,14 @@ function SearchPage() {
             <p className="text-xs text-slate-500 mb-6 font-medium leading-relaxed">Please log in to interact with project on HotDrop.</p>
             <div className="flex flex-col gap-2.5">
               <button 
+                type="button"
                 onClick={() => navigate("/login")} 
                 className="w-full bg-blue-600 text-white text-xs font-black uppercase tracking-wider py-3 rounded-2xl hover:bg-blue-700 transition-all shadow-lg shadow-blue-500/20 cursor-pointer"
               >
                 Sign In
               </button>
               <button 
+                type="button"
                 onClick={() => setShowAuthModal(false)} 
                 className="w-full bg-slate-100 text-slate-600 text-xs font-bold py-2.5 rounded-2xl hover:bg-slate-200 transition-all cursor-pointer"
               >
@@ -880,13 +925,21 @@ function SearchPage() {
 
       {/* TECH TOPICS FILTER POPUP MODAL */}
       {showFilterModal && (
-        <div 
-          className="fixed inset-0 z-[9999] bg-slate-950/60 backdrop-blur-md flex items-center justify-center p-3 sm:p-6 animate-in fade-in duration-200 select-none"
-          onClick={() => setShowFilterModal(false)}
-        >
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-3 sm:p-6 select-none">
           <div 
-            className="bg-white w-full max-w-lg rounded-3xl overflow-hidden shadow-2xl border border-slate-100 animate-in zoom-in-95 duration-150 flex flex-col max-h-[85vh]"
-            onClick={(e) => e.stopPropagation()}
+            role="button"
+            tabIndex={0}
+            aria-label="Close filter modal"
+            className="fixed inset-0 bg-slate-950/60 backdrop-blur-md animate-in fade-in duration-200 cursor-pointer"
+            onClick={() => setShowFilterModal(false)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || e.key === " " || e.key === "Escape") {
+                setShowFilterModal(false);
+              }
+            }}
+          />
+          <div 
+            className="relative bg-white w-full max-w-lg rounded-3xl overflow-hidden shadow-2xl border border-slate-100 animate-in zoom-in-95 duration-150 flex flex-col max-h-[85vh]"
           >
             <div className="p-4 px-5 border-b border-slate-100 flex justify-between items-center bg-slate-50/60">
               <div className="flex items-center gap-2 text-slate-900">

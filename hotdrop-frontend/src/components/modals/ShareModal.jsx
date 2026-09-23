@@ -25,14 +25,20 @@ function ShareModal({ post, onClose }) {
   }, [onClose]);
 
   return (
-    <div
-      className="fixed inset-0 z-[500] bg-slate-950/60 backdrop-blur-md flex items-center justify-center p-4 animate-in fade-in duration-200"
-      onClick={onClose}
-    >
+    <div className="fixed inset-0 z-[500] flex items-center justify-center p-4 animate-in fade-in duration-200">
       <div
-        className="relative bg-white rounded-3xl w-full max-w-sm shadow-2xl border border-slate-100 p-6 animate-in zoom-in-95 duration-200"
-        onClick={(e) => e.stopPropagation()}
-      >
+        role="button"
+        tabIndex={0}
+        aria-label="Close share modal"
+        className="fixed inset-0 bg-slate-950/60 backdrop-blur-md"
+        onClick={onClose}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " " || e.key === "Escape") {
+            onClose();
+          }
+        }}
+      />
+      <div className="relative z-10 bg-white rounded-3xl w-full max-w-sm shadow-2xl border border-slate-100 p-6 animate-in zoom-in-95 duration-200">
 
         <div className="absolute top-4 left-5 text-[10px] font-black tracking-widest uppercase">
           <span className="text-orange-500">HOT</span>
@@ -45,6 +51,7 @@ function ShareModal({ post, onClose }) {
           </h2>
 
           <button
+            type="button"
             onClick={onClose}
             className="p-1 rounded-full text-slate-400 hover:bg-slate-100 hover:text-slate-700 transition"
           >
@@ -62,6 +69,7 @@ function ShareModal({ post, onClose }) {
           <div className="flex flex-col gap-2.5">
 
             <button
+              type="button"
               onClick={copyLink}
               className="flex items-center justify-between border border-slate-200 rounded-xl px-4 py-2.5 hover:bg-slate-50 transition group"
             >
@@ -79,6 +87,7 @@ function ShareModal({ post, onClose }) {
             </button>
 
             <button
+              type="button"
               onClick={() => setShowQR(true)}
               className="flex items-center gap-3 border border-slate-200 rounded-xl px-4 py-2.5 text-xs font-bold text-slate-800 bg-white hover:bg-gradient-to-r hover:from-orange-50 hover:to-blue-50 hover:border-blue-200 transition shadow-sm"
             >
@@ -135,6 +144,7 @@ function ShareModal({ post, onClose }) {
             </span>
 
             <button
+              type="button"
               onClick={() => setShowQR(false)}
               className="text-xs font-bold text-blue-600 hover:underline"
             >

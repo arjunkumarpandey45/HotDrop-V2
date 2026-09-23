@@ -173,9 +173,10 @@ const NotificationItem = ({ notification, onClose }) => {
   };
 
   return (
-    <div
+    <button
+      type="button"
       onClick={handleClick}
-      className={`group relative flex items-center justify-between gap-3 rounded-2xl px-3 py-2.5 transition-all duration-150 cursor-pointer ${
+      className={`w-full text-left group relative flex items-center justify-between gap-3 rounded-2xl px-3 py-2.5 transition-all duration-150 cursor-pointer ${
         !isRead
           ? "bg-blue-50/50 hover:bg-blue-50/80"
           : "bg-white hover:bg-slate-50"
@@ -207,7 +208,7 @@ const NotificationItem = ({ notification, onClose }) => {
           <ChevronRight size={14} className="text-slate-300 group-hover:text-slate-600 transition" />
         )}
       </div>
-    </div>
+    </button>
   );
 };
 

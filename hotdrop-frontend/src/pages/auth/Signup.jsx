@@ -131,7 +131,7 @@ export default function Signup() {
 
               <div>
 
-                <label className="mb-1.5 ml-1 block text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400">
+                <label htmlFor="signup-firstName" className="mb-1.5 ml-1 block text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400">
                   First Name
                 </label>
 
@@ -140,6 +140,7 @@ export default function Signup() {
                   <User className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
 
                   <input
+                    id="signup-firstName"
                     type="text"
                     name="firstName"
                     value={formData.firstName}
@@ -155,7 +156,7 @@ export default function Signup() {
 
               <div>
 
-                <label className="mb-1.5 ml-1 block text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400">
+                <label htmlFor="signup-lastName" className="mb-1.5 ml-1 block text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400">
                   Last Name
                 </label>
 
@@ -164,6 +165,7 @@ export default function Signup() {
                   <User className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
 
                   <input
+                    id="signup-lastName"
                     type="text"
                     name="lastName"
                     value={formData.lastName}
@@ -180,7 +182,7 @@ export default function Signup() {
             </div>
 
             <div>
-              <label className="mb-1.5 ml-1 block text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400">
+              <label htmlFor="signup-hotdropId" className="mb-1.5 ml-1 block text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400">
                 HotDrop ID
               </label>
 
@@ -188,6 +190,7 @@ export default function Signup() {
                 <BadgeCheck className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
 
                 <input
+                  id="signup-hotdropId"
                   type="text"
                   name="hotdropId"
                   value={formData.hotdropId}
@@ -200,7 +203,7 @@ export default function Signup() {
             </div>
 
             <div>
-              <label className="mb-1.5 ml-1 block text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400">
+              <label htmlFor="signup-email" className="mb-1.5 ml-1 block text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400">
                 Email Address
               </label>
 
@@ -208,6 +211,7 @@ export default function Signup() {
                 <Mail className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
 
                 <input
+                  id="signup-email"
                   type="email"
                   name="email"
                   value={formData.email}
@@ -224,12 +228,13 @@ export default function Signup() {
             </div>
 
             <div>
-              <label className="mb-1.5 ml-1 block text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400">
+              <label htmlFor="signup-password" className="mb-1.5 ml-1 block text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400">
                 Password
               </label>
 
               <div className="relative">
                 <input
+                  id="signup-password"
                   type={showPassword ? "text" : "password"}
                   name="password"
                   value={formData.password}

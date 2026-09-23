@@ -33,14 +33,20 @@ function LikeModal({ post, onClose }) {
   const count = totalElements || Math.max(post?.likeCount ?? 0, likesList.length);
 
   return (
-    <div
-      className="fixed inset-0 bg-slate-950/60 backdrop-blur-md flex items-center justify-center z-[600] p-4 animate-in fade-in duration-200 select-none"
-      onClick={onClose}
-    >
+    <div className="fixed inset-0 z-[600] flex items-center justify-center p-4 animate-in fade-in duration-200 select-none">
       <div
-        className="bg-white w-full max-w-xs rounded-3xl overflow-hidden shadow-2xl border border-slate-100 animate-in zoom-in-95 duration-150 flex flex-col"
-        onClick={(e) => e.stopPropagation()}
-      >
+        role="button"
+        tabIndex={0}
+        aria-label="Close likes modal"
+        className="fixed inset-0 bg-slate-950/60 backdrop-blur-md"
+        onClick={onClose}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " " || e.key === "Escape") {
+            onClose();
+          }
+        }}
+      />
+      <div className="relative z-10 bg-white w-full max-w-xs rounded-3xl overflow-hidden shadow-2xl border border-slate-100 animate-in zoom-in-95 duration-150 flex flex-col">
         <div className="p-4 px-5 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
           <div className="flex items-center gap-2">
             <Heart size={18} className="text-rose-500 fill-rose-500" />
@@ -49,6 +55,7 @@ function LikeModal({ post, onClose }) {
             </h3>
           </div>
           <button
+            type="button"
             onClick={onClose}
             className="p-1 text-slate-400 hover:bg-slate-200/60 hover:text-slate-700 rounded-full transition cursor-pointer"
           >
@@ -73,9 +80,10 @@ function LikeModal({ post, onClose }) {
                 const fullName = [item.firstName, item.lastName].filter(Boolean).join(" ");
 
                 return (
-                  <div
+                  <button
+                    type="button"
                     key={uId}
-                    className="flex gap-3 items-center group cursor-pointer p-2.5 rounded-2xl hover:bg-slate-50 transition border border-transparent hover:border-slate-100"
+                    className="w-full text-left flex gap-3 items-center group cursor-pointer p-2.5 rounded-2xl hover:bg-slate-50 transition border border-transparent hover:border-slate-100"
                     onClick={() => handleProfileClick(hotdropId)}
                   >
                     <img
@@ -94,7 +102,7 @@ function LikeModal({ post, onClose }) {
                         </span>
                       )}
                     </div>
-                  </div>
+                  </button>
                 );
               })}
 

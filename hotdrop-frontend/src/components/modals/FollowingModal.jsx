@@ -213,19 +213,26 @@ function FollowingModal({
   const displayCount = totalElements || users.length;
 
   return (
-    <div
-      className="fixed inset-0 bg-slate-950/60 backdrop-blur-md z-[500] flex items-center justify-center p-4 animate-in fade-in duration-200 select-none"
-      onClick={onClose}
-    >
+    <div className="fixed inset-0 z-[500] flex items-center justify-center p-4 animate-in fade-in duration-200 select-none">
       <div
-        className="bg-white w-full max-w-sm rounded-3xl overflow-hidden shadow-2xl border border-slate-100 animate-in zoom-in-95 duration-150 flex flex-col max-h-[80vh]"
-        onClick={(e) => e.stopPropagation()}
-      >
+        role="button"
+        tabIndex={0}
+        aria-label="Close following modal"
+        className="fixed inset-0 bg-slate-950/60 backdrop-blur-md"
+        onClick={onClose}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " " || e.key === "Escape") {
+            onClose();
+          }
+        }}
+      />
+      <div className="relative z-10 bg-white w-full max-w-sm rounded-3xl overflow-hidden shadow-2xl border border-slate-100 animate-in zoom-in-95 duration-150 flex flex-col max-h-[80vh]">
         <div className="p-4 px-5 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
           <h3 className="font-extrabold text-sm text-slate-900">
             Following {displayCount > 0 ? `(${displayCount})` : ""}
           </h3>
           <button
+            type="button"
             onClick={onClose}
             className="p-1.5 text-slate-400 hover:bg-slate-200/60 hover:text-slate-700 rounded-full transition cursor-pointer"
           >
@@ -266,8 +273,9 @@ function FollowingModal({
                     key={uId}
                     className="flex items-center justify-between p-2.5 px-3 rounded-2xl hover:bg-slate-50 transition border border-transparent hover:border-slate-100 group"
                   >
-                    <div
-                      className="flex items-center gap-3 min-w-0 cursor-pointer flex-1"
+                    <button
+                      type="button"
+                      className="flex items-center gap-3 min-w-0 cursor-pointer flex-1 text-left"
                       onClick={() => handleUserClick(hotdropId)}
                     >
                       <img
@@ -285,10 +293,11 @@ function FollowingModal({
                           </span>
                         )}
                       </div>
-                    </div>
+                    </button>
 
                     {!isSelf && currentUserId && (
                       <button
+                        type="button"
                         onClick={() => handleToggleFollow(u)}
                         disabled={isPending}
                         className={`px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shrink-0 ${

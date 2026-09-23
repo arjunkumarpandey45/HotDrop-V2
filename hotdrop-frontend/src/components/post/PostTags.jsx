@@ -42,7 +42,7 @@ function PostTags({ tags, postTitle, onTagClick }) {
   };
 
   return (
-    <div className="flex items-center gap-1.5 flex-wrap" onClick={(e) => e.stopPropagation()}>
+    <div className="flex items-center gap-1.5 flex-wrap">
       {initialTags.map((tag, idx) => {
         const displayTag = tag.replace(/^#+/, "");
         return (
@@ -75,17 +75,24 @@ function PostTags({ tags, postTitle, onTagClick }) {
           </button>
 
           {showModal && (
-            <div
-              className="fixed inset-0 z-[9999] bg-slate-950/60 backdrop-blur-md flex items-center justify-center p-4 animate-in fade-in duration-200 select-none"
-              onClick={(e) => {
-                e.stopPropagation();
-                setShowModal(false);
-              }}
-            >
+            <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 animate-in fade-in duration-200 select-none">
               <div
-                className="bg-white w-full max-w-sm rounded-3xl p-5 shadow-2xl border border-slate-100 animate-in zoom-in-95 duration-150 flex flex-col space-y-4"
-                onClick={(e) => e.stopPropagation()}
-              >
+                role="button"
+                tabIndex={0}
+                aria-label="Close tags modal"
+                className="fixed inset-0 bg-slate-950/60 backdrop-blur-md"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setShowModal(false);
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " " || e.key === "Escape") {
+                    e.stopPropagation();
+                    setShowModal(false);
+                  }
+                }}
+              />
+              <div className="relative z-10 bg-white w-full max-w-sm rounded-3xl p-5 shadow-2xl border border-slate-100 animate-in zoom-in-95 duration-150 flex flex-col space-y-4">
                 <div className="flex justify-between items-center border-b border-slate-100 pb-3">
                   <div className="flex items-center gap-2">
                     <div className="p-2 bg-blue-50 text-blue-600 rounded-xl">

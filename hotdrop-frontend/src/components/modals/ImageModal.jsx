@@ -194,40 +194,49 @@ function ImageModal({
 
   if (isMobile) {
     return (
-      <div
-        className="fixed inset-0 bg-black/95 backdrop-blur-md flex items-center justify-center z-[99] p-3 animate-in fade-in duration-200"
-        onClick={onClose}
-      >
-        <button
-          onClick={(e) => {
-            e.stopPropagation();
-            onClose();
+      <div className="fixed inset-0 z-[99] flex items-center justify-center p-3 animate-in fade-in duration-200">
+        <div
+          role="button"
+          tabIndex={0}
+          aria-label="Close image modal"
+          className="fixed inset-0 bg-black/95 backdrop-blur-md"
+          onClick={onClose}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" || e.key === " " || e.key === "Escape") {
+              onClose();
+            }
           }}
+        />
+        <button
+          type="button"
+          onClick={onClose}
           className="absolute top-5 right-5 text-white/80 hover:text-white transition-transform hover:scale-110 z-[1100]"
         >
           <X size={26} />
         </button>
-        <div className="relative w-full h-full flex items-center justify-center">
+        <div className="relative z-10 w-full h-full flex items-center justify-center pointer-events-none">
           {images.length > 0 ? (
             <img
               src={images[modalIndex]}
-              className="object-contain w-full h-full"
+              className="object-contain w-full h-full pointer-events-auto"
               alt="Preview"
             />
           ) : (
-            <div className="text-white text-sm font-semibold">No Image Available</div>
+            <div className="text-white text-sm font-semibold pointer-events-auto">No Image Available</div>
           )}
           {images.length > 1 && (
             <>
               <button
+                type="button"
                 onClick={prev}
-                className="absolute left-3 top-1/2 -translate-y-1/2 bg-white/20 text-white p-2.5 rounded-xl hover:bg-white/40 backdrop-blur-md"
+                className="pointer-events-auto absolute left-3 top-1/2 -translate-y-1/2 bg-white/20 text-white p-2.5 rounded-xl hover:bg-white/40 backdrop-blur-md"
               >
                 <ChevronLeft size={20} />
               </button>
               <button
+                type="button"
                 onClick={next}
-                className="absolute right-3 top-1/2 -translate-y-1/2 bg-white/20 text-white p-2.5 rounded-xl hover:bg-white/40 backdrop-blur-md"
+                className="pointer-events-auto absolute right-3 top-1/2 -translate-y-1/2 bg-white/20 text-white p-2.5 rounded-xl hover:bg-white/40 backdrop-blur-md"
               >
                 <ChevronRight size={20} />
               </button>
@@ -239,16 +248,27 @@ function ImageModal({
   }
 
   return (
-    <div
-      className="fixed inset-0 bg-slate-950/90 backdrop-blur-md flex items-center justify-center z-[99] p-4 animate-in fade-in duration-200 select-none"
-      onClick={() => {
-        setMenuOpen(false);
-        onClose();
-      }}
-    >
+    <div className="fixed inset-0 z-[99] flex items-center justify-center p-4 animate-in fade-in duration-200 select-none">
+      <div
+        role="button"
+        tabIndex={0}
+        aria-label="Close image modal"
+        className="fixed inset-0 bg-slate-950/90 backdrop-blur-md"
+        onClick={() => {
+          setMenuOpen(false);
+          onClose();
+        }}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " " || e.key === "Escape") {
+            setMenuOpen(false);
+            onClose();
+          }
+        }}
+      />
       <button
-        onClick={(e) => {
-          e.stopPropagation();
+        type="button"
+        onClick={() => {
+          setMenuOpen(false);
           onClose();
         }}
         className="absolute top-6 right-6 text-white/70 hover:text-white transition-transform hover:scale-110 z-[1100]"
@@ -259,6 +279,7 @@ function ImageModal({
 
       {hasPrevPost && (
         <motion.button
+          type="button"
           initial={{ opacity: 0, x: -20 }}
           animate={{ opacity: 1, x: 0 }}
           whileHover={{ scale: 1.1, x: -3 }}
@@ -274,6 +295,7 @@ function ImageModal({
 
       {hasNextPost && (
         <motion.button
+          type="button"
           initial={{ opacity: 0, x: 20 }}
           animate={{ opacity: 1, x: 0 }}
           whileHover={{ scale: 1.1, x: 3 }}
@@ -294,11 +316,7 @@ function ImageModal({
           animate={{ opacity: 1, x: 0, scale: 1 }}
           exit={{ opacity: 0, x: slideDirection * -50, scale: 0.97 }}
           transition={{ duration: 0.22, ease: "easeOut" }}
-          className="bg-white w-full max-w-[1000px] h-[85vh] flex flex-col md:flex-row rounded-3xl overflow-hidden shadow-2xl border border-slate-100 relative"
-          onClick={(e) => {
-            e.stopPropagation();
-            if (menuOpen) setMenuOpen(false);
-          }}
+          className="relative z-10 bg-white w-full max-w-[1000px] h-[85vh] flex flex-col md:flex-row rounded-3xl overflow-hidden shadow-2xl border border-slate-100"
         >
 
           <div className="md:w-[65%] w-full bg-slate-950 flex items-center justify-center relative group">
@@ -392,6 +410,7 @@ function ImageModal({
                 {isOwner && (
                   <div className="relative">
                     <button
+                      type="button"
                       onClick={(e) => {
                         e.stopPropagation();
                         setMenuOpen(!menuOpen);
@@ -404,10 +423,12 @@ function ImageModal({
 
                     {menuOpen && (
                       <div
+                        role="menu"
                         className="absolute right-0 mt-1 bg-white border border-slate-100 rounded-2xl shadow-xl p-1.5 z-30 min-w-[140px] animate-in zoom-in-95 duration-150"
-                        onClick={(e) => e.stopPropagation()}
                       >
                         <button
+                          type="button"
+                          role="menuitem"
                           onClick={() => {
                             setMenuOpen(false);
                             setDeleteConfirm(true);
@@ -449,6 +470,7 @@ function ImageModal({
 
                   {livePost.description && livePost.description.length > maxLength && (
                     <button
+                      type="button"
                       onClick={toggleExpand}
                       className="ml-1 text-[11px] text-blue-600 hover:underline font-bold"
                     >
@@ -464,12 +486,25 @@ function ImageModal({
                 </span>
 
                 <div
+                  role="button"
+                  tabIndex={0}
+                  aria-label="Preview target link"
                   onClick={(e) => {
                     e.preventDefault();
                     if (!isLinkDead && projectUrl) {
                       setPreviewUrl(projectUrl);
                     } else {
                       showDeadLinkToast("This project link is currently down or unreachable");
+                    }
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault();
+                      if (!isLinkDead && projectUrl) {
+                        setPreviewUrl(projectUrl);
+                      } else {
+                        showDeadLinkToast("This project link is currently down or unreachable");
+                      }
                     }
                   }}
                   className="group/link relative flex items-center cursor-pointer justify-between p-[1px] rounded-xl transition-all duration-300 hover:scale-[1.01]"
@@ -521,53 +556,73 @@ function ImageModal({
 
             <div className="flex justify-between items-center p-4 border-t border-slate-100 bg-slate-50/50 mt-auto">
               <div className="flex gap-5 items-center">
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleLike(livePost);
-                  }}
-                  className="flex items-center gap-1.5 group/like"
-                >
-                  <Heart
-                    size={18}
-                    className={`transition-transform duration-200 group-hover/like:scale-110 ${
-                      isLiked ? "fill-rose-500 text-rose-500" : "text-slate-400"
-                    }`}
-                  />
-                  <span
+                <div className="flex items-center gap-1.5">
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleLike(livePost);
+                    }}
+                    className="flex items-center group/like"
+                    aria-label={isLiked ? "Unlike project" : "Like project"}
+                  >
+                    <Heart
+                      size={18}
+                      className={`transition-transform duration-200 group-hover/like:scale-110 ${
+                        isLiked ? "fill-rose-500 text-rose-500" : "text-slate-400"
+                      }`}
+                    />
+                  </button>
+                  <button
+                    type="button"
                     onClick={(e) => {
                       e.stopPropagation();
                       if (setLikePost) setLikePost(livePost);
                     }}
                     className="text-xs font-bold text-slate-700 hover:text-blue-600 cursor-pointer"
+                    aria-label="View users who liked this project"
                   >
                     {likeCount}
-                  </span>
-                </button>
+                  </button>
+                </div>
 
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    if (setCommentPost) setCommentPost(livePost);
-                  }}
-                  className="flex items-center gap-1.5 group/comment"
-                >
-                  <MessageCircle
-                    size={18}
-                    className="text-slate-400 group-hover/comment:text-blue-600 transition"
-                  />
-                  <span className="text-xs font-bold text-slate-700 hover:text-blue-600 cursor-pointer">
+                <div className="flex items-center gap-1.5">
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (setCommentPost) setCommentPost(livePost);
+                    }}
+                    className="flex items-center gap-1.5 group/comment"
+                    aria-label="Comments"
+                  >
+                    <MessageCircle
+                      size={18}
+                      className="text-slate-400 group-hover/comment:text-blue-600 transition"
+                    />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (setCommentPost) setCommentPost(livePost);
+                    }}
+                    className="text-xs font-bold text-slate-700 hover:text-blue-600 cursor-pointer"
+                    aria-label="View comments"
+                  >
                     {commentCount}
-                  </span>
-                </button>
+                  </button>
+                </div>
               </div>
 
               <button
+                type="button"
                 onClick={(e) => {
                   e.stopPropagation();
                   if (setSharePost) setSharePost(livePost);
                 }}
                 className="p-1.5 hover:bg-white rounded-xl transition text-slate-400 hover:text-slate-700"
+                aria-label="Share project"
               >
                 <Share2 size={16} />
               </button>
@@ -579,8 +634,16 @@ function ImageModal({
       {deleteConfirm && (
         <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4 animate-in fade-in duration-200">
           <div
+            role="button"
+            tabIndex={0}
+            aria-label="Close delete confirmation"
             className="absolute inset-0 bg-slate-950/60 backdrop-blur-sm"
             onClick={() => !isDeleting && setDeleteConfirm(false)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || e.key === " " || e.key === "Escape") {
+                if (!isDeleting) setDeleteConfirm(false);
+              }
+            }}
           />
           <div className="relative w-full max-w-xs bg-white rounded-3xl p-6 shadow-2xl border border-slate-100 flex flex-col items-center text-center animate-in zoom-in-95 duration-200 z-[1001]">
             <div className="w-12 h-12 rounded-2xl bg-red-50 text-red-500 border border-red-100 flex items-center justify-center mb-3 shadow-inner">
@@ -592,6 +655,7 @@ function ImageModal({
             </p>
             <div className="flex w-full gap-2">
               <button
+                type="button"
                 onClick={() => setDeleteConfirm(false)}
                 disabled={isDeleting}
                 className="flex-1 py-2.5 rounded-xl text-xs font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 transition"
@@ -599,6 +663,7 @@ function ImageModal({
                 Cancel
               </button>
               <button
+                type="button"
                 onClick={handleFinalDelete}
                 disabled={isDeleting}
                 className="flex-1 py-2.5 rounded-xl text-xs font-bold text-white bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-700 hover:to-rose-700 transition flex items-center justify-center gap-1.5 disabled:opacity-60 shadow-md shadow-red-500/20 active:scale-95"

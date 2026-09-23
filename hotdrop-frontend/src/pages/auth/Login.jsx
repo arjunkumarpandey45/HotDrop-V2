@@ -121,12 +121,13 @@ navigate("/", { replace: true });
             <form onSubmit={handleSubmit} className="space-y-3">
 
               <div>
-                <label className="mb-1 ml-1 block text-[11px] font-semibold text-slate-700">
+                <label htmlFor="login-identifier" className="mb-1 ml-1 block text-[11px] font-semibold text-slate-700">
                   Email Address or HotDrop ID
                 </label>
                 <div className="relative">
                   <Mail className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
                   <input
+                    id="login-identifier"
                     type="text"
                     name="identifier"
                     value={formData.identifier}
@@ -140,7 +141,7 @@ navigate("/", { replace: true });
 
               <div>
                 <div className="mb-1 flex items-center justify-between">
-                  <label className="ml-1 text-[11px] font-semibold text-slate-700">
+                  <label htmlFor="login-password" className="ml-1 text-[11px] font-semibold text-slate-700">
                     Password
                   </label>
                   <Link
@@ -154,6 +155,7 @@ navigate("/", { replace: true });
                 <div className="relative">
                   <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
                   <input
+                    id="login-password"
                     type={showPassword ? "text" : "password"}
                     name="password"
                     value={formData.password}

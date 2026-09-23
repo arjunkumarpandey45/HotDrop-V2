@@ -215,7 +215,7 @@ export function usePaginatedFetch({
         const parsed = parsePaginatedResponse(resData, pageToFetch, pageSize);
 
         const mappedContent = transformRef.current
-          ? parsed.content.map(transformRef.current)
+          ? parsed.content.map((item, index) => transformRef.current(item))
           : parsed.content;
 
         setItems((prev) => {

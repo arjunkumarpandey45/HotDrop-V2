@@ -189,6 +189,15 @@ const CreatePost = ({ isOpen, onClose }) => {
 
     if (!isOpen) return null;
 
+    const isValidUrl = (urlString) => {
+        try {
+            const parsed = new URL(urlString);
+            return (parsed.protocol === "http:" || parsed.protocol === "https:") && Boolean(parsed.hostname);
+        } catch {
+            return false;
+        }
+    };
+
     const checkUrl = async (url) => {
         if (!url || url.trim() === "") return;
 
@@ -198,18 +207,7 @@ const CreatePost = ({ isOpen, onClose }) => {
             formattedUrl = `https://${formattedUrl}`;
         }
 
-        const urlPattern = new RegExp(
-            "^(https?:\\/\\/)" +
-            "((([a-z\\d]([a-z\\d-]*[a-z\\d])*)\\.)+[a-z]{2,}|" +
-            "((\\d{1,3}\\.){3}\\d{1,3}))" +
-            "(\\:\\d+)?" +
-            "(\\/[-a-z\\d%_.~+]*)*" +
-            "(\\?[;&a-z\\d%_.~+=-]*)?" +
-            "(\\#[-a-z\\d_]*)?$",
-            "i"
-        );
-
-        if (!urlPattern.test(formattedUrl)) {
+        if (!isValidUrl(formattedUrl)) {
             setFormData((prev) => ({ ...prev, isLinkDead: true }));
             setIsLinkVerified(false);
             showPostErrorToast("Please enter a valid URL");
@@ -325,13 +323,20 @@ const CreatePost = ({ isOpen, onClose }) => {
     return (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-3 sm:p-4">
             <div
-                className="absolute inset-0 bg-slate-950/50 backdrop-blur-md animate-in fade-in duration-200"
+                role="button"
+                tabIndex={0}
+                aria-label="Close create post modal"
+                className="absolute inset-0 bg-slate-950/50 backdrop-blur-md animate-in fade-in duration-200 cursor-pointer"
                 onClick={handleCloseModal}
+                onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " " || e.key === "Escape") {
+                        handleCloseModal();
+                    }
+                }}
             />
 
             <div
                 className="relative w-full max-w-lg bg-white rounded-3xl shadow-2xl border border-slate-100 overflow-hidden animate-in zoom-in-95 duration-200"
-                onClick={(e) => e.stopPropagation()}
             >
 
                 <div className="bg-gradient-to-r from-blue-600 via-blue-500 to-indigo-600 px-6 py-4 text-white flex justify-between items-center shadow-sm">
@@ -472,7 +477,7 @@ const CreatePost = ({ isOpen, onClose }) => {
 
                     <div>
                         <div className="flex items-center justify-between mb-2">
-                            <label className="text-xs font-bold text-slate-700">
+                            <label htmlFor="create-post-screenshots" className="text-xs font-bold text-slate-700">
                                 Screenshots <span className="text-red-500">*</span>
                             </label>
                             <span className="text-[10px] font-semibold text-slate-400">
@@ -492,6 +497,7 @@ const CreatePost = ({ isOpen, onClose }) => {
                                         alt="preview"
                                     />
                                     <button
+                                        type="button"
                                         onClick={() => removeImage(i)}
                                         className="absolute top-1 right-1 bg-red-500 text-white p-1 rounded-full shadow-md hover:bg-red-600 transition"
                                     >
@@ -501,8 +507,9 @@ const CreatePost = ({ isOpen, onClose }) => {
                             ))}
 
                             {formData.images.length < 3 && (
-                                <label className="w-20 h-16 border-2 border-dashed border-slate-300 rounded-xl flex flex-col items-center justify-center cursor-pointer hover:bg-blue-50/50 hover:border-blue-400 transition">
+                                <label htmlFor="create-post-screenshots" className="w-20 h-16 border-2 border-dashed border-slate-300 rounded-xl flex flex-col items-center justify-center cursor-pointer hover:bg-blue-50/50 hover:border-blue-400 transition">
                                     <input
+                                        id="create-post-screenshots"
                                         type="file"
                                         multiple
                                         accept="image/*"
@@ -524,12 +531,14 @@ const CreatePost = ({ isOpen, onClose }) => {
 
                 <div className="px-6 py-4 bg-slate-50 border-t border-slate-100 flex gap-3">
                     <button
+                        type="button"
                         onClick={handleCloseModal}
                         className="flex-1 py-2.5 rounded-xl border border-slate-200 text-xs font-bold text-slate-600 hover:bg-slate-100 transition"
                     >
                         Cancel
                     </button>
                     <button
+                        type="button"
                         disabled={!isFormValid}
                         onClick={() => setShowPreview(true)}
                         className={`flex-1 py-2.5 rounded-xl text-xs font-black flex items-center justify-center gap-1.5 transition ${isFormValid

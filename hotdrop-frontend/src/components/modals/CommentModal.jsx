@@ -131,17 +131,34 @@ function CommentModal({
   const totalCount = totalElements || localComments.length;
 
   return (
-    <div 
-      className="fixed inset-0 bg-slate-950/70 backdrop-blur-md z-[1500] flex items-center justify-center p-4 animate-in fade-in duration-200 select-none"
-      onClick={onClose}
-    >
+    <div className="fixed inset-0 z-[1500] flex items-center justify-center p-4 animate-in fade-in duration-200 select-none">
+      <div
+        role="button"
+        tabIndex={0}
+        aria-label="Close comments modal"
+        className="fixed inset-0 bg-slate-950/70 backdrop-blur-md"
+        onClick={onClose}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " " || e.key === "Escape") {
+            onClose();
+          }
+        }}
+      />
       {deleteConfirm && (
         <div className="fixed inset-0 z-[1600] flex items-center justify-center p-4">
           <div
+            role="button"
+            tabIndex={0}
+            aria-label="Close delete confirmation"
             className="absolute inset-0 bg-slate-950/60 backdrop-blur-sm"
             onClick={() => !isDeleting && setDeleteConfirm(null)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || e.key === " " || e.key === "Escape") {
+                if (!isDeleting) setDeleteConfirm(null);
+              }
+            }}
           />
-          <div className="relative bg-white w-full max-w-xs rounded-3xl p-5 shadow-2xl text-center border border-slate-100 animate-in zoom-in-95 duration-150">
+          <div className="relative z-10 bg-white w-full max-w-xs rounded-3xl p-5 shadow-2xl text-center border border-slate-100 animate-in zoom-in-95 duration-150">
             <div className="w-12 h-12 rounded-2xl bg-red-50 text-red-500 border border-red-100 flex items-center justify-center mx-auto mb-3 shadow-inner">
               <Trash2 size={24} strokeWidth={2.2} />
             </div>
@@ -151,6 +168,7 @@ function CommentModal({
             <p className="text-xs text-slate-500 mb-4">This action cannot be undone.</p>
             <div className="flex gap-2">
               <button
+                type="button"
                 onClick={() => setDeleteConfirm(null)}
                 disabled={isDeleting}
                 className="flex-1 py-2 text-xs font-bold bg-slate-100 rounded-xl text-slate-600 hover:bg-slate-200 transition disabled:opacity-60 cursor-pointer"
@@ -158,6 +176,7 @@ function CommentModal({
                 Cancel
               </button>
               <button
+                type="button"
                 onClick={() => handleDeleteComment(deleteConfirm)}
                 disabled={isDeleting}
                 className="flex-1 py-2 text-xs font-bold bg-gradient-to-r from-red-600 to-rose-600 text-white rounded-xl hover:from-red-700 hover:to-rose-700 transition disabled:opacity-60 flex items-center justify-center gap-1 shadow-md shadow-red-500/20 cursor-pointer"
@@ -169,10 +188,7 @@ function CommentModal({
         </div>
       )}
 
-      <div 
-        className="bg-white w-full max-w-md h-[520px] rounded-3xl shadow-2xl flex flex-col overflow-hidden border border-slate-100 animate-in zoom-in-95 duration-200"
-        onClick={(e) => e.stopPropagation()}
-      >
+      <div className="relative z-10 bg-white w-full max-w-md h-[520px] rounded-3xl shadow-2xl flex flex-col overflow-hidden border border-slate-100 animate-in zoom-in-95 duration-200">
         <div className="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
           <div className="flex items-center gap-2.5">
             <div className="p-2 bg-blue-50 rounded-xl text-blue-600">
@@ -183,6 +199,7 @@ function CommentModal({
             </h3>
           </div>
           <button
+            type="button"
             onClick={onClose}
             className="p-1 rounded-full text-slate-400 hover:bg-slate-200/60 hover:text-slate-700 transition cursor-pointer"
           >
@@ -229,26 +246,33 @@ function CommentModal({
 
                 return (
                   <div key={cId} className="flex gap-3 group/comment">
-                    <img
-                      src={authorAvatar}
-                      className="w-8 h-8 rounded-full object-cover ring-1 ring-slate-200 shrink-0 cursor-pointer"
-                      alt={authorHotdropId}
+                    <button
+                      type="button"
                       onClick={() => {
                         onClose();
                         navigate(`/user/userprofile/${authorHotdropId}`);
                       }}
-                    />
+                      className="shrink-0 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      aria-label={`View profile of @${authorHotdropId}`}
+                    >
+                      <img
+                        src={authorAvatar}
+                        className="w-8 h-8 rounded-full object-cover ring-1 ring-slate-200"
+                        alt={authorHotdropId}
+                      />
+                    </button>
                     <div className="flex-1 bg-slate-50 border border-slate-100 rounded-2xl p-3 text-xs">
                       <div className="flex justify-between items-center mb-1">
-                        <span 
+                        <button
+                          type="button"
                           onClick={() => {
                             onClose();
                             navigate(`/user/userprofile/${authorHotdropId}`);
                           }}
-                          className="font-bold text-slate-900 cursor-pointer hover:text-blue-600 truncate max-w-[140px]"
+                          className="font-bold text-slate-900 cursor-pointer hover:text-blue-600 truncate max-w-[140px] text-left"
                         >
                           @{authorHotdropId}
-                        </span>
+                        </button>
 
                         <div className="flex items-center gap-2 shrink-0">
                           <span className="text-[10px] text-slate-400 font-mono">{formatDate(c.createdAt)}</span>

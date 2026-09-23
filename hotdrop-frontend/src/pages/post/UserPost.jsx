@@ -403,8 +403,17 @@ function UserPost({
             <div key={pId} className="w-full">
 
               <div
+                role="button"
+                tabIndex={0}
+                aria-label="View drop details"
                 className="hidden md:block relative bg-slate-50 rounded-2xl overflow-hidden cursor-pointer aspect-[4/3] group shadow-sm hover:shadow-lg transition-all duration-200 border border-slate-200/60 select-none"
                 onClick={(e) => handleImageClick(e, post, imgIndex)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    handleImageClick(e, post, imgIndex);
+                  }
+                }}
                 onMouseEnter={(e) => handleCardHover(e, post)}
                 onMouseLeave={() => setHoveredPost(null)}
               >
@@ -480,10 +489,11 @@ function UserPost({
 
                       {menuOpen === pId && (
                         <div
-                          onClick={(e) => e.stopPropagation()}
+                          role="menu"
                           className="absolute right-0 mt-1 bg-white border border-slate-100 rounded-2xl shadow-xl p-1.5 z-30 min-w-[140px] animate-in zoom-in-95 duration-150"
                         >
                           <button
+                            type="button"
                             onClick={(e) => {
                               e.stopPropagation();
                               setDeleteConfirm(post);
@@ -501,8 +511,17 @@ function UserPost({
                 </div>
 
                 <div
+                  role="button"
+                  tabIndex={0}
+                  aria-label="View drop details"
                   className="relative bg-slate-50 cursor-pointer flex items-center justify-center aspect-[4/3] overflow-hidden select-none"
                   onClick={(e) => handleImageClick(e, post, imgIndex)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault();
+                      handleImageClick(e, post, imgIndex);
+                    }
+                  }}
                 >
                   <img
                     src={images?.[imgIndex]}
@@ -571,6 +590,9 @@ function UserPost({
                   </div>
 
                   <div
+                    role="button"
+                    tabIndex={0}
+                    aria-label="Preview project link"
                     onClick={(e) => {
                       e.preventDefault();
                       if (!user) {
@@ -581,6 +603,20 @@ function UserPost({
                         setPreviewUrl(projectUrl);
                       } else {
                         showDeadLinkToast("This project link is currently down or unreachable");
+                      }
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" || e.key === " ") {
+                        e.preventDefault();
+                        if (!user) {
+                          setShowAuthModal(true);
+                          return;
+                        }
+                        if (!isLinkDead && projectUrl) {
+                          setPreviewUrl(projectUrl);
+                        } else {
+                          showDeadLinkToast("This project link is currently down or unreachable");
+                        }
                       }
                     }}
                     className="group/link relative flex items-center justify-between p-[1px] rounded-xl mb-4 transition-all duration-300 hover:scale-[1.01] active:scale-[0.99] cursor-pointer"
@@ -679,26 +715,35 @@ function UserPost({
                   <div className="flex justify-between items-center mt-auto border-t pt-3">
                     <div className="flex gap-5 items-center">
                       <div className="flex items-center gap-1">
-                        <Heart
-                          size={18}
+                        <button
+                          type="button"
                           onClick={() => handleLike(post)}
-                          className={`cursor-pointer transition-colors active:scale-125 ${
-                            isLiked ? "fill-red-500 text-red-500" : "text-slate-400"
-                          }`}
-                        />
-                        <span
+                          aria-label={isLiked ? "Unlike post" : "Like post"}
+                          className="cursor-pointer bg-transparent border-0 p-0 flex items-center"
+                        >
+                          <Heart
+                            size={18}
+                            className={`transition-colors active:scale-125 ${
+                              isLiked ? "fill-red-500 text-red-500" : "text-slate-400"
+                            }`}
+                          />
+                        </button>
+                        <button
+                          type="button"
                           onClick={() => {
                             if (!user) return setShowAuthModal(true);
                             setLikePost(post);
                           }}
-                          className="text-xs cursor-pointer font-semibold"
+                          aria-label="View likers"
+                          className="text-xs cursor-pointer font-semibold bg-transparent border-0 p-0 text-slate-700 hover:text-blue-600 transition-colors"
                         >
                           {likeCount}
-                        </span>
+                        </button>
                       </div>
 
-                      <div
-                        className="flex items-center gap-1 cursor-pointer"
+                      <button
+                        type="button"
+                        className="flex items-center gap-1 cursor-pointer bg-transparent border-0 p-0 text-slate-700"
                         onClick={() => {
                           if (!user) return setShowAuthModal(true);
                           setCommentPost(post);
@@ -706,15 +751,16 @@ function UserPost({
                       >
                         <MessageCircle size={18} className="text-slate-400" />
                         <span className="text-xs font-semibold">{commentCount}</span>
-                      </div>
+                      </button>
                     </div>
 
                     <button
+                      type="button"
                       onClick={() => {
                         if (!user) return setShowAuthModal(true);
                         setSharePost(post);
                       }}
-                      className="p-1"
+                      className="p-1 cursor-pointer"
                     >
                       <Share2 size={16} className="text-slate-400" />
                     </button>
@@ -788,8 +834,16 @@ function UserPost({
       {deleteConfirm && (
         <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4 animate-in fade-in duration-200">
           <div
+            role="button"
+            tabIndex={0}
+            aria-label="Close delete confirmation"
             className="absolute inset-0 bg-slate-950/60 backdrop-blur-md transition-opacity"
             onClick={() => !isDeleting && setDeleteConfirm(null)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || e.key === " " || e.key === "Escape") {
+                if (!isDeleting) setDeleteConfirm(null);
+              }
+            }}
           />
           <div className="relative w-full max-w-[320px] bg-white rounded-3xl p-6 shadow-2xl border border-slate-100 flex flex-col items-center text-center animate-in zoom-in-95 duration-200">
             <div className="w-14 h-14 rounded-2xl bg-red-50 text-red-500 border border-red-100 flex items-center justify-center mb-4 shadow-sm">
@@ -807,6 +861,7 @@ function UserPost({
             </p>
             <div className="flex w-full gap-2.5">
               <button
+                type="button"
                 onClick={() => setDeleteConfirm(null)}
                 disabled={isDeleting}
                 className="flex-1 py-2.5 rounded-xl text-xs font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 transition"
@@ -814,6 +869,7 @@ function UserPost({
                 Cancel
               </button>
               <button
+                type="button"
                 onClick={handleFinalDelete}
                 disabled={isDeleting}
                 className="flex-1 py-2.5 rounded-xl text-xs font-bold text-white bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-700 hover:to-rose-700 disabled:opacity-60 transition flex items-center justify-center gap-1.5 shadow-lg shadow-red-500/25 active:scale-95"
@@ -834,8 +890,16 @@ function UserPost({
       {showAuthModal && (
         <div className="fixed inset-0 z-[999] flex items-center justify-center p-6">
           <div
+            role="button"
+            tabIndex={0}
+            aria-label="Close sign in modal"
             className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm"
             onClick={() => setShowAuthModal(false)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || e.key === " " || e.key === "Escape") {
+                setShowAuthModal(false);
+              }
+            }}
           />
           <div className="relative bg-white w-full max-w-[300px] rounded-2xl p-6 shadow-xl text-center border border-slate-100 animate-in fade-in zoom-in duration-200">
             <div className="w-12 h-12 bg-indigo-50 text-indigo-600 rounded-xl flex items-center justify-center mx-auto mb-4">

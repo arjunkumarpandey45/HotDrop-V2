@@ -35,11 +35,19 @@ const PreviewModal = ({ url, onClose }) => {
       <div className="fixed inset-0 z-[9999] flex items-center justify-center p-0 sm:p-4 lg:p-6">
 
         <motion.div
+          role="button"
+          tabIndex={0}
+          aria-label="Close preview modal"
           initial={{ opacity: 0, backdropFilter: "blur(0px)" }}
           animate={{ opacity: 1, backdropFilter: "blur(12px)" }}
           exit={{ opacity: 0, backdropFilter: "blur(0px)" }}
           className="absolute inset-0 bg-slate-950/85"
           onClick={onClose}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" || e.key === " " || e.key === "Escape") {
+              onClose();
+            }
+          }}
         />
 
         <motion.div
@@ -98,6 +106,7 @@ const PreviewModal = ({ url, onClose }) => {
   <div className="absolute inset-0 rounded-xl border border-white/20 group-hover:border-white/40 transition-colors" />
 </a>
               <button
+                type="button"
                 onClick={onClose}
                 className="p-2 hover:bg-red-50 text-slate-400  cursor-pointer hover:text-red-500 rounded-lg transition-all"
               >

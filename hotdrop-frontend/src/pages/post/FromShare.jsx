@@ -208,8 +208,9 @@ function FromShare() {
         <div className="bg-white rounded-3xl p-3.5 border border-slate-200/80 shadow-2xl overflow-hidden flex flex-col">
 
           <div className="pb-3 flex items-center justify-between border-b border-slate-100 mb-3">
-            <div
-              className="flex items-center gap-2.5 cursor-pointer group"
+            <button
+              type="button"
+              className="flex items-center gap-2.5 cursor-pointer group text-left bg-transparent border-0 p-0"
               onClick={() => navigate(`/user/userprofile/${owner.hotdropId}`)}
             >
               <img
@@ -228,15 +229,24 @@ function FromShare() {
                     : "just now"}
                 </div>
               </div>
-            </div>
+            </button>
 
           </div>
 
           <div
-            className="relative bg-slate-50 border border-slate-200/70 group aspect-video w-full rounded-2xl flex items-center justify-center overflow-hidden cursor-pointer mb-3 shadow-inner"
+            role="button"
+            tabIndex={0}
+            aria-label="View media details"
+            className="relative bg-slate-50 border border-slate-200/70 group aspect-video w-full rounded-2xl flex items-center justify-center overflow-hidden cursor-pointer mb-3 shadow-inner p-0"
             onClick={() => {
               setImagePost(post);
               setModalIndex(currentImageIndex);
+            }}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                setImagePost(post);
+                setModalIndex(currentImageIndex);
+              }
             }}
           >
             {images.length > 0 ? (
@@ -301,11 +311,24 @@ function FromShare() {
             </div>
 
             <div
+              role="button"
+              tabIndex={0}
+              aria-label="Preview project link"
               onClick={() => {
                 if (!isLinkDead && projectUrl) {
                   setPreviewUrl(projectUrl);
                 } else {
                   showDeadLinkToast("This project link is currently down or unreachable");
+                }
+              }}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault();
+                  if (!isLinkDead && projectUrl) {
+                    setPreviewUrl(projectUrl);
+                  } else {
+                    showDeadLinkToast("This project link is currently down or unreachable");
+                  }
                 }
               }}
               className="group/link relative flex items-center justify-between p-[1px] rounded-xl mb-3 transition-all duration-300 hover:scale-[1.01] cursor-pointer"
@@ -358,6 +381,7 @@ function FromShare() {
 
               {post.description && post.description.length > maxLength && (
                 <button
+                  type="button"
                   onClick={toggleExpand}
                   className="ml-1 text-xs text-blue-600 hover:underline font-bold"
                 >
@@ -368,43 +392,50 @@ function FromShare() {
 
             <div className="flex justify-between items-center border-t border-slate-100 pt-3">
               <div className="flex gap-6">
-                <button
-                  onClick={() => handleLike(post)}
-                  className="flex items-center gap-2 group cursor-pointer"
-                >
-                  <Heart
-                    size={20}
-                    className={`transition-transform duration-200 group-hover:scale-110 ${
-                      isLiked ? "fill-red-500 text-red-500" : "text-slate-400"
-                    }`}
-                  />
-                  <span
-                    onClick={(e) => {
-                      e.stopPropagation();
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => handleLike(post)}
+                    aria-label={isLiked ? "Unlike post" : "Like post"}
+                    className="flex items-center group cursor-pointer bg-transparent border-0 p-0"
+                  >
+                    <Heart
+                      size={20}
+                      className={`transition-transform duration-200 group-hover:scale-110 ${
+                        isLiked ? "fill-red-500 text-red-500" : "text-slate-400"
+                      }`}
+                    />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
                       if (!user) return setShowAuthModal(true);
                       setLikePost(post);
                     }}
-                    className="text-xs font-bold text-slate-800 hover:text-blue-600"
+                    aria-label="View likers"
+                    className="text-xs font-bold text-slate-800 hover:text-blue-600 cursor-pointer bg-transparent border-0 p-0"
                   >
                     {likeCount}
-                  </span>
-                </button>
+                  </button>
+                </div>
 
                 <button
+                  type="button"
                   onClick={() => (!user ? setShowAuthModal(true) : setCommentPost(post))}
-                  className="flex items-center gap-2 group cursor-pointer"
+                  className="flex items-center gap-2 group cursor-pointer bg-transparent border-0 p-0"
                 >
                   <MessageCircle
                     size={20}
-                    className="text-slate-400 group-hover:text-blue-600 transition"
+                    className="text-slate-400 group-hover/text-blue-600 transition"
                   />
                   <span className="text-xs font-bold text-slate-800">{commentCount}</span>
                 </button>
               </div>
 
               <button
+                type="button"
                 onClick={() => setSharePost(post)}
-                className="p-2 text-slate-400 hover:bg-slate-100 rounded-xl transition"
+                className="p-2 text-slate-400 hover:bg-slate-100 rounded-xl transition cursor-pointer"
               >
                 <Share2 size={16} />
               </button>
@@ -415,7 +446,18 @@ function FromShare() {
 
       {showAuthModal && (
         <div className="fixed inset-0 z-[999] flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-slate-950/60 backdrop-blur-sm" onClick={() => setShowAuthModal(false)} />
+          <div 
+            role="button"
+            tabIndex={0}
+            aria-label="Close sign in modal"
+            className="absolute inset-0 bg-slate-950/60 backdrop-blur-sm cursor-pointer" 
+            onClick={() => setShowAuthModal(false)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || e.key === " " || e.key === "Escape") {
+                setShowAuthModal(false);
+              }
+            }}
+          />
           <div className="relative bg-white w-full max-w-xs rounded-2xl p-6 shadow-2xl text-center border border-slate-100 animate-in zoom-in-95 duration-200">
             <div className="w-12 h-12 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center mx-auto mb-3">
               <ShieldCheck size={24} />

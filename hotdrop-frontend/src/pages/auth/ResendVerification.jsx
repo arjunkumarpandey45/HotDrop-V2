@@ -157,12 +157,13 @@ const ResendVerification = () => {
                 )}
 
                 <div>
-                  <label className="mb-1 ml-1 block text-[11px] font-semibold text-slate-700">
+                  <label htmlFor="resend-email" className="mb-1 ml-1 block text-[11px] font-semibold text-slate-700">
                     Registered Email Address
                   </label>
                   <div className="relative">
                     <Mail className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
                     <input
+                      id="resend-email"
                       type="email"
                       name="email"
                       value={email}

@@ -615,7 +615,7 @@ function EditUserProfile() {
     }
     try {
       const d = new Date(dateVal);
-      if (isNaN(d.getTime())) {
+      if (Number.isNaN(Number(d.getTime()))) {
         return new Date().toLocaleDateString("en-US", { month: "short", year: "numeric" });
       }
       return d.toLocaleDateString("en-US", { month: "short", year: "numeric" });
@@ -686,9 +686,11 @@ function EditUserProfile() {
 
             <div className="flex flex-col sm:flex-row items-center sm:items-end justify-between gap-3 -mt-14 sm:-mt-18 mb-3">
 
-              <div 
-                className="relative shrink-0 cursor-pointer group z-20"
+              <button 
+                type="button"
+                className="relative shrink-0 cursor-pointer group z-20 bg-transparent border-0 p-0"
                 onClick={() => setShowFullImage(true)}
+                aria-label="Click to view avatar full size"
                 title="Click to view avatar full size"
               >
                 <div className="absolute -inset-1 bg-gradient-to-tr from-orange-500 via-indigo-500 to-blue-600 rounded-full blur-md opacity-40 group-hover:opacity-80 transition duration-500 animate-pulse" />
@@ -706,7 +708,7 @@ function EditUserProfile() {
                 <div className="absolute bottom-1 right-1 bg-gradient-to-tr from-blue-600 to-indigo-600 text-white p-1 rounded-full shadow-lg border-2 border-white" title="Verified Creator">
                   <CheckCircle2 size={14} className="fill-white text-blue-600" />
                 </div>
-              </div>
+              </button>
 
               <div className="hidden sm:flex items-center gap-2">
                 {isOwnProfile ? (
@@ -897,13 +899,23 @@ function EditUserProfile() {
       </div>
 
       {showFullImage && (
-        <div
-          className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-950/90 backdrop-blur-md animate-in fade-in duration-200"
-          onClick={() => setShowFullImage(false)}
-        >
-          <button
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+          <div
+            role="button"
+            tabIndex={0}
+            aria-label="Close image preview"
+            className="fixed inset-0 bg-slate-950/90 backdrop-blur-md animate-in fade-in duration-200 cursor-pointer"
             onClick={() => setShowFullImage(false)}
-            className="absolute top-6 right-6 text-white/70 hover:text-white p-2 rounded-full hover:bg-white/10 transition cursor-pointer"
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || e.key === " " || e.key === "Escape") {
+                setShowFullImage(false);
+              }
+            }}
+          />
+          <button
+            type="button"
+            onClick={() => setShowFullImage(false)}
+            className="absolute top-6 right-6 text-white/70 hover:text-white p-2 rounded-full hover:bg-white/10 transition cursor-pointer z-10"
           >
             <X size={24} />
           </button>
@@ -913,9 +925,8 @@ function EditUserProfile() {
               e.target.onerror = null;
               e.target.src = dp;
             }}
-            className="max-w-full max-h-[85vh] rounded-3xl shadow-2xl object-contain ring-4 ring-white/20 animate-in zoom-in-95 duration-200"
+            className="relative max-w-full max-h-[85vh] rounded-3xl shadow-2xl object-contain ring-4 ring-white/20 animate-in zoom-in-95 duration-200 z-10"
             alt="Profile Preview"
-            onClick={(e) => e.stopPropagation()}
           />
         </div>
       )}

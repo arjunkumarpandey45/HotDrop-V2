@@ -268,8 +268,16 @@ const Navbar = () => {
     <header className={`fixed left-0 right-0 top-0 z-50 px-3 sm:px-4 transition-all duration-300 ${scrolled ? "pt-2" : "pt-3 sm:pt-4"}`}>
       {(isProfileOpen || isSidebarOpen || isLoginPromptOpen || showSuggestions || isMobileNotificationOpen || isDesktopNotificationOpen || isMobileSettingsOpen) && (
         <div
-          className="fixed inset-0 z-40 bg-slate-950/40 backdrop-blur-md transition-all duration-300 animate-in fade-in"
+          role="button"
+          tabIndex={0}
+          aria-label="Close menu overlays"
+          className="fixed inset-0 z-40 bg-slate-950/40 backdrop-blur-md transition-all duration-300 animate-in fade-in cursor-pointer"
           onClick={closeAllPopups}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" || e.key === " " || e.key === "Escape") {
+              closeAllPopups();
+            }
+          }}
         />
       )}
 
@@ -295,7 +303,6 @@ const Navbar = () => {
 
             <div className="relative flex-1 min-w-0" ref={mobileSearchRef}>
               <input
-                autoFocus
                 type="text"
                 placeholder={searchMode === "users" ? "Search users..." : "Search projects..."}
                 value={searchQuery}
@@ -397,9 +404,10 @@ const Navbar = () => {
             </div>
 
             <div className="hidden flex-1 max-w-lg md:flex justify-center">
-              <div 
+              <button 
+                type="button"
                 onClick={() => setIsSearchModalOpen(true)}
-                className="w-full relative cursor-pointer group"
+                className="w-full relative cursor-pointer group text-left bg-transparent border-0 p-0"
               >
                 <div className="relative flex items-center gap-2.5 rounded-2xl border border-slate-200/80 bg-white/90 p-2 px-3.5 shadow-lg shadow-slate-200/50 backdrop-blur-xl transition-all group-hover:border-blue-400 group-hover:bg-white">
                   <Search className="w-4 h-4 text-slate-400 group-hover:text-blue-600 transition shrink-0" />
@@ -410,7 +418,7 @@ const Navbar = () => {
                     ⌘K / Search
                   </span>
                 </div>
-              </div>
+              </button>
             </div>
 
             <div className="flex items-center gap-1.5 sm:gap-2 rounded-2xl border border-slate-200/80 bg-white/90 p-1.5 shadow-lg shadow-slate-200/50 backdrop-blur-xl">
