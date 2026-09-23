@@ -104,12 +104,14 @@ export const parsePaginatedResponse = (resData, fallbackPage = 0, fallbackSize =
   const totalElements = payload?.totalElements ?? payload?.total ?? (Array.isArray(content) ? content.length : 0);
   const totalPages = payload?.totalPages ?? (pageSize > 0 ? Math.ceil(totalElements / pageSize) : 1);
 
-  const isLastPage =
-    typeof payload?.isLastPage === "boolean"
-      ? payload.isLastPage
-      : typeof payload?.last === "boolean"
-      ? payload.last
-      : pageNumber >= totalPages - 1 || (Array.isArray(content) && content.length < pageSize);
+  let isLastPage;
+  if (typeof payload?.isLastPage === "boolean") {
+    isLastPage = payload.isLastPage;
+  } else if (typeof payload?.last === "boolean") {
+    isLastPage = payload.last;
+  } else {
+    isLastPage = pageNumber >= totalPages - 1 || (Array.isArray(content) && content.length < pageSize);
+  }
 
   return {
     content: Array.isArray(content) ? content : [],
@@ -157,19 +159,18 @@ export function usePaginatedFetch({
 
   // Stable references for props to avoid unnecessary effect triggers
   const paramsRef = useRef(params);
-  paramsRef.current = params;
-
   const transformRef = useRef(transformItem);
-  transformRef.current = transformItem;
-
   const onSuccessRef = useRef(onSuccess);
-  onSuccessRef.current = onSuccess;
-
   const keyExtractorRef = useRef(keyExtractor);
-  keyExtractorRef.current = keyExtractor;
-
   const fetcherRef = useRef(fetcher);
-  fetcherRef.current = fetcher;
+
+  useEffect(() => {
+    paramsRef.current = params;
+    transformRef.current = transformItem;
+    onSuccessRef.current = onSuccess;
+    keyExtractorRef.current = keyExtractor;
+    fetcherRef.current = fetcher;
+  });
 
   const abortControllerRef = useRef(null);
 
@@ -215,7 +216,7 @@ export function usePaginatedFetch({
         const parsed = parsePaginatedResponse(resData, pageToFetch, pageSize);
 
         const mappedContent = transformRef.current
-          ? parsed.content.map((item, index) => transformRef.current(item))
+          ? parsed.content.map((item) => transformRef.current(item))
           : parsed.content;
 
         setItems((prev) => {

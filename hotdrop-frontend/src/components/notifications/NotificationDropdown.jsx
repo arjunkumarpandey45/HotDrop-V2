@@ -43,6 +43,47 @@ const NotificationDropdown = ({ isOpen, onClose }) => {
 
   if (!isOpen) return null;
 
+  const renderNotificationContent = () => {
+    if (isLoading && notifications.length === 0) {
+      return (
+        <div className="py-8 text-center space-y-3">
+          <div className="flex items-center justify-center">
+            <Loader2 className="h-6 w-6 text-blue-600 animate-spin" />
+          </div>
+          <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">
+            Loading alerts...
+          </p>
+        </div>
+      );
+    }
+
+    if (notifications.length === 0) {
+      return (
+        <div className="py-10 text-center space-y-3 px-4">
+          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-slate-50 text-slate-400 border border-slate-100">
+            <BellOff className="h-5 w-5" />
+          </div>
+          <div>
+            <h4 className="text-xs font-black uppercase text-slate-800 tracking-tight">
+              All caught up! ✨
+            </h4>
+            <p className="text-[11px] font-medium text-slate-400 mt-1 leading-relaxed">
+              When developers like, comment on your project, or follow you, your alerts will show up here.
+            </p>
+          </div>
+        </div>
+      );
+    }
+
+    return notifications.map((notif) => (
+      <NotificationItem
+        key={notif.id || `${notif.senderHotdropId}-${notif.createdAt}`}
+        notification={notif}
+        onClose={onClose}
+      />
+    ));
+  };
+
   return (
     <div
       ref={dropdownRef}
@@ -66,6 +107,7 @@ const NotificationDropdown = ({ isOpen, onClose }) => {
         </div>
 
         <button
+          type="button"
           onClick={handleCloseDropdown}
           className="rounded-xl p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-700 transition cursor-pointer"
           aria-label="Close notifications"
@@ -75,38 +117,7 @@ const NotificationDropdown = ({ isOpen, onClose }) => {
       </div>
 
       <div className="mt-2 max-h-[380px] overflow-y-auto space-y-1.5 pr-1 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
-        {isLoading && notifications.length === 0 ? (
-          <div className="py-8 text-center space-y-3">
-            <div className="flex items-center justify-center">
-              <Loader2 className="h-6 w-6 text-blue-600 animate-spin" />
-            </div>
-            <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">
-              Loading alerts...
-            </p>
-          </div>
-        ) : notifications.length === 0 ? (
-          <div className="py-10 text-center space-y-3 px-4">
-            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-slate-50 text-slate-400 border border-slate-100">
-              <BellOff className="h-5 w-5" />
-            </div>
-            <div>
-              <h4 className="text-xs font-black uppercase text-slate-800 tracking-tight">
-                All caught up! ✨
-              </h4>
-              <p className="text-[11px] font-medium text-slate-400 mt-1 leading-relaxed">
-                When developers like, comment on your project, or follow you, your alerts will show up here.
-              </p>
-            </div>
-          </div>
-        ) : (
-          notifications.map((notif) => (
-            <NotificationItem
-              key={notif.id || `${notif.senderHotdropId}-${notif.createdAt}`}
-              notification={notif}
-              onClose={onClose}
-            />
-          ))
-        )}
+        {renderNotificationContent()}
       </div>
 
       {notifications.length > 0 && (

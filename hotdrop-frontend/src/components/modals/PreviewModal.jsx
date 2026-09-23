@@ -36,7 +36,6 @@ const PreviewModal = ({ url, onClose }) => {
 
         <motion.button
           type="button"
-          tabIndex={0}
           aria-label="Close preview modal"
           initial={{ opacity: 0, backdropFilter: "blur(0px)" }}
           animate={{ opacity: 1, backdropFilter: "blur(12px)" }}

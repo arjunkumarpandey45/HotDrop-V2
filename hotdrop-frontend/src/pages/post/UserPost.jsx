@@ -28,7 +28,7 @@ import { showLikeToast, showCommentToast, showProjectDeletedToast, showErrorToas
 import { AnimatePresence, motion } from "framer-motion";
 import { Link, useNavigate } from "react-router-dom";
 import dp from "../../assets/dp.jpg";
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
 import LoadMoreTrigger from "../../components/common/LoadMoreTrigger";
 
 function UserPost({
@@ -242,7 +242,7 @@ function UserPost({
     }
   };
 
-  const triggerDoubleTapLike = (post) => {
+  const triggerDoubleTapLike = useCallback((post) => {
     const pId = post.id || post._id;
     if (!user) {
       setShowAuthModal(true);
@@ -258,9 +258,9 @@ function UserPost({
     setTimeout(() => {
       setDoubleTapHeartMap((prev) => ({ ...prev, [pId]: false }));
     }, 800);
-  };
+  }, [user]);
 
-  const handleImageClick = (e, post, imgIndex) => {
+  const handleImageClick = useCallback((e, post, imgIndex) => {
     e.preventDefault();
     const pId = post.id || post._id;
     const now = Date.now();
@@ -287,7 +287,7 @@ function UserPost({
         setModalIndex(imgIndex);
       }, 280);
     }
-  };
+  }, [user, triggerDoubleTapLike]);
 
   const submitComment = async (e) => {
     e.preventDefault();
@@ -509,58 +509,60 @@ function UserPost({
                   )}
                 </div>
 
-                <button
-                  type="button"
-                  aria-label="View drop details"
-                  className="relative bg-slate-50 cursor-pointer flex items-center justify-center aspect-[4/3] overflow-hidden select-none w-full p-0 border-0"
-                  onClick={(e) => handleImageClick(e, post, imgIndex)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter" || e.key === " ") {
-                      e.preventDefault();
-                      handleImageClick(e, post, imgIndex);
-                    }
-                  }}
-                >
-                  <img
-                    src={images?.[imgIndex]}
-                    className="w-full h-full object-contain p-0.5"
-                    alt="post"
-                  />
+                <div className="relative bg-slate-50 flex items-center justify-center aspect-[4/3] overflow-hidden select-none w-full">
+                  <button
+                    type="button"
+                    aria-label="View drop details"
+                    className="w-full h-full p-0 border-0 bg-transparent cursor-pointer flex items-center justify-center"
+                    onClick={(e) => handleImageClick(e, post, imgIndex)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" || e.key === " ") {
+                        e.preventDefault();
+                        handleImageClick(e, post, imgIndex);
+                      }
+                    }}
+                  >
+                    <img
+                      src={images?.[imgIndex]}
+                      className="w-full h-full object-contain p-0.5"
+                      alt={post.title ? `${post.title} screenshot ${imgIndex + 1}` : "Project screenshot"}
+                    />
 
-                  {isHeartActive && (
-                    <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-30 animate-in zoom-in-50 fade-out duration-700">
-                      <Heart size={68} className="fill-rose-500 text-rose-500 drop-shadow-[0_10px_25px_rgba(244,63,94,0.7)] animate-pulse" />
-                    </div>
-                  )}
-
-                  {!user && (
-                    <div className="absolute inset-0 bg-black/40 backdrop-blur-[2px] flex items-center justify-center">
-                      <div className="bg-white/90 px-4 py-2 rounded-xl flex items-center gap-2 text-[10px] font-black uppercase shadow-xl">
-                        <Lock size={12} className="text-indigo-600" /> Login to access
+                    {isHeartActive && (
+                      <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-30 animate-in zoom-in-50 fade-out duration-700">
+                        <Heart size={68} className="fill-rose-500 text-rose-500 drop-shadow-[0_10px_25px_rgba(244,63,94,0.7)] animate-pulse" />
                       </div>
-                    </div>
-                  )}
+                    )}
+
+                    {!user && (
+                      <div className="absolute inset-0 bg-black/40 backdrop-blur-[2px] flex items-center justify-center">
+                        <div className="bg-white/90 px-4 py-2 rounded-xl flex items-center gap-2 text-[10px] font-black uppercase shadow-xl">
+                          <Lock size={12} className="text-indigo-600" /> Login to access
+                        </div>
+                      </div>
+                    )}
+                  </button>
 
                   {user && images.length > 1 && (
                     <>
                       <div className="absolute inset-x-2 top-1/2 -translate-y-1/2 flex justify-between pointer-events-none z-20">
-                        <span
-                          tabIndex={0}
-                          role="presentation"
+                        <button
+                          type="button"
+                          aria-label="Previous image"
                           onClick={(e) => prevImage(e, pId, images.length)}
-                          className="pointer-events-auto bg-black/60 hover:bg-black/80 text-white p-1 rounded-full border border-white/30 shadow-md backdrop-blur-sm transition-transform hover:scale-105 cursor-pointer inline-flex items-center justify-center"
+                          className="pointer-events-auto bg-black/60 hover:bg-black/80 text-white p-1 rounded-full border border-white/30 shadow-md backdrop-blur-sm transition-transform hover:scale-105 cursor-pointer inline-flex items-center justify-center border-0"
                         >
                           <ChevronLeft size={14} />
-                        </span>
+                        </button>
 
-                        <span
-                          tabIndex={0}
-                          role="presentation"
+                        <button
+                          type="button"
+                          aria-label="Next image"
                           onClick={(e) => nextImage(e, pId, images.length)}
-                          className="pointer-events-auto bg-black/60 hover:bg-black/80 text-white p-1 rounded-full border border-white/30 shadow-md backdrop-blur-sm transition-transform hover:scale-105 cursor-pointer inline-flex items-center justify-center"
+                          className="pointer-events-auto bg-black/60 hover:bg-black/80 text-white p-1 rounded-full border border-white/30 shadow-md backdrop-blur-sm transition-transform hover:scale-105 cursor-pointer inline-flex items-center justify-center border-0"
                         >
                           <ChevronRight size={14} />
-                        </span>
+                        </button>
                       </div>
 
                       <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex items-center gap-1.5 pointer-events-none z-20">
@@ -577,7 +579,7 @@ function UserPost({
                       </div>
                     </>
                   )}
-                </button>
+                </div>
 
                 <div className="p-4 flex flex-col flex-1">
 
@@ -836,7 +838,6 @@ function UserPost({
         <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4 animate-in fade-in duration-200">
           <button
             type="button"
-            tabIndex={0}
             aria-label="Close delete confirmation"
             className="absolute inset-0 bg-slate-950/60 backdrop-blur-md transition-opacity border-0 p-0"
             onClick={() => !isDeleting && setDeleteConfirm(null)}
@@ -892,7 +893,6 @@ function UserPost({
         <div className="fixed inset-0 z-[999] flex items-center justify-center p-6">
           <button
             type="button"
-            tabIndex={0}
             aria-label="Close sign in modal"
             className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm border-0 p-0"
             onClick={() => setShowAuthModal(false)}

@@ -848,7 +848,6 @@ function EditUserProfile() {
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
           <button
             type="button"
-            tabIndex={0}
             aria-label="Close image preview"
             className="fixed inset-0 bg-slate-950/90 backdrop-blur-md animate-in fade-in duration-200 cursor-pointer border-0 p-0"
             onClick={() => setShowFullImage(false)}

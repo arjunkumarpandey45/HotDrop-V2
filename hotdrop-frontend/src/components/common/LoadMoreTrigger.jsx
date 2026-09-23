@@ -34,17 +34,18 @@ export function LoadMoreTrigger({
     return null;
   }
 
-  return (
-    <div
-      ref={sentinelRef}
-      className="py-4 flex flex-col items-center justify-center w-full min-h-[48px]"
-    >
-      {loadingMore ? (
+  const renderTriggerContent = () => {
+    if (loadingMore) {
+      return (
         <div className="flex items-center gap-2 text-xs font-bold text-blue-600 py-1.5 animate-in fade-in duration-200">
           <Loader2 size={16} className="animate-spin text-blue-600" />
           <span className="text-[11px] font-semibold text-slate-500">Loading more...</span>
         </div>
-      ) : hasMore && (mode === "button" || mode === "both") ? (
+      );
+    }
+
+    if (hasMore && (mode === "button" || mode === "both")) {
+      return (
         <button
           type="button"
           onClick={onLoadMore}
@@ -52,7 +53,18 @@ export function LoadMoreTrigger({
         >
           {label}
         </button>
-      ) : null}
+      );
+    }
+
+    return null;
+  };
+
+  return (
+    <div
+      ref={sentinelRef}
+      className="py-4 flex flex-col items-center justify-center w-full min-h-[48px]"
+    >
+      {renderTriggerContent()}
     </div>
   );
 }

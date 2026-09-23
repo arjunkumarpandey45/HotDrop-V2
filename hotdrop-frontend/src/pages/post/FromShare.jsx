@@ -216,7 +216,7 @@ function FromShare() {
               <img
                 src={ownerAvatar}
                 className="w-8 h-8 rounded-full object-cover ring-2 ring-slate-100 group-hover:ring-blue-200 transition"
-                alt="avatar"
+                alt={owner.hotdropId ? `@${owner.hotdropId} avatar` : "Author avatar"}
               />
               <div className="flex flex-col">
                 <span className="text-xs font-bold text-slate-900 group-hover:text-blue-600">
@@ -233,40 +233,42 @@ function FromShare() {
 
           </div>
 
-          <button
-            type="button"
-            aria-label="View media details"
-            className="relative bg-slate-50 border border-slate-200/70 group aspect-video w-full rounded-2xl flex items-center justify-center overflow-hidden cursor-pointer mb-3 shadow-inner p-0"
-            onClick={() => {
-              setImagePost(post);
-              setModalIndex(currentImageIndex);
-            }}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" || e.key === " ") {
+          <div className="relative bg-slate-50 border border-slate-200/70 group aspect-video w-full rounded-2xl flex items-center justify-center overflow-hidden mb-3 shadow-inner">
+            <button
+              type="button"
+              aria-label="View media details"
+              className="w-full h-full flex items-center justify-center cursor-pointer p-0 border-0 bg-transparent"
+              onClick={() => {
                 setImagePost(post);
                 setModalIndex(currentImageIndex);
-              }
-            }}
-          >
-            {images.length > 0 ? (
-              <img
-                src={images[currentImageIndex]}
-                className="w-full h-full object-contain p-1 transition-transform duration-300"
-                alt="drop preview"
-              />
-            ) : (
-              <div className="text-slate-400 text-xs font-semibold flex flex-col items-center">
-                <Globe size={32} />
-                <span className="mt-1">No Screenshot</span>
-              </div>
-            )}
+              }}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  setImagePost(post);
+                  setModalIndex(currentImageIndex);
+                }
+              }}
+            >
+              {images.length > 0 ? (
+                <img
+                  src={images[currentImageIndex]}
+                  className="w-full h-full object-contain p-1 transition-transform duration-300"
+                  alt={post?.title ? `${post.title} preview ${currentImageIndex + 1}` : "Drop preview"}
+                />
+              ) : (
+                <div className="text-slate-400 text-xs font-semibold flex flex-col items-center">
+                  <Globe size={32} />
+                  <span className="mt-1">No Screenshot</span>
+                </div>
+              )}
+            </button>
 
             {images.length > 1 && (
               <>
                 <div className="absolute inset-x-2 top-1/2 -translate-y-1/2 flex justify-between pointer-events-none z-20">
-                  <span
-                    tabIndex={0}
-                    role="presentation"
+                  <button
+                    type="button"
+                    aria-label="Previous image"
                     onClick={(e) => {
                       e.stopPropagation();
                       setCurrentImageIndex((p) => (p - 1 + images.length) % images.length);
@@ -274,10 +276,10 @@ function FromShare() {
                     className="pointer-events-auto bg-black/60 hover:bg-black/80 text-white p-1 rounded-full border border-white/30 shadow-md backdrop-blur-sm transition-transform hover:scale-105 cursor-pointer inline-flex items-center justify-center"
                   >
                     <ChevronLeft size={14} />
-                  </span>
-                  <span
-                    tabIndex={0}
-                    role="presentation"
+                  </button>
+                  <button
+                    type="button"
+                    aria-label="Next image"
                     onClick={(e) => {
                       e.stopPropagation();
                       setCurrentImageIndex((p) => (p + 1) % images.length);
@@ -285,7 +287,7 @@ function FromShare() {
                     className="pointer-events-auto bg-black/60 hover:bg-black/80 text-white p-1 rounded-full border border-white/30 shadow-md backdrop-blur-sm transition-transform hover:scale-105 cursor-pointer inline-flex items-center justify-center"
                   >
                     <ChevronRight size={14} />
-                  </span>
+                  </button>
                 </div>
 
                 <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex items-center gap-1.5 pointer-events-none z-20">
@@ -302,7 +304,7 @@ function FromShare() {
                 </div>
               </>
             )}
-          </button>
+          </div>
 
           <div className="flex flex-col">
 
@@ -450,7 +452,6 @@ function FromShare() {
         <div className="fixed inset-0 z-[999] flex items-center justify-center p-4">
           <button 
             type="button"
-            tabIndex={0}
             aria-label="Close sign in modal"
             className="absolute inset-0 bg-slate-950/60 backdrop-blur-sm cursor-pointer border-0 p-0" 
             onClick={() => setShowAuthModal(false)}

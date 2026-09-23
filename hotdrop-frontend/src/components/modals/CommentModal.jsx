@@ -130,11 +130,118 @@ function CommentModal({
 
   const totalCount = totalElements || localComments.length;
 
+  const renderCommentContent = () => {
+    if (loadingComments && localComments.length === 0) {
+      return (
+        <div className="h-full flex flex-col items-center justify-center text-blue-600 py-12">
+          <Loader2 size={32} className="animate-spin mb-2" />
+          <span className="text-xs font-bold uppercase tracking-wider text-slate-400">Loading comments...</span>
+        </div>
+      );
+    }
+
+    if (localComments.length > 0) {
+      return (
+        <>
+          {localComments.map((c, i) => {
+            const cId = c.id || c._id || i;
+            const author = c.user || c.creator || {};
+            const authorAvatar = author.profilePicture || author.profileImageUrl || dp;
+            const authorHotdropId = author.hotdropId || author.username || "user";
+            const textContent = c.text || "";
+
+            const currentUserId = String(user?.id || user?._id || user?.userId || "");
+            const currentHotdropId = (user?.hotdropId || user?.username || "").toLowerCase();
+
+            const authorId = String(author.id || author._id || author.userId || "");
+            const authorHandle = (author.hotdropId || author.username || "").toLowerCase();
+
+            const postOwner = (typeof post?.creator === "object" ? post.creator : null) || (typeof post?.user === "object" ? post.user : null) || {};
+            const postOwnerId = String(postOwner.id || postOwner._id || postOwner.userId || "");
+            const postOwnerHandle = (postOwner.hotdropId || postOwner.username || "").toLowerCase();
+
+            const canDelete =
+              Boolean(user) &&
+              (
+                (currentUserId && authorId && currentUserId === authorId) ||
+                (currentHotdropId && authorHandle && currentHotdropId === authorHandle) ||
+                (currentUserId && postOwnerId && currentUserId === postOwnerId) ||
+                (currentHotdropId && postOwnerHandle && currentHotdropId === postOwnerHandle)
+              );
+
+            return (
+              <div key={cId} className="flex gap-3 group/comment">
+                <button
+                  type="button"
+                  onClick={() => {
+                    onClose();
+                    navigate(`/user/userprofile/${authorHotdropId}`);
+                  }}
+                  className="shrink-0 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  aria-label={`View profile of @${authorHotdropId}`}
+                >
+                  <img
+                    src={authorAvatar}
+                    className="w-8 h-8 rounded-full object-cover ring-1 ring-slate-200"
+                    alt={authorHotdropId}
+                  />
+                </button>
+                <div className="flex-1 bg-slate-50 border border-slate-100 rounded-2xl p-3 text-xs">
+                  <div className="flex justify-between items-center mb-1">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        onClose();
+                        navigate(`/user/userprofile/${authorHotdropId}`);
+                      }}
+                      className="font-bold text-slate-900 cursor-pointer hover:text-blue-600 truncate max-w-[140px] text-left"
+                    >
+                      @{authorHotdropId}
+                    </button>
+
+                    <div className="flex items-center gap-2 shrink-0">
+                      <span className="text-[10px] text-slate-400 font-mono">{formatDate(c.createdAt)}</span>
+                      {canDelete && (
+                        <button
+                          type="button"
+                          onClick={() => setDeleteConfirm(cId)}
+                          className="text-red-500 hover:text-red-700 p-1 rounded-lg hover:bg-red-50 transition cursor-pointer flex items-center gap-1 font-bold text-[10px]"
+                          title="Delete comment"
+                        >
+                          <Trash2 size={13} />
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                  <p className="text-slate-800 font-medium leading-relaxed">{textContent}</p>
+                </div>
+              </div>
+            );
+          })}
+
+          {/* Infinite scroll sentinel & load more button */}
+          <LoadMoreTrigger
+            hasMore={hasMore}
+            loadingMore={loadingMore}
+            onLoadMore={loadMore}
+            sentinelRef={sentinelRef}
+            label="Load Older Comments"
+          />
+        </>
+      );
+    }
+
+    return (
+      <div className="h-full flex flex-col items-center justify-center py-12 text-slate-400 text-xs font-semibold">
+        No comments yet. Be the first to comment!
+      </div>
+    );
+  };
+
   return (
     <div className="fixed inset-0 z-[1500] flex items-center justify-center p-4 animate-in fade-in duration-200 select-none">
       <button
         type="button"
-        tabIndex={0}
         aria-label="Close comments modal"
         className="fixed inset-0 bg-slate-950/70 backdrop-blur-md border-0 p-0"
         onClick={onClose}
@@ -148,7 +255,6 @@ function CommentModal({
         <div className="fixed inset-0 z-[1600] flex items-center justify-center p-4">
           <button
             type="button"
-            tabIndex={0}
             aria-label="Close delete confirmation"
             className="absolute inset-0 bg-slate-950/60 backdrop-blur-sm border-0 p-0"
             onClick={() => !isDeleting && setDeleteConfirm(null)}
@@ -211,103 +317,7 @@ function CommentModal({
           className="flex-1 overflow-y-auto px-6 py-4 space-y-4"
           onScroll={(e) => handleScroll(e.currentTarget)}
         >
-          {loadingComments && localComments.length === 0 ? (
-            <div className="h-full flex flex-col items-center justify-center text-blue-600 py-12">
-              <Loader2 size={32} className="animate-spin mb-2" />
-              <span className="text-xs font-bold uppercase tracking-wider text-slate-400">Loading comments...</span>
-            </div>
-          ) : localComments.length > 0 ? (
-            <>
-              {localComments.map((c, i) => {
-                const cId = c.id || c._id || i;
-                const author = c.user || c.creator || {};
-                const authorAvatar = author.profilePicture || author.profileImageUrl || dp;
-                const authorHotdropId = author.hotdropId || author.username || "user";
-                const textContent = c.text || "";
-
-                const currentUserId = String(user?.id || user?._id || user?.userId || "");
-                const currentHotdropId = (user?.hotdropId || user?.username || "").toLowerCase();
-
-                const authorId = String(author.id || author._id || author.userId || "");
-                const authorHandle = (author.hotdropId || author.username || "").toLowerCase();
-
-                const postOwner = (typeof post?.creator === "object" ? post.creator : null) || (typeof post?.user === "object" ? post.user : null) || {};
-                const postOwnerId = String(postOwner.id || postOwner._id || postOwner.userId || "");
-                const postOwnerHandle = (postOwner.hotdropId || postOwner.username || "").toLowerCase();
-
-                const canDelete =
-                  Boolean(user) &&
-                  (
-                    (currentUserId && authorId && currentUserId === authorId) ||
-                    (currentHotdropId && authorHandle && currentHotdropId === authorHandle) ||
-                    (currentUserId && postOwnerId && currentUserId === postOwnerId) ||
-                    (currentHotdropId && postOwnerHandle && currentHotdropId === postOwnerHandle)
-                  );
-
-                return (
-                  <div key={cId} className="flex gap-3 group/comment">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        onClose();
-                        navigate(`/user/userprofile/${authorHotdropId}`);
-                      }}
-                      className="shrink-0 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      aria-label={`View profile of @${authorHotdropId}`}
-                    >
-                      <img
-                        src={authorAvatar}
-                        className="w-8 h-8 rounded-full object-cover ring-1 ring-slate-200"
-                        alt={authorHotdropId}
-                      />
-                    </button>
-                    <div className="flex-1 bg-slate-50 border border-slate-100 rounded-2xl p-3 text-xs">
-                      <div className="flex justify-between items-center mb-1">
-                        <button
-                          type="button"
-                          onClick={() => {
-                            onClose();
-                            navigate(`/user/userprofile/${authorHotdropId}`);
-                          }}
-                          className="font-bold text-slate-900 cursor-pointer hover:text-blue-600 truncate max-w-[140px] text-left"
-                        >
-                          @{authorHotdropId}
-                        </button>
-
-                        <div className="flex items-center gap-2 shrink-0">
-                          <span className="text-[10px] text-slate-400 font-mono">{formatDate(c.createdAt)}</span>
-                          {canDelete && (
-                            <button
-                              type="button"
-                              onClick={() => setDeleteConfirm(cId)}
-                              className="text-red-500 hover:text-red-700 p-1 rounded-lg hover:bg-red-50 transition cursor-pointer flex items-center gap-1 font-bold text-[10px]"
-                              title="Delete comment"
-                            >
-                              <Trash2 size={13} />
-                            </button>
-                          )}
-                        </div>
-                      </div>
-                      <p className="text-slate-800 font-medium leading-relaxed">{textContent}</p>
-                    </div>
-                  </div>
-                );
-              })}
-
-              {/* Infinite scroll sentinel & load more button */}
-              <LoadMoreTrigger
-                hasMore={hasMore}
-                loadingMore={loadingMore}
-                onLoadMore={loadMore}
-                sentinelRef={sentinelRef}
-                label="Load Older Comments"
-              />
-            </>
-          ) : (
-            <div className="h-full flex flex-col items-center justify-center py-12 text-slate-400 text-xs font-semibold">
-              No comments yet. Be the first to comment!
-            </div>
-          )}
+          {renderCommentContent()}
         </div>
 
         <form onSubmit={handleSubmit} className="p-4 border-t border-slate-100 bg-white flex items-center gap-2">

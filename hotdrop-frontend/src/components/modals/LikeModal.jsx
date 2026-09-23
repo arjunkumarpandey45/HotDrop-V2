@@ -32,11 +32,73 @@ function LikeModal({ post, onClose }) {
 
   const count = totalElements || Math.max(post?.likeCount ?? 0, likesList.length);
 
+  const renderLikesContent = () => {
+    if (loading && likesList.length === 0) {
+      return (
+        <div className="flex justify-center items-center py-8 text-slate-400">
+          <Loader2 size={22} className="animate-spin text-blue-600" />
+        </div>
+      );
+    }
+
+    if (likesList.length > 0) {
+      return (
+        <>
+          {likesList.map((item, i) => {
+            const uId = item.id || item._id || item.userId || i;
+            const avatar = item.profilePicture || item.profileImageUrl || dp;
+            const hotdropId = item.hotdropId || item.username || "user";
+            const fullName = [item.firstName, item.lastName].filter(Boolean).join(" ");
+
+            return (
+              <button
+                type="button"
+                key={uId}
+                className="w-full text-left flex gap-3 items-center group cursor-pointer p-2.5 rounded-2xl hover:bg-slate-50 transition border border-transparent hover:border-slate-100"
+                onClick={() => handleProfileClick(hotdropId)}
+              >
+                <img
+                  src={avatar}
+                  className="w-9 h-9 rounded-full object-cover ring-2 ring-slate-100 group-hover:ring-blue-200 transition-all shrink-0"
+                  alt={hotdropId}
+                />
+
+                <div className="flex flex-col min-w-0 flex-1">
+                  <span className="text-xs font-extrabold text-slate-900 leading-tight truncate group-hover:text-blue-600 transition-colors">
+                    @{hotdropId}
+                  </span>
+                  {fullName && (
+                    <span className="text-[11px] font-medium text-slate-400 truncate">
+                      {fullName}
+                    </span>
+                  )}
+                </div>
+              </button>
+            );
+          })}
+
+          <LoadMoreTrigger
+            hasMore={hasMore}
+            loadingMore={loadingMore}
+            onLoadMore={loadMore}
+            sentinelRef={sentinelRef}
+            label="Load More Likes"
+          />
+        </>
+      );
+    }
+
+    return (
+      <div className="text-center py-8 text-slate-400 text-xs font-medium">
+        No likes on this project yet
+      </div>
+    );
+  };
+
   return (
     <div className="fixed inset-0 z-[600] flex items-center justify-center p-4 animate-in fade-in duration-200 select-none">
       <button
         type="button"
-        tabIndex={0}
         aria-label="Close likes modal"
         className="fixed inset-0 bg-slate-950/60 backdrop-blur-md border-0 p-0"
         onClick={onClose}
@@ -67,59 +129,7 @@ function LikeModal({ post, onClose }) {
           className="max-h-[350px] overflow-y-auto p-3 space-y-2"
           onScroll={(e) => handleScroll(e.currentTarget)}
         >
-          {loading && likesList.length === 0 ? (
-            <div className="flex justify-center items-center py-8 text-slate-400">
-              <Loader2 size={22} className="animate-spin text-blue-600" />
-            </div>
-          ) : likesList.length > 0 ? (
-            <>
-              {likesList.map((item, i) => {
-                const uId = item.id || item._id || item.userId || i;
-                const avatar = item.profilePicture || item.profileImageUrl || dp;
-                const hotdropId = item.hotdropId || item.username || "user";
-                const fullName = [item.firstName, item.lastName].filter(Boolean).join(" ");
-
-                return (
-                  <button
-                    type="button"
-                    key={uId}
-                    className="w-full text-left flex gap-3 items-center group cursor-pointer p-2.5 rounded-2xl hover:bg-slate-50 transition border border-transparent hover:border-slate-100"
-                    onClick={() => handleProfileClick(hotdropId)}
-                  >
-                    <img
-                      src={avatar}
-                      className="w-9 h-9 rounded-full object-cover ring-2 ring-slate-100 group-hover:ring-blue-200 transition-all shrink-0"
-                      alt={hotdropId}
-                    />
-
-                    <div className="flex flex-col min-w-0 flex-1">
-                      <span className="text-xs font-extrabold text-slate-900 leading-tight truncate group-hover:text-blue-600 transition-colors">
-                        @{hotdropId}
-                      </span>
-                      {fullName && (
-                        <span className="text-[11px] font-medium text-slate-400 truncate">
-                          {fullName}
-                        </span>
-                      )}
-                    </div>
-                  </button>
-                );
-              })}
-
-              {/* Infinite scroll sentinel & load more button */}
-              <LoadMoreTrigger
-                hasMore={hasMore}
-                loadingMore={loadingMore}
-                onLoadMore={loadMore}
-                sentinelRef={sentinelRef}
-                label="Load More Likes"
-              />
-            </>
-          ) : (
-            <div className="text-center py-8 text-slate-400 text-xs font-medium">
-              No likes on this project yet
-            </div>
-          )}
+          {renderLikesContent()}
         </div>
       </div>
     </div>

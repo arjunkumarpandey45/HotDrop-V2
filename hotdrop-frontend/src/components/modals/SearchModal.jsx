@@ -53,20 +53,27 @@ function SearchModal({ isOpen, onClose, initialMode = "users" }) {
 
           try {
             const res1 = await API.get(`/users/suggestions/${encodeURIComponent(cleanQ)}`);
-            const payload1 = res1.data?.data;
-            userList = Array.isArray(payload1)
-              ? payload1
-              : payload1?.users || (payload1?.hotdropId ? [payload1] : []);
+            if (Array.isArray(payload1)) {
+              userList = payload1;
+            } else if (payload1?.users) {
+              userList = payload1.users;
+            } else if (payload1?.hotdropId) {
+              userList = [payload1];
+            } else {
+              userList = [];
+            }
           } catch {
 
             try {
               const res2 = await API.get(`/users/search/${encodeURIComponent(cleanQ)}`);
               const payload2 = res2.data?.data;
-              userList = Array.isArray(payload2)
-                ? payload2
-                : payload2?.hotdropId
-                ? [payload2]
-                : [];
+              if (Array.isArray(payload2)) {
+                userList = payload2;
+              } else if (payload2?.hotdropId) {
+                userList = [payload2];
+              } else {
+                userList = [];
+              }
             } catch {
               userList = [];
             }
@@ -135,11 +142,145 @@ function SearchModal({ isOpen, onClose, initialMode = "users" }) {
 
   const activeCleanQuery = searchQuery.replace(/^@/, "").trim();
 
+  const renderSearchModalContent = () => {
+    if (searchQuery.trim().length === 0) {
+      return (
+        <div className="flex flex-col items-center justify-center py-8 text-center text-slate-400 space-y-1">
+          <span className="text-xs font-medium text-slate-500">
+            {searchMode === "users"
+              ? "Type any HotDrop ID or name to search users"
+              : "Type title keywords or #tags to search projects"}
+          </span>
+        </div>
+      );
+    }
+
+    if (loading) {
+      return (
+        <div className="flex items-center justify-center py-8 text-xs font-medium text-slate-400">
+          Searching suggestions...
+        </div>
+      );
+    }
+
+    if (searchMode === "users") {
+      return (
+        <div className="space-y-1">
+          {userSuggestions.map((s, index) => {
+            const avatar = s.profilePicture || s.profileImageUrl || dp;
+            const handle = s.hotdropId || s.username || "user";
+            const fullName = [s.firstName, s.lastName].filter(Boolean).join(" ");
+
+            return (
+              <button
+                type="button"
+                key={s.id || s._id || `${handle}-${index}`}
+                onClick={() => handleSelectUser(handle)}
+                className="w-full text-left flex items-center gap-3 p-2.5 px-3 rounded-2xl cursor-pointer hover:bg-blue-50/80 transition group border border-transparent hover:border-blue-100"
+              >
+                <img
+                  src={avatar}
+                  alt={handle}
+                  className="w-9 h-9 rounded-full object-cover border border-slate-200 shrink-0 group-hover:scale-105 transition"
+                />
+                <div className="flex flex-col min-w-0 flex-1">
+                  <span className="text-xs font-bold text-slate-900 truncate group-hover:text-blue-600 transition">
+                    @{handle}
+                  </span>
+                  {fullName && (
+                    <span className="text-[11px] font-medium text-slate-400 truncate">
+                      {fullName}
+                    </span>
+                  )}
+                </div>
+                <ArrowRight size={15} className="text-slate-300 group-hover:text-blue-600 transition" />
+              </button>
+            );
+          })}
+
+          <button
+            type="button"
+            onClick={() => handleSelectUser(activeCleanQuery)}
+            className="w-full mt-2 p-2.5 px-3 bg-blue-50 hover:bg-blue-100/80 text-blue-600 rounded-2xl text-xs font-bold transition flex items-center justify-between cursor-pointer border border-blue-100"
+          >
+            <span>Open profile <strong>@{activeCleanQuery}</strong></span>
+            <ArrowRight size={14} />
+          </button>
+        </div>
+      );
+    }
+
+    if (projectSuggestions.length > 0) {
+      return (
+        <div className="space-y-1">
+          {projectSuggestions.map((post, index) => {
+            const pTitle = post.title || "Project ";
+            const pOwner = post.creator || post.user || {};
+            const pHandle = pOwner.hotdropId || pOwner.username || "dev";
+            const rawImages = post.imageUrls || post.images || [];
+            const firstImg = rawImages.length > 0
+              ? (typeof rawImages[0] === "string" ? rawImages[0] : rawImages[0]?.url)
+              : null;
+
+            return (
+              <button
+                type="button"
+                key={post.id || post._id || `${pTitle}-${index}`}
+                onClick={() => handleSelectProject(post.title || activeCleanQuery)}
+                className="w-full text-left flex items-center justify-between p-2.5 px-3 rounded-2xl cursor-pointer hover:bg-slate-50 transition group border border-transparent hover:border-slate-100"
+              >
+                <div className="flex items-center gap-3 truncate">
+                  <div className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0 overflow-hidden bg-slate-100 border border-slate-200 shadow-2xs">
+                    {firstImg ? (
+                      <img src={firstImg} alt={pTitle} className="w-full h-full object-cover group-hover:scale-105 transition" />
+                    ) : (
+                      <div className="w-full h-full bg-blue-50 text-blue-600 flex items-center justify-center">
+                        <Globe size={16} />
+                      </div>
+                    )}
+                  </div>
+                  <div className="flex flex-col truncate">
+                    <span className="text-xs font-extrabold text-slate-900 truncate group-hover:text-blue-600 uppercase">
+                      {pTitle}
+                    </span>
+                    <span className="text-[10px] font-semibold text-slate-400">
+                      by @{pHandle}
+                    </span>
+                  </div>
+                </div>
+                <ArrowRight size={15} className="text-slate-300 group-hover:text-blue-600 transition" />
+              </button>
+            );
+          })}
+          <button
+            type="button"
+            onClick={() => handleSelectProject(activeCleanQuery)}
+            className="w-full mt-2 py-2.5 bg-blue-600 text-white rounded-xl text-xs font-black uppercase tracking-wider hover:bg-blue-700 transition flex items-center justify-center gap-1.5 cursor-pointer shadow-md shadow-blue-500/20"
+          >
+            View All Matching Projects <ArrowRight size={14} />
+          </button>
+        </div>
+      );
+    }
+
+    return (
+      <div className="text-center py-8 space-y-3">
+        <p className="text-slate-400 text-xs font-medium">No direct project match for "{activeCleanQuery}"</p>
+        <button
+          type="button"
+          onClick={() => handleSelectProject(activeCleanQuery)}
+          className="px-4 py-2 bg-blue-600 text-white rounded-xl text-xs font-bold hover:bg-blue-700 transition cursor-pointer"
+        >
+          Search Projects for "{activeCleanQuery}"
+        </button>
+      </div>
+    );
+  };
+
   return (
     <div className="fixed inset-0 z-[9999] flex items-start justify-center p-3 sm:p-6 pt-16 sm:pt-24 animate-in fade-in duration-200 select-none">
       <button
         type="button"
-        tabIndex={0}
         aria-label="Close search modal"
         className="fixed inset-0 bg-slate-950/60 backdrop-blur-md border-0 p-0"
         onClick={onClose}
@@ -206,126 +347,7 @@ function SearchModal({ isOpen, onClose, initialMode = "users" }) {
         </div>
 
         <div className="p-3 max-h-[360px] overflow-y-auto">
-          {searchQuery.trim().length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-8 text-center text-slate-400 space-y-1">
-              <span className="text-xs font-medium text-slate-500">
-                {searchMode === "users"
-                  ? "Type any HotDrop ID or name to search users"
-                  : "Type title keywords or #tags to search projects"}
-              </span>
-            </div>
-          ) : loading ? (
-            <div className="flex items-center justify-center py-8 text-xs font-medium text-slate-400">
-              Searching suggestions...
-            </div>
-          ) : searchMode === "users" ? (
-
-            <div className="space-y-1">
-              {userSuggestions.map((s, index) => {
-                const avatar = s.profilePicture || s.profileImageUrl || dp;
-                const handle = s.hotdropId || s.username || "user";
-                const fullName = [s.firstName, s.lastName].filter(Boolean).join(" ");
-
-                return (
-                  <button
-                    type="button"
-                    key={s.id || s._id || index}
-                    onClick={() => handleSelectUser(handle)}
-                    className="w-full text-left flex items-center gap-3 p-2.5 px-3 rounded-2xl cursor-pointer hover:bg-blue-50/80 transition group border border-transparent hover:border-blue-100"
-                  >
-                    <img
-                      src={avatar}
-                      alt={handle}
-                      className="w-9 h-9 rounded-full object-cover border border-slate-200 shrink-0 group-hover:scale-105 transition"
-                    />
-                    <div className="flex flex-col min-w-0 flex-1">
-                      <span className="text-xs font-bold text-slate-900 truncate group-hover:text-blue-600 transition">
-                        @{handle}
-                      </span>
-                      {fullName && (
-                        <span className="text-[11px] font-medium text-slate-400 truncate">
-                          {fullName}
-                        </span>
-                      )}
-                    </div>
-                    <ArrowRight size={15} className="text-slate-300 group-hover:text-blue-600 transition" />
-                  </button>
-                );
-              })}
-
-              <button
-                type="button"
-                onClick={() => handleSelectUser(activeCleanQuery)}
-                className="w-full mt-2 p-2.5 px-3 bg-blue-50 hover:bg-blue-100/80 text-blue-600 rounded-2xl text-xs font-bold transition flex items-center justify-between cursor-pointer border border-blue-100"
-              >
-                <span>Open profile <strong>@{activeCleanQuery}</strong></span>
-                <ArrowRight size={14} />
-              </button>
-            </div>
-          ) : (
-
-            projectSuggestions.length > 0 ? (
-              <div className="space-y-1">
-                {projectSuggestions.map((post, index) => {
-                  const pTitle = post.title || "Project ";
-                  const pOwner = post.creator || post.user || {};
-                  const pHandle = pOwner.hotdropId || pOwner.username || "dev";
-                  const rawImages = post.imageUrls || post.images || [];
-                  const firstImg = rawImages.length > 0
-                    ? (typeof rawImages[0] === "string" ? rawImages[0] : rawImages[0]?.url)
-                    : null;
-
-                  return (
-                    <button
-                      type="button"
-                      key={post.id || post._id || index}
-                      onClick={() => handleSelectProject(post.title || activeCleanQuery)}
-                      className="w-full text-left flex items-center justify-between p-2.5 px-3 rounded-2xl cursor-pointer hover:bg-slate-50 transition group border border-transparent hover:border-slate-100"
-                    >
-                      <div className="flex items-center gap-3 truncate">
-                        <div className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0 overflow-hidden bg-slate-100 border border-slate-200 shadow-2xs">
-                          {firstImg ? (
-                            <img src={firstImg} alt={pTitle} className="w-full h-full object-cover group-hover:scale-105 transition" />
-                          ) : (
-                            <div className="w-full h-full bg-blue-50 text-blue-600 flex items-center justify-center">
-                              <Globe size={16} />
-                            </div>
-                          )}
-                        </div>
-                        <div className="flex flex-col truncate">
-                          <span className="text-xs font-extrabold text-slate-900 truncate group-hover:text-blue-600 uppercase">
-                            {pTitle}
-                          </span>
-                          <span className="text-[10px] font-semibold text-slate-400">
-                            by @{pHandle}
-                          </span>
-                        </div>
-                      </div>
-                      <ArrowRight size={15} className="text-slate-300 group-hover:text-blue-600 transition" />
-                    </button>
-                  );
-                })}
-                <button
-                  type="button"
-                  onClick={() => handleSelectProject(activeCleanQuery)}
-                  className="w-full mt-2 py-2.5 bg-blue-600 text-white rounded-xl text-xs font-black uppercase tracking-wider hover:bg-blue-700 transition flex items-center justify-center gap-1.5 cursor-pointer shadow-md shadow-blue-500/20"
-                >
-                  View All Matching Projects <ArrowRight size={14} />
-                </button>
-              </div>
-            ) : (
-              <div className="text-center py-8 space-y-3">
-                <p className="text-slate-400 text-xs font-medium">No direct project match for "{activeCleanQuery}"</p>
-                <button
-                  type="button"
-                  onClick={() => handleSelectProject(activeCleanQuery)}
-                  className="px-4 py-2 bg-blue-600 text-white rounded-xl text-xs font-bold hover:bg-blue-700 transition cursor-pointer"
-                >
-                  Search Projects for "{activeCleanQuery}"
-                </button>
-              </div>
-            )
-          )}
+          {renderSearchModalContent()}
         </div>
       </div>
     </div>

@@ -324,7 +324,6 @@ const CreatePost = ({ isOpen, onClose }) => {
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-3 sm:p-4">
             <button
                 type="button"
-                tabIndex={0}
                 aria-label="Close create post modal"
                 className="absolute inset-0 bg-slate-950/50 backdrop-blur-md animate-in fade-in duration-200 cursor-pointer border-0 p-0"
                 onClick={handleCloseModal}

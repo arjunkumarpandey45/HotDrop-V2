@@ -197,7 +197,6 @@ function ImageModal({
       <div className="fixed inset-0 z-[99] flex items-center justify-center p-3 animate-in fade-in duration-200">
         <button
           type="button"
-          tabIndex={0}
           aria-label="Close image modal"
           className="fixed inset-0 bg-black/95 backdrop-blur-md border-0 p-0"
           onClick={onClose}
@@ -251,7 +250,6 @@ function ImageModal({
     <div className="fixed inset-0 z-[99] flex items-center justify-center p-4 animate-in fade-in duration-200 select-none">
       <button
         type="button"
-        tabIndex={0}
         aria-label="Close image modal"
         className="fixed inset-0 bg-slate-950/90 backdrop-blur-md border-0 p-0"
         onClick={() => {
@@ -360,9 +358,9 @@ function ImageModal({
                 </div>
 
                 <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex items-center gap-1.5 pointer-events-none z-10">
-                  {images.map((_, i) => (
+                  {images.map((img, i) => (
                     <div
-                      key={i}
+                      key={`${currentPostId}-dot-${typeof img === 'string' ? img : img?.url || i}`}
                       className={`rounded-full border border-black/80 transition-all duration-200 ${
                         i === modalIndex
                           ? "w-3 h-3 bg-white shadow-md scale-110"
@@ -634,7 +632,6 @@ function ImageModal({
         <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4 animate-in fade-in duration-200">
           <button
             type="button"
-            tabIndex={0}
             aria-label="Close delete confirmation"
             className="absolute inset-0 bg-slate-950/60 backdrop-blur-sm border-0 p-0"
             onClick={() => !isDeleting && setDeleteConfirm(false)}

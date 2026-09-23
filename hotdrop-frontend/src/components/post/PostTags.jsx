@@ -78,7 +78,6 @@ function PostTags({ tags, postTitle, onTagClick }) {
             <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 animate-in fade-in duration-200 select-none">
               <button
                 type="button"
-                tabIndex={0}
                 aria-label="Close tags modal"
                 className="fixed inset-0 bg-slate-950/60 backdrop-blur-md border-0 p-0"
                 onClick={(e) => {

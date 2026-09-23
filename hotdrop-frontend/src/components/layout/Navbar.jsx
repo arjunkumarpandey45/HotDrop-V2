@@ -132,11 +132,12 @@ const Navbar = () => {
             }
           }
 
-          const arr = Array.isArray(userList)
-            ? userList
-            : userList?.hotdropId
-            ? [userList]
-            : [];
+          let arr = [];
+          if (Array.isArray(userList)) {
+            arr = userList;
+          } else if (userList?.hotdropId) {
+            arr = [userList];
+          }
 
           setSuggestions(arr.slice(0, 5));
           setShowSuggestions(true);
@@ -264,12 +265,87 @@ const Navbar = () => {
 
   const isActive = (path) => location.pathname === path;
 
+  const renderMobileSuggestions = () => {
+    if (suggestions.length === 0) {
+      return (
+        <button
+          type="button"
+          onClick={() => handleSuggestionClick(searchQuery, searchMode)}
+          className="flex w-full items-center justify-between px-3 py-2.5 text-xs font-bold text-blue-600 hover:bg-blue-50 rounded-xl transition cursor-pointer"
+        >
+          <span>
+            {searchMode === "users"
+              ? `Go to profile @${searchQuery.replace(/^@/, "")}`
+              : `Search for "${searchQuery}"`}
+          </span>
+          <ArrowRight size={14} />
+        </button>
+      );
+    }
+
+    if (searchMode === "projects") {
+      return suggestions.map((p, index) => {
+        const pTitle = p.title || "Project ";
+        const pOwner = p.creator || p.user || {};
+        const pHandle = pOwner.hotdropId || pOwner.username || "dev";
+        const rawImages = p.imageUrls || p.images || [];
+        let firstImg = null;
+        if (rawImages.length > 0) {
+          firstImg = typeof rawImages[0] === "string" ? rawImages[0] : rawImages[0]?.url;
+        }
+
+        return (
+          <button
+            key={p.id || p._id || index}
+            type="button"
+            onClick={() => handleSuggestionClick(pTitle, "projects")}
+            className="flex w-full items-center gap-3 rounded-xl px-3 py-2 text-left transition hover:bg-blue-50/80 cursor-pointer"
+          >
+            <div className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0 overflow-hidden bg-slate-100 border border-slate-200 shadow-2xs">
+              {firstImg ? (
+                <img src={firstImg} alt={pTitle} className="w-full h-full object-cover" />
+              ) : (
+                <div className="w-full h-full bg-blue-100 text-blue-600 flex items-center justify-center">
+                  <Globe size={14} />
+                </div>
+              )}
+            </div>
+            <div className="flex flex-col min-w-0 flex-1">
+              <span className="truncate text-xs font-black uppercase text-slate-900">{pTitle}</span>
+              <span className="truncate text-[10px] text-slate-400 font-semibold">by @{pHandle}</span>
+            </div>
+            <ArrowRight size={14} className="text-slate-400 shrink-0" />
+          </button>
+        );
+      });
+    }
+
+    return suggestions.map((s, index) => (
+      <button
+        key={s._id || s.id || index}
+        type="button"
+        onClick={() => handleSuggestionClick(s.hotdropId || s.username, "users")}
+        className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left transition hover:bg-blue-50/70 cursor-pointer"
+      >
+        <img
+          src={s.profilePicture || s.profileImageUrl || s.avatar || dp}
+          alt={s.hotdropId}
+          className="h-8 w-8 rounded-full object-cover ring-1 ring-slate-200 shrink-0"
+        />
+        <div className="flex flex-col min-w-0 flex-1">
+          <span className="truncate text-xs font-bold text-slate-900">@{s.hotdropId || s.username}</span>
+          <span className="truncate text-[10px] text-slate-400 font-medium">{[s.firstName, s.lastName].filter(Boolean).join(" ")}</span>
+        </div>
+        <ArrowRight size={14} className="text-slate-400 shrink-0" />
+      </button>
+    ));
+  };
+
   return (
     <header className={`fixed left-0 right-0 top-0 z-50 px-3 sm:px-4 transition-all duration-300 ${scrolled ? "pt-2" : "pt-3 sm:pt-4"}`}>
       {(isProfileOpen || isSidebarOpen || isLoginPromptOpen || showSuggestions || isMobileNotificationOpen || isDesktopNotificationOpen || isMobileSettingsOpen) && (
         <button
           type="button"
-          tabIndex={0}
           aria-label="Close menu overlays"
           className="fixed inset-0 z-40 bg-slate-950/40 backdrop-blur-md transition-all duration-300 animate-in fade-in cursor-pointer border-0 p-0"
           onClick={closeAllPopups}
@@ -316,72 +392,7 @@ const Navbar = () => {
 
               {showSuggestions && (
                 <div className="absolute left-0 right-0 top-full z-[100] mt-2.5 max-h-[300px] overflow-y-auto rounded-2xl border border-slate-100 bg-white p-1.5 shadow-2xl">
-                  {suggestions.length > 0 ? (
-                    searchMode === "projects" ? (
-                      suggestions.map((p, index) => {
-                        const pTitle = p.title || "Project ";
-                        const pOwner = p.creator || p.user || {};
-                        const pHandle = pOwner.hotdropId || pOwner.username || "dev";
-                        const rawImages = p.imageUrls || p.images || [];
-                        const firstImg = rawImages.length > 0
-                          ? (typeof rawImages[0] === "string" ? rawImages[0] : rawImages[0]?.url)
-                          : null;
-
-                        return (
-                          <button
-                            key={p.id || p._id || index}
-                            type="button"
-                            onClick={() => handleSuggestionClick(pTitle, "projects")}
-                            className="flex w-full items-center gap-3 rounded-xl px-3 py-2 text-left transition hover:bg-blue-50/80 cursor-pointer"
-                          >
-                            <div className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0 overflow-hidden bg-slate-100 border border-slate-200 shadow-2xs">
-                              {firstImg ? (
-                                <img src={firstImg} alt={pTitle} className="w-full h-full object-cover" />
-                              ) : (
-                                <div className="w-full h-full bg-blue-100 text-blue-600 flex items-center justify-center">
-                                  <Globe size={14} />
-                                </div>
-                              )}
-                            </div>
-                            <div className="flex flex-col min-w-0 flex-1">
-                              <span className="truncate text-xs font-black uppercase text-slate-900">{pTitle}</span>
-                              <span className="truncate text-[10px] text-slate-400 font-semibold">by @{pHandle}</span>
-                            </div>
-                            <ArrowRight size={14} className="text-slate-400 shrink-0" />
-                          </button>
-                        );
-                      })
-                    ) : (
-                      suggestions.map((s, index) => (
-                        <button
-                          key={s._id || s.id || index}
-                          type="button"
-                          onClick={() => handleSuggestionClick(s.hotdropId || s.username, "users")}
-                          className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left transition hover:bg-blue-50/70 cursor-pointer"
-                        >
-                          <img
-                            src={s.profilePicture || s.profileImageUrl || s.avatar || dp}
-                            alt={s.hotdropId}
-                            className="h-8 w-8 rounded-full object-cover ring-1 ring-slate-200 shrink-0"
-                          />
-                          <div className="flex flex-col min-w-0 flex-1">
-                            <span className="truncate text-xs font-bold text-slate-900">@{s.hotdropId || s.username}</span>
-                            <span className="truncate text-[10px] text-slate-400 font-medium">{[s.firstName, s.lastName].filter(Boolean).join(" ")}</span>
-                          </div>
-                          <ArrowRight size={14} className="text-slate-400 shrink-0" />
-                        </button>
-                      ))
-                    )
-                  ) : (
-                    <button
-                      type="button"
-                      onClick={() => handleSuggestionClick(searchQuery, searchMode)}
-                      className="flex w-full items-center justify-between px-3 py-2.5 text-xs font-bold text-blue-600 hover:bg-blue-50 rounded-xl transition cursor-pointer"
-                    >
-                      <span>{searchMode === "users" ? `Go to profile @${searchQuery.replace(/^@/, "")}` : `Searchs for "$ drop{searchQuery}"`}</span>
-                      <ArrowRight size={14} />
-                    </button>
-                  )}
+                  {renderMobileSuggestions()}
                 </div>
               )}
             </div>

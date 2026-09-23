@@ -55,10 +55,10 @@ const normalizeUrl = (url) => {
   return `https://${trimmed}`;
 };
 
-const URL_REGEX = /^(https?:\/\/)?([\w-]+\.)+[\w-]+(\/[\w-./?%&=]*)?$/i;
-const GITHUB_REGEX = /^(https?:\/\/)?(www\.)?github\.com\/[a-zA-Z0-9_-]+\/?$/i;
-const LINKEDIN_REGEX = /^(https?:\/\/)?(www\.)?linkedin\.com\/(in|company)\/[a-zA-Z0-9_-]+\/?$/i;
-const LEETCODE_REGEX = /^(https?:\/\/)?(www\.)?leetcode\.com\/(u\/)?[a-zA-Z0-9_-]+\/?$/i;
+const URL_REGEX = /^(https?:\/\/)?([\w-]+\.)+[\w-]+(\/[-\w./?%&=]*)?$/i;
+const GITHUB_REGEX = /^(https?:\/\/)?(www\.)?github\.com\/[\w-]+\/?$/i;
+const LINKEDIN_REGEX = /^(https?:\/\/)?(www\.)?linkedin\.com\/(in|company)\/[\w-]+\/?$/i;
+const LEETCODE_REGEX = /^(https?:\/\/)?(www\.)?leetcode\.com\/(u\/)?[\w-]+\/?$/i;
 
 function EditProfileModal({ isOpen, onClose, user, handleUpdate, loading }) {
   const [formData, setFormData] = useState({
@@ -172,7 +172,6 @@ function EditProfileModal({ isOpen, onClose, user, handleUpdate, loading }) {
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-3 sm:p-4 animate-in fade-in duration-200">
       <button
         type="button"
-        tabIndex={0}
         aria-label="Close edit profile modal"
         className="fixed inset-0 bg-slate-900/60 backdrop-blur-md border-0 p-0"
         onClick={onClose}

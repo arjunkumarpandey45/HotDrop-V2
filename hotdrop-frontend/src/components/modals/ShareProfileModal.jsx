@@ -18,7 +18,6 @@ function ShareProfileModal({ isOpen, onClose, user }) {
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 animate-in fade-in duration-200">
       <button
         type="button"
-        tabIndex={0}
         aria-label="Close share profile modal"
         className="fixed inset-0 bg-black/50 backdrop-blur-sm border-0 p-0"
         onClick={onClose}

@@ -411,7 +411,7 @@ MONITORING STATUS:
               <span className="text-xl font-black uppercase text-orange-500">HOT</span>
               <span className="text-xl font-black uppercase text-blue-600">DROP</span>
               <span className="ml-2 text-[10px] font-black uppercase tracking-wider text-slate-500 bg-slate-100 px-2 py-0.5 rounded-md border border-slate-200/80 hidden sm:inline-block">
-                
+                Analytics
               </span>
             </Link>
           </div>
@@ -509,7 +509,7 @@ MONITORING STATUS:
         {loading && (
           <div className="space-y-6 animate-pulse">
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
-              {[...new Array(5)].map((_, i) => (
+              {Array.from({ length: 5 }, (_, i) => (
                 <div
                   key={`analytics-skeleton-${i}`}
                   className="h-32 rounded-2xl bg-white border border-slate-200/80 shadow-xs"
@@ -577,7 +577,7 @@ MONITORING STATUS:
                   <div className="flex items-baseline gap-2">
                     <span className="text-3xl font-black text-slate-900 font-mono">
                       {stats.totalDrops}
-                    </span>
+                    </span>{' '}
                     <span className="text-xs text-slate-500 font-semibold">projects</span>
                   </div>
                   <p className="text-[11px] text-slate-500 font-medium">
@@ -720,7 +720,7 @@ MONITORING STATUS:
                   <div className="flex items-baseline gap-2">
                     <span className="text-3xl font-black text-slate-900 font-mono">
                       {stats.totalLikesReceived}
-                    </span>
+                    </span>{' '}
                     <span className="text-xs text-slate-500 font-semibold">likes</span>
                   </div>
 
@@ -750,7 +750,7 @@ MONITORING STATUS:
                   <div className="flex items-baseline gap-2">
                     <span className="text-3xl font-black text-slate-900 font-mono">
                       {stats.totalCommentReceived ?? 0}
-                    </span>
+                    </span>{' '}
                     <span className="text-xs text-slate-500 font-semibold">
                       {(stats.totalCommentReceived ?? 0) === 1 ? "comment" : "comments"}
                     </span>
