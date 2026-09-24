@@ -5,6 +5,7 @@ import com.arjun.hotdrop_backend.dto.*;
 import com.arjun.hotdrop_backend.scheduler.LinkTrackingScheduler;
 import com.arjun.hotdrop_backend.service.PostService;
 
+import com.arjun.hotdrop_backend.utils.MaskUtils;
 import com.arjun.hotdrop_backend.utils.ResponseHandler;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -56,11 +57,11 @@ public class PostController {
             @RequestParam("files") MultipartFile[] files,
             @AuthenticationPrincipal UserDetails userDetails) {
 
-        String userEmail = userDetails.getUsername();
-        log.info("Creating post '{}' for user: {}", createPostDto.getTitle(), userEmail);
+        String userIdentifier = userDetails.getUsername();
+        log.info("Creating post '{}' for user: {}", createPostDto.getTitle(), MaskUtils.maskIdentifier(userIdentifier));
 
-        PostResponseDto savedPost = postService.createNewPost(createPostDto, files, userEmail);
-        log.info("Created post '{}' with ID {} for user: {}", savedPost.getTitle(), savedPost.getId(), userEmail);
+        PostResponseDto savedPost = postService.createNewPost(createPostDto, files, userIdentifier);
+        log.info("Created post '{}' with ID {} for user: {}", savedPost.getTitle(), savedPost.getId(), MaskUtils.maskIdentifier(userIdentifier));
 
         return ResponseHandler.generateResponse(
                 HttpStatus.CREATED,
@@ -116,7 +117,7 @@ public class PostController {
         try {
             validUuid = UUID.fromString(postId);
         } catch (IllegalArgumentException e) {
-            log.error("Invalid post ID format: {}", postId);
+            log.warn("Invalid post ID format: {}", postId);
             return ResponseHandler.generateResponse(
                     HttpStatus.BAD_REQUEST,
                     "Provided Post ID format is invalid.",
@@ -127,7 +128,7 @@ public class PostController {
         PostResponseDto post = postService.getPostByPostId(validUuid);
 
         if (post == null) {
-            log.error("Post not found with ID: {}", validUuid);
+            log.warn("Post not found with ID: {}", validUuid);
             return ResponseHandler.generateResponse(
                     HttpStatus.NOT_FOUND,
                     "Post does not exist.",

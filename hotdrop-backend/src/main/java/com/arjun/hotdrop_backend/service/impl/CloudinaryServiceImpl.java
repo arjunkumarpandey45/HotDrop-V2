@@ -24,7 +24,7 @@ public class CloudinaryServiceImpl implements CloudinaryService {
         log.info("Uploading post image ({} bytes)...", file != null ? file.getSize() : 0);
         try {
             if (file == null || file.isEmpty()) {
-                log.error("Cannot upload post image: file is empty.");
+                log.warn("Cannot upload post image: file is empty.");
                 throw new RuntimeException("Cannot upload empty file.");
             }
 
@@ -44,8 +44,8 @@ public class CloudinaryServiceImpl implements CloudinaryService {
             return Map.of("url", url, "publicId", publicId);
 
         } catch (IOException e) {
-            log.error("Failed to upload post image: {}", e.getMessage());
-            throw new RuntimeException("Image upload failed: " + e.getMessage());
+            log.error("Failed to upload post image", e);
+            throw new RuntimeException("Image upload failed: " + e.getMessage(), e);
         }
     }
 
@@ -54,7 +54,7 @@ public class CloudinaryServiceImpl implements CloudinaryService {
         log.info("Uploading profile picture ({} bytes)...", file != null ? file.getSize() : 0);
         try {
             if (file == null || file.isEmpty()) {
-                log.error("Cannot upload profile picture: file is empty.");
+                log.warn("Cannot upload profile picture: file is empty.");
                 throw new RuntimeException("Cannot upload empty file.");
             }
 
@@ -74,8 +74,8 @@ public class CloudinaryServiceImpl implements CloudinaryService {
             return Map.of("url", url, "publicId", publicId);
 
         } catch (IOException e) {
-            log.error("Failed to upload profile picture: {}", e.getMessage());
-            throw new RuntimeException("Image upload failed: " + e.getMessage());
+            log.error("Failed to upload profile picture", e);
+            throw new RuntimeException("Image upload failed: " + e.getMessage(), e);
         }
     }
 
@@ -86,7 +86,7 @@ public class CloudinaryServiceImpl implements CloudinaryService {
             cloudinary.uploader().destroy(publicId, ObjectUtils.emptyMap());
             log.info("Deleted image with ID: {}", publicId);
         } catch (IOException e) {
-            log.error("Failed to delete image {}: {}", publicId, e.getMessage());
+            log.error("Failed to delete image with publicId: {}", publicId, e);
         }
     }
 }

@@ -39,7 +39,7 @@ public class RateLimitAspect {
         int refillTokens = rateLimited.refillTokens();
         int durationSeconds = rateLimited.refillDurationSeconds();
 
-        log.info("Checking rate limit for {} (limit: {} per {}s, key: {})",
+        log.debug("Checking rate limit for {} (limit: {} per {}s, key: {})",
                 actionName, capacity, durationSeconds, rateLimitKey);
 
         if (!rateLimiterService.tryConsume(rateLimitKey, capacity, refillTokens, durationSeconds)) {

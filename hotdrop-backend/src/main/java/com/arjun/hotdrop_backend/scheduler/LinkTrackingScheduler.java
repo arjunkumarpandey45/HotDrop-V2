@@ -102,7 +102,7 @@ public class LinkTrackingScheduler {
                             }
                             log.warn("Sent project down notification for post ID: {}", post.getId());
                         } catch (Exception e) {
-                            log.error("Could not send project down notification: {}", e.getMessage());
+                            log.error("Could not send project down notification for post ID: {}", post.getId(), e);
                         }
                     }
 
@@ -120,7 +120,7 @@ public class LinkTrackingScheduler {
                             }
                             log.info("Sent project up notification for post ID: {}", post.getId());
                         } catch (Exception e) {
-                            log.error("Could not send project up notification: {}", e.getMessage());
+                            log.error("Could not send project up notification for post ID: {}", post.getId(), e);
                         }
                     }
                     post.setLinkDead(currentlyDead);
@@ -134,10 +134,10 @@ public class LinkTrackingScheduler {
             log.info("Saved all link status updates successfully.");
 
         } catch (InterruptedException ie) {
-            log.error("Link check was interrupted: {}", ie.getMessage());
+            log.warn("Link check was interrupted: {}", ie.getMessage());
             Thread.currentThread().interrupt();
         } catch (Exception e) {
-            log.error("Failed to check project links: {}", e.getMessage());
+            log.error("Failed to check project links", e);
         }
     }
 

@@ -281,7 +281,7 @@ public class TechStackDetectorServiceImpl implements TechStackDetectorService {
             }
 
         } catch (Exception e) {
-            log.error("Could not detect technologies for {}: {}", targetUrl, e.getMessage());
+            log.warn("Could not detect technologies for {}: {}", targetUrl, e.getMessage());
         }
 
         log.info("Finished checking technologies for {}. Found {}: {}", targetUrl, tags.size(), tags);

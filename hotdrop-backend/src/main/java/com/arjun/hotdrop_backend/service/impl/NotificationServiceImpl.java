@@ -7,6 +7,7 @@ import com.arjun.hotdrop_backend.entity.User;
 import com.arjun.hotdrop_backend.enums.NotificationType;
 import com.arjun.hotdrop_backend.repository.NotificationRepo;
 import com.arjun.hotdrop_backend.service.NotificationService;
+import com.arjun.hotdrop_backend.utils.MaskUtils;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -77,12 +78,12 @@ public class NotificationServiceImpl implements NotificationService {
 
     @Override
     public org.springframework.data.domain.Page<NotificationResponseDto> getUserNotifications(String hotdropId, org.springframework.data.domain.Pageable pageable) {
-        log.info("Getting notifications for user: {}", hotdropId);
+        log.info("Getting notifications for user: {}", MaskUtils.maskIdentifier(hotdropId));
 
         User user = userRepo.findByHotdropId(hotdropId)
                 .or(() -> userRepo.findByEmail(hotdropId))
                 .orElseThrow(() -> {
-                    log.error("Cannot get notifications: user not found for {}", hotdropId);
+                    log.warn("Cannot get notifications: user not found for {}", MaskUtils.maskIdentifier(hotdropId));
                     return new RuntimeException("User not found: " + hotdropId);
                 });
 
@@ -108,57 +109,57 @@ public class NotificationServiceImpl implements NotificationService {
                             .build();
                 });
 
-        log.info("Loaded {} notifications for user: {}", result.getNumberOfElements(), hotdropId);
+        log.info("Loaded {} notifications for user: {}", result.getNumberOfElements(), MaskUtils.maskIdentifier(hotdropId));
         return result;
     }
 
     @Override
     public long getUnreadCount(String hotdropId) {
-        log.info("Getting unread notification count for user: {}", hotdropId);
+        log.info("Getting unread notification count for user: {}", MaskUtils.maskIdentifier(hotdropId));
 
         User user = userRepo.findByHotdropId(hotdropId)
                 .or(() -> userRepo.findByEmail(hotdropId))
                 .orElseThrow(() -> {
-                    log.error("Cannot get unread count: user not found for {}", hotdropId);
+                    log.warn("Cannot get unread count: user not found for {}", MaskUtils.maskIdentifier(hotdropId));
                     return new RuntimeException("User not found: " + hotdropId);
                 });
 
         long count = notificationRepo.countByRecipientAndIsReadFalse(user);
-        log.info("User {} has {} unread notifications.", hotdropId, count);
+        log.info("User {} has {} unread notifications.", MaskUtils.maskIdentifier(hotdropId), count);
         return count;
     }
 
     @Override
     @Transactional
     public void markAsRead(UUID notificationId, String hotdropId) {
-        log.info("Marking notification {} as read for user: {}", notificationId, hotdropId);
+        log.info("Marking notification {} as read for user: {}", notificationId, MaskUtils.maskIdentifier(hotdropId));
 
         Notification notification = notificationRepo.findById(notificationId)
                 .orElseThrow(() -> {
-                    log.error("Cannot mark as read: notification {} was not found.", notificationId);
+                    log.warn("Cannot mark as read: notification {} was not found.", notificationId);
                     return new RuntimeException("Notification not found");
                 });
 
         if (!notification.getRecipient().getHotdropId().equalsIgnoreCase(hotdropId) &&
             !notification.getRecipient().getEmail().equalsIgnoreCase(hotdropId)) {
-            log.error("User {} cannot mark notification {} of another user.", hotdropId, notificationId);
+            log.warn("User {} cannot mark notification {} of another user.", MaskUtils.maskIdentifier(hotdropId), notificationId);
             throw new RuntimeException("Unauthorized to modify this notification");
         }
 
         notification.setRead(true);
         notificationRepo.save(notification);
-        log.info("Marked notification {} as read for user: {}", notificationId, hotdropId);
+        log.info("Marked notification {} as read for user: {}", notificationId, MaskUtils.maskIdentifier(hotdropId));
     }
 
     @Override
     @Transactional
     public void markAllAsRead(String hotdropId) {
-        log.info("Marking all notifications as read for user: {}", hotdropId);
+        log.info("Marking all notifications as read for user: {}", MaskUtils.maskIdentifier(hotdropId));
 
         User user = userRepo.findByHotdropId(hotdropId)
                 .or(() -> userRepo.findByEmail(hotdropId))
                 .orElseThrow(() -> {
-                    log.error("Cannot mark all as read: user not found for {}", hotdropId);
+                    log.warn("Cannot mark all as read: user not found for {}", MaskUtils.maskIdentifier(hotdropId));
                     return new RuntimeException("User not found: " + hotdropId);
                 });
 
@@ -169,6 +170,6 @@ public class NotificationServiceImpl implements NotificationService {
 
         unread.forEach(n -> n.setRead(true));
         notificationRepo.saveAll(unread);
-        log.info("Marked {} notifications as read for user: {}", unread.size(), hotdropId);
+        log.info("Marked {} notifications as read for user: {}", unread.size(), MaskUtils.maskIdentifier(hotdropId));
     }
 }

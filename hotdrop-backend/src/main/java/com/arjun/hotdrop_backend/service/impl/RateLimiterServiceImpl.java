@@ -52,7 +52,7 @@ public class RateLimiterServiceImpl implements RateLimiterService {
         if (!consumed) {
             log.warn("Rate limit breached in Redis for key: {}. Request blocked.", fullKey);
         } else {
-            log.info("Rate limit token consumed from Redis for key: {}", fullKey);
+            log.debug("Rate limit token consumed from Redis for key: {}", fullKey);
         }
         return consumed;
         }

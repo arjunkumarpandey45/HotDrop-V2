@@ -1,6 +1,7 @@
 package com.arjun.hotdrop_backend.service.impl;
 
 import com.arjun.hotdrop_backend.service.JwtService;
+import com.arjun.hotdrop_backend.utils.MaskUtils;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
@@ -36,7 +37,7 @@ public class JwtServiceImpl implements JwtService {
                     .parseSignedClaims(token)
                     .getPayload();
         } catch (Exception e) {
-            log.error("Could not read token: {}", e.getMessage());
+            log.warn("Could not read token claims: {}", e.getMessage());
             throw e;
         }
     }
@@ -61,7 +62,7 @@ public class JwtServiceImpl implements JwtService {
     }
 
     public String generateEmailVerificationToken(String email) {
-        log.info("Creating verification token for: {}", email);
+        log.info("Creating verification token for: {}", MaskUtils.maskEmail(email));
         return Jwts.builder()
                 .subject(email)
                 .claim("purpose", "EMAIL_VERIFICATION")
@@ -78,11 +79,11 @@ public class JwtServiceImpl implements JwtService {
             boolean isValid = PURPOSE_VERIFICATION.equals(claims.get(CLAIM_PURPOSE))
                     && claims.getExpiration().after(new Date());
             if (!isValid) {
-                log.error("Verification token is expired or invalid.");
+                log.warn("Verification token is expired or invalid.");
             }
             return isValid;
         } catch (Exception e) {
-            log.error("Failed to verify token: {}", e.getMessage());
+            log.warn("Failed to verify token: {}", e.getMessage());
             return false;
         }
     }

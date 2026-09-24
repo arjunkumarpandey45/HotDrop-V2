@@ -3,6 +3,7 @@ package com.arjun.hotdrop_backend.controller;
 import com.arjun.hotdrop_backend.dto.ApiResponse;
 import com.arjun.hotdrop_backend.dto.NotificationResponseDto;
 import com.arjun.hotdrop_backend.service.NotificationService;
+import com.arjun.hotdrop_backend.utils.MaskUtils;
 import com.arjun.hotdrop_backend.utils.ResponseHandler;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -33,14 +34,14 @@ public class NotificationController {
             @AuthenticationPrincipal UserDetails userDetails) {
 
         if (userDetails == null) {
-            log.error("Cannot get notifications: user is not logged in.");
+            log.warn("Cannot get notifications: user is not logged in.");
             return ResponseHandler.generateResponse(HttpStatus.UNAUTHORIZED, "Authentication required", null);
         }
 
-        log.info("Getting notifications for user: {}, page: {}, size: {}", userDetails.getUsername(), page, size);
+        log.info("Getting notifications for user: {}, page: {}, size: {}", MaskUtils.maskIdentifier(userDetails.getUsername()), page, size);
         Pageable pageable = PageRequest.of(page, size);
         Page<NotificationResponseDto> notifications = notificationService.getUserNotifications(userDetails.getUsername(), pageable);
-        log.info("Loaded {} notifications for user: {}", notifications.getNumberOfElements(), userDetails.getUsername());
+        log.info("Loaded {} notifications for user: {}", notifications.getNumberOfElements(), MaskUtils.maskIdentifier(userDetails.getUsername()));
 
         return ResponseHandler.generateResponse(
                 HttpStatus.OK,
@@ -54,13 +55,13 @@ public class NotificationController {
             @AuthenticationPrincipal UserDetails userDetails) {
 
         if (userDetails == null) {
-            log.error("Cannot get unread count: user is not logged in.");
+            log.warn("Cannot get unread count: user is not logged in.");
             return ResponseHandler.generateResponse(HttpStatus.UNAUTHORIZED, "Authentication required", null);
         }
 
-        log.info("Checking unread notifications for user: {}", userDetails.getUsername());
+        log.info("Checking unread notifications for user: {}", MaskUtils.maskIdentifier(userDetails.getUsername()));
         long unreadCount = notificationService.getUnreadCount(userDetails.getUsername());
-        log.info("User {} has {} unread notifications.", userDetails.getUsername(), unreadCount);
+        log.info("User {} has {} unread notifications.", MaskUtils.maskIdentifier(userDetails.getUsername()), unreadCount);
 
         return ResponseHandler.generateResponse(
                 HttpStatus.OK,
@@ -75,13 +76,13 @@ public class NotificationController {
             @AuthenticationPrincipal UserDetails userDetails) {
 
         if (userDetails == null) {
-            log.error("Cannot mark notification {} as read: user is not logged in.", id);
+            log.warn("Cannot mark notification {} as read: user is not logged in.", id);
             return ResponseHandler.generateResponse(HttpStatus.UNAUTHORIZED, "Authentication required", null);
         }
 
-        log.info("Marking notification {} as read for user: {}", id, userDetails.getUsername());
+        log.info("Marking notification {} as read for user: {}", id, MaskUtils.maskIdentifier(userDetails.getUsername()));
         notificationService.markAsRead(id, userDetails.getUsername());
-        log.info("Marked notification {} as read for user: {}", id, userDetails.getUsername());
+        log.info("Marked notification {} as read for user: {}", id, MaskUtils.maskIdentifier(userDetails.getUsername()));
 
         return ResponseHandler.generateResponse(
                 HttpStatus.OK,
@@ -95,13 +96,13 @@ public class NotificationController {
             @AuthenticationPrincipal UserDetails userDetails) {
 
         if (userDetails == null) {
-            log.error("Cannot mark notifications as read: user is not logged in.");
+            log.warn("Cannot mark notifications as read: user is not logged in.");
             return ResponseHandler.generateResponse(HttpStatus.UNAUTHORIZED, "Authentication required", null);
         }
 
-        log.info("Marking all notifications as read for user: {}", userDetails.getUsername());
+        log.info("Marking all notifications as read for user: {}", MaskUtils.maskIdentifier(userDetails.getUsername()));
         notificationService.markAllAsRead(userDetails.getUsername());
-        log.info("Marked all notifications as read for user: {}", userDetails.getUsername());
+        log.info("Marked all notifications as read for user: {}", MaskUtils.maskIdentifier(userDetails.getUsername()));
 
         return ResponseHandler.generateResponse(
                 HttpStatus.OK,

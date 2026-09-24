@@ -23,7 +23,7 @@ public class TokenBlacklistServiceImpl implements TokenBlacklistService {
         redisTemplate.opsForValue().set(key, "blacklisted", Duration.ofMillis(remainingExpiryMillis));
         log.info("Blocked token for {} ms.", remainingExpiryMillis);
         } catch (Exception e) {
-            log.error("Failed to blacklist token in Redis: {}", e.getMessage());
+            log.error("Failed to blacklist token in Redis", e);
         }
     }
     public boolean isTokenBlacklisted(String token) {
@@ -34,7 +34,7 @@ public class TokenBlacklistServiceImpl implements TokenBlacklistService {
         String key = BLACKLIST_PREFIX + token;
             return redisTemplate.hasKey(key);
         } catch (Exception e) {
-            log.error("Error checking token blacklist status in Redis: {}", e.getMessage());
+            log.error("Error checking token blacklist status in Redis", e);
             return false;
         }
     }

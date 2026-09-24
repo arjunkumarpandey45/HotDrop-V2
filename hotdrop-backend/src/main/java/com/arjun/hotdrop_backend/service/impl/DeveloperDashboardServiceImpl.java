@@ -5,6 +5,7 @@ import com.arjun.hotdrop_backend.dto.DeveloperDashboardStatsDto;
 import com.arjun.hotdrop_backend.repository.PostRepo;
 import com.arjun.hotdrop_backend.repository.UserRepo;
 import com.arjun.hotdrop_backend.service.DeveloperDashboardService;
+import com.arjun.hotdrop_backend.utils.MaskUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -26,7 +27,7 @@ public class DeveloperDashboardServiceImpl implements DeveloperDashboardService 
 
     @Transactional(readOnly = true)
     public DeveloperDashboardStatsDto getUserDashboardStats(String hotdropId) {
-        log.info("Calculating dashboard stats for user: {}", hotdropId);
+        log.info("Calculating dashboard stats for user: {}", MaskUtils.maskIdentifier(hotdropId));
 
         UUID userId = userRepository.findByHotdropId(hotdropId)
                 .orElseThrow(() -> new UsernameNotFoundException("User not found: " + hotdropId))

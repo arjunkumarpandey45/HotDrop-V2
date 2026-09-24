@@ -44,7 +44,7 @@ public class RequestIdFilter extends OncePerRequestFilter {
 
             log.info("Finished {} {} with status {}", request.getMethod(), request.getRequestURI(), response.getStatus());
         } catch (Exception e) {
-            log.error("Request failed for {} {}: {}", request.getMethod(), request.getRequestURI(), e.getMessage());
+            log.error("Request failed for {} {}", request.getMethod(), request.getRequestURI(), e);
             throw e;
         } finally {
             MDC.remove(MDC_KEY);

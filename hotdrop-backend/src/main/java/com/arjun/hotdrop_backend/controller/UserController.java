@@ -4,6 +4,7 @@ package com.arjun.hotdrop_backend.controller;
 import com.arjun.hotdrop_backend.annotation.RateLimited;
 import com.arjun.hotdrop_backend.dto.*;
 import com.arjun.hotdrop_backend.service.UserService;
+import com.arjun.hotdrop_backend.utils.MaskUtils;
 import com.arjun.hotdrop_backend.utils.ResponseHandler;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -31,10 +32,10 @@ public class UserController {
            @PathVariable String hotdropId,
            @AuthenticationPrincipal UserDetails userDetails) {
       String currentLoggedInHotdropId = (userDetails != null) ? userDetails.getUsername() : null;
-      log.info("Looking for user profile: {} (viewed by {})", hotdropId, currentLoggedInHotdropId);
+      log.info("Looking for user profile: {} (viewed by {})", MaskUtils.maskIdentifier(hotdropId), MaskUtils.maskIdentifier(currentLoggedInHotdropId));
 
       UserResponseOnSearchDto searchDto = userService.getUserByHotDropId(hotdropId, currentLoggedInHotdropId);
-      log.info("Found profile for user: {}", hotdropId);
+      log.info("Found profile for user: {}", MaskUtils.maskIdentifier(hotdropId));
 
       return ResponseHandler.generateResponse(
               HttpStatus.OK,
@@ -51,7 +52,7 @@ public class UserController {
 
       String currentHotdropId = userDetails.getUsername();
       UUID userIdToFollow = UUID.fromString(requestBody.get("userIdToFollow"));
-      log.info("User {} wants to follow or unfollow user ID: {}", currentHotdropId, userIdToFollow);
+      log.info("User {} wants to follow or unfollow user ID: {}", MaskUtils.maskIdentifier(currentHotdropId), userIdToFollow);
 
       FollowResponseDto responseDto = userService.toggleFollowUser(userIdToFollow, currentHotdropId);
 
@@ -59,7 +60,7 @@ public class UserController {
               ? "Successfully followed @" + responseDto.getHotdropId()
               : "Successfully unfollowed @" + responseDto.getHotdropId();
 
-      log.info("User {} {} @{}", currentHotdropId, responseDto.isFollowing() ? "followed" : "unfollowed", responseDto.getHotdropId());
+      log.info("User {} {} @{}", MaskUtils.maskIdentifier(currentHotdropId), responseDto.isFollowing() ? "followed" : "unfollowed", MaskUtils.maskIdentifier(responseDto.getHotdropId()));
 
       return ResponseHandler.generateResponse(
               HttpStatus.OK,
@@ -76,7 +77,7 @@ public class UserController {
            @AuthenticationPrincipal UserDetails userDetails) {
 
       String currentHotdropId = (userDetails != null) ? userDetails.getUsername() : null;
-      log.info("Getting followers for user ID: {}, page: {}, size: {} (viewed by {})", userId, page, size, currentHotdropId);
+      log.info("Getting followers for user ID: {}, page: {}, size: {} (viewed by {})", userId, page, size, MaskUtils.maskIdentifier(currentHotdropId));
 
       PagedResponse<FollowerUserDto> followers = userService.getUserFollowers(userId, currentHotdropId, page, size);
       log.info("Loaded {} followers for user ID: {}", followers.getContent().size(), userId);
@@ -94,14 +95,14 @@ public class UserController {
            @ModelAttribute ProfileUpdateRequestDto requestDto,
            @AuthenticationPrincipal UserDetails userDetails) {
       String currentHotdropId = userDetails.getUsername();
-      log.info("Updating profile for user ID: {} by: {}", userIdFromParams, currentHotdropId);
+      log.info("Updating profile for user ID: {} by: {}", userIdFromParams, MaskUtils.maskIdentifier(currentHotdropId));
 
       UserResponseDto updatedProfile = userService.updateProfileDetails(
               userIdFromParams,
               currentHotdropId,
               requestDto
       );
-      log.info("Updated profile for user: {}", currentHotdropId);
+      log.info("Updated profile for user: {}", MaskUtils.maskIdentifier(currentHotdropId));
 
       return ResponseHandler.generateResponse(
               HttpStatus.OK,
@@ -113,15 +114,15 @@ public class UserController {
    @GetMapping("/me")
    public ResponseEntity<ApiResponse<MeResponseDto>> getMe(Authentication authentication) {
       if (authentication == null || !authentication.isAuthenticated()) {
-         log.error("Cannot load profile: user is not logged in.");
+         log.warn("Cannot load profile: user is not logged in or token missing.");
          return ResponseHandler.generateResponse(HttpStatus.UNAUTHORIZED, "User session not found or token missing", null);
       }
 
       String hotdropId = authentication.getName();
-      log.info("Getting profile details for: {}", hotdropId);
+      log.info("Getting profile details for: {}", MaskUtils.maskIdentifier(hotdropId));
 
       MeResponseDto response = userService.getMeByHotdropId(hotdropId);
-      log.info("Loaded profile details for: {}", hotdropId);
+      log.info("Loaded profile details for: {}", MaskUtils.maskIdentifier(hotdropId));
 
       return ResponseHandler.generateResponse(HttpStatus.OK, "User found successfully", response);
    }

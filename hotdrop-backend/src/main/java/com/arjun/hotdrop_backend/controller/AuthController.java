@@ -8,6 +8,7 @@ import com.arjun.hotdrop_backend.service.JwtService;
 import com.arjun.hotdrop_backend.service.RefreshTokenService;
 
 import com.arjun.hotdrop_backend.utils.CookieUtils;
+import com.arjun.hotdrop_backend.utils.MaskUtils;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
@@ -33,7 +34,7 @@ public class AuthController {
     @RateLimited(capacity = 5, refillTokens = 5, refillDurationSeconds = 300)
     @PostMapping("/signup")
     public ResponseEntity<UserResponseDto> signup(@Valid @RequestBody RegisterRequestDto registerRequestDto) {
-        log.info("Signing up user {} with email: {}", registerRequestDto.getHotdropId(), registerRequestDto.getEmail());
+        log.info("Signing up user {} with email: {}", registerRequestDto.getHotdropId(), MaskUtils.maskEmail(registerRequestDto.getEmail()));
         UserResponseDto responseDto = authService.register(registerRequestDto);
         log.info("Registered user: {}", registerRequestDto.getHotdropId());
         return ResponseEntity.status(HttpStatus.CREATED).body(responseDto);
@@ -41,9 +42,9 @@ public class AuthController {
 @PostMapping("/resend-email")
 @RateLimited(capacity = 2, refillTokens = 2, refillDurationSeconds = 300)
 public ResponseEntity<String> resendVerifyEmail(@Valid @RequestBody ReVerificationEmailDto reVerificationEmailDto){
-    log.info("Resending verification email to: {}", reVerificationEmailDto.getEmail());
+    log.info("Resending verification email to: {}", MaskUtils.maskEmail(reVerificationEmailDto.getEmail()));
         authService.reVerifyEmail(reVerificationEmailDto.getEmail());
-    log.info("Sent verification link to: {}", reVerificationEmailDto.getEmail());
+    log.info("Sent verification link to: {}", MaskUtils.maskEmail(reVerificationEmailDto.getEmail()));
         return ResponseEntity.ok("Verification Link Sent To Your Email");
 }
     @RateLimited(capacity = 3, refillTokens = 3, refillDurationSeconds = 60)
@@ -58,7 +59,7 @@ public ResponseEntity<String> resendVerifyEmail(@Valid @RequestBody ReVerificati
     @RateLimited(capacity = 10, refillTokens = 10, refillDurationSeconds = 60)
     @PostMapping("/login")
     public ResponseEntity<LoginResponseDto> login(@Valid @RequestBody LoginRequestDto loginRequestDto) {
-        log.info("Logging in user: {}", loginRequestDto.getHotdropIdOrEmail());
+        log.info("Logging in user: {}", MaskUtils.maskIdentifier(loginRequestDto.getHotdropIdOrEmail()));
         AuthResultDto authResult = authService.login(loginRequestDto);
         ResponseCookie accessCookie = ResponseCookie.from("accessToken", authResult.getAccessToken())
                 .httpOnly(true)
@@ -125,18 +126,18 @@ public ResponseEntity<String> resendVerifyEmail(@Valid @RequestBody ReVerificati
     @RateLimited(capacity = 3, refillTokens = 3, refillDurationSeconds = 300)
     @PostMapping("/forgot-password")
     public ResponseEntity<String> forgotPassword(@Valid @RequestBody ForgotPasswordRequestDto requestDto) {
-        log.info("Sending password reset code to: {}", requestDto.getEmail());
+        log.info("Sending password reset code to: {}", MaskUtils.maskEmail(requestDto.getEmail()));
         authService.sendForgotPasswordOtp(requestDto);
-        log.info("Sent password reset code to: {}", requestDto.getEmail());
+        log.info("Sent password reset code to: {}", MaskUtils.maskEmail(requestDto.getEmail()));
         return ResponseEntity.ok("OTP sent to Your E-Mail ");
     }
 
     @RateLimited(capacity = 4, refillTokens = 4, refillDurationSeconds = 60)
     @PostMapping("/verify-otp")
     public ResponseEntity<String> resetPassword(@Valid @RequestBody ResetPasswordDto resetPasswordDto) {
-        log.info("Resetting password for: {}", resetPasswordDto.getEmail());
+        log.info("Resetting password for: {}", MaskUtils.maskEmail(resetPasswordDto.getEmail()));
         authService.resetPasswordWithOtp(resetPasswordDto);
-        log.info("Password reset successfully for: {}", resetPasswordDto.getEmail());
+        log.info("Password reset successfully for: {}", MaskUtils.maskEmail(resetPasswordDto.getEmail()));
         return ResponseEntity.ok("Password reset successfully");
     }
 

@@ -6,6 +6,7 @@ import com.arjun.hotdrop_backend.error.ResourceNotFoundException;
 import com.arjun.hotdrop_backend.repository.RefreshTokenRepo;
 import com.arjun.hotdrop_backend.repository.UserRepo;
 import com.arjun.hotdrop_backend.service.RefreshTokenService;
+import com.arjun.hotdrop_backend.utils.MaskUtils;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -29,10 +30,10 @@ public class RefreshTokenServiceImpl implements RefreshTokenService {
     @Override
     @Transactional
     public RefreshToken createRefreshToken(String hotdropId) {
-        log.info("Creating refresh token for user: {}", hotdropId);
+        log.info("Creating refresh token for user: {}", MaskUtils.maskIdentifier(hotdropId));
         var user = userRepo.findByHotdropId(hotdropId)
                 .orElseThrow(() -> {
-                    log.error("Cannot create refresh token: user not found for {}", hotdropId);
+                    log.warn("Cannot create refresh token: user not found for {}", MaskUtils.maskIdentifier(hotdropId));
                     return new ResourceNotFoundException("User not found with id: " + hotdropId);
                 });
 
@@ -45,7 +46,7 @@ public class RefreshTokenServiceImpl implements RefreshTokenService {
                 .build();
 
         RefreshToken savedToken = refreshTokenRepo.save(refreshToken);
-        log.info("Created refresh token for user: {}", hotdropId);
+        log.info("Created refresh token for user: {}", MaskUtils.maskIdentifier(hotdropId));
         return savedToken;
     }
     @Override
@@ -56,7 +57,7 @@ public class RefreshTokenServiceImpl implements RefreshTokenService {
 
         if (refreshToken.getExpiryDate().isBefore(Instant.now())) {
             refreshTokenRepo.delete(refreshToken);
-            log.warn("Expired refresh token rejected for user: {}", refreshToken.getUser().getHotdropId());
+            log.warn("Expired refresh token rejected for user: {}", MaskUtils.maskIdentifier(refreshToken.getUser().getHotdropId()));
             throw new BadCredentialsException("Refresh token has expired. Please login again.");
         }
 

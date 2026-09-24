@@ -15,6 +15,7 @@ import com.arjun.hotdrop_backend.repository.RefreshTokenRepo;
 import com.arjun.hotdrop_backend.repository.RoleRepo;
 import com.arjun.hotdrop_backend.repository.UserRepo;
 import com.arjun.hotdrop_backend.service.*;
+import com.arjun.hotdrop_backend.utils.MaskUtils;
 
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -58,7 +59,7 @@ private final RefreshTokenService refreshTokenService;
         String email = registerRequestDto.getEmail().trim().toLowerCase();
         String hotdropId = registerRequestDto.getHotdropId().trim().toLowerCase();
 
-        log.info("Processing registration for hotdropId: {} and email: {}", hotdropId, email);
+        log.info("Processing registration for hotdropId: {} (email: {})", hotdropId, MaskUtils.maskEmail(email));
 
         Optional<User> existingUserOpt = userRepo.findByEmail(email);
 
@@ -68,7 +69,7 @@ private final RefreshTokenService refreshTokenService;
             User existingUser = existingUserOpt.get();
 
             if (existingUser.isEmailVerified()) {
-                log.warn("Registration rejected: Email {} is already verified", email);
+                log.warn("Registration rejected: Email {} is already verified", MaskUtils.maskEmail(email));
                 throw new IllegalArgumentException("Email already exists and is verified.");
             }
 
@@ -86,7 +87,7 @@ private final RefreshTokenService refreshTokenService;
             existingUser.setEmailVerified(false);
 
             userToSave = userRepo.save(existingUser);
-            log.info("Updated unverified account credentials for email: {}", email);
+            log.info("Updated unverified account credentials for user: {}", hotdropId);
         } else {
 
             if (userRepo.existsByHotdropId(hotdropId)) {
@@ -130,11 +131,11 @@ private final RefreshTokenService refreshTokenService;
             return;
         }
         String email = rawEmail.trim().toLowerCase();
-        log.info("Processing re-verification email request for: {}", email);
+        log.info("Processing re-verification email request for: {}", MaskUtils.maskEmail(email));
         Optional<User> existingUser = userRepo.findByEmail(email);
 
         if (existingUser.isEmpty()) {
-            log.warn("Re-verification requested for unregistered email: {}", email);
+            log.warn("Re-verification requested for unregistered email: {}", MaskUtils.maskEmail(email));
             return;
         }
 
@@ -143,7 +144,7 @@ private final RefreshTokenService refreshTokenService;
 
 
             if (user.isEmailVerified()) {
-                log.info("Re-verification skipped: Email {} is already verified.", email);
+                log.info("Re-verification skipped: Email is already verified for user: {}", user.getHotdropId());
                 return;
 
         }
@@ -160,7 +161,7 @@ private final RefreshTokenService refreshTokenService;
                 verificationLink
         );
 
-        log.info("Sent verification email to: {}", email);
+        log.info("Sent verification email for user: {}", user.getHotdropId());
 
     }
     @Override
@@ -169,7 +170,7 @@ private final RefreshTokenService refreshTokenService;
         log.info("Verifying email token.");
 
         if (!jwtService.validateEmailToken(token)) {
-            log.error("Email verification failed: token is expired or invalid.");
+            log.warn("Email verification failed: token is expired or invalid.");
             throw new IllegalArgumentException("Invalid or expired verification token.");
         }
 
@@ -181,12 +182,12 @@ private final RefreshTokenService refreshTokenService;
 
         User user = userRepo.findByEmail(email)
                 .orElseThrow(() -> {
-                    log.error("Email verification failed: no user found for email: {}", email);
+                    log.warn("Email verification failed: no user found for email: {}", MaskUtils.maskEmail(email));
                     return new IllegalArgumentException("User not found.");
                 });
 
         if (user.isEmailVerified()) {
-            log.info("Email {} is already verified.", email);
+            log.info("Email verification skipped: User {} is already verified.", user.getHotdropId());
             return "Email is already verified.";
         }
 
@@ -194,7 +195,7 @@ private final RefreshTokenService refreshTokenService;
         userRepo.save(user);
         long remainingMs = jwtService.getRemainingExpirationTime(token);
         tokenBlacklistService.blacklistToken(token, remainingMs);
-        log.info("Email {} verified for user: {}", email, user.getHotdropId());
+        log.info("Email verified successfully for user: {}", user.getHotdropId());
         return "Email verified successfully!";
     }
 
@@ -202,12 +203,12 @@ private final RefreshTokenService refreshTokenService;
 
     public AuthResultDto login(LoginRequestDto loginRequestDto) {
         String identifier = loginRequestDto.getHotdropIdOrEmail().trim().toLowerCase();
-        log.info("User attempting login: {}", identifier);
+        log.info("User attempting login: {}", MaskUtils.maskIdentifier(identifier));
 
         User user = userRepo.findByHotdropId(identifier)
                 .or(() -> userRepo.findByEmail(identifier))
                 .orElseThrow(() -> {
-                    log.error("Login failed: no account found for identifier: {}", identifier);
+                    log.warn("Login failed: no account found for identifier: {}", MaskUtils.maskIdentifier(identifier));
                     return new BadCredentialsException("Invalid Hotdrop ID/Email or password.");
                 });
 
@@ -250,16 +251,16 @@ private final RefreshTokenService refreshTokenService;
     @Transactional
 
     public void sendForgotPasswordOtp(ForgotPasswordRequestDto request) {
-        log.info("Sending password reset code to: {}", request.getEmail());
+        log.info("Sending password reset code to: {}", MaskUtils.maskEmail(request.getEmail()));
 
         User user = userRepo.findByEmail(request.getEmail())
                 .orElseThrow(() -> {
-                    log.error("Cannot reset password: no user found with email: {}", request.getEmail());
+                    log.warn("Cannot reset password: no user found with email: {}", MaskUtils.maskEmail(request.getEmail()));
                     return new RuntimeException("No account registered with this email address.");
                 });
 
         if (user.isBanned()) {
-            log.error("Cannot reset password: user is banned for email: {}", request.getEmail());
+            log.warn("Cannot reset password: user {} is banned.", user.getHotdropId());
             throw new RuntimeException("Account is restricted.");
         }
 
@@ -279,34 +280,34 @@ private final RefreshTokenService refreshTokenService;
                 .build());
 
         emailService.sendOTP(user.getEmail(), user.getFirstName(), otp);
-        log.info("Sent password reset code to: {}", user.getEmail());
+        log.info("Sent password reset code for user: {}", user.getHotdropId());
     }
 
     @Override
     @Transactional
     public void resetPasswordWithOtp(ResetPasswordDto request) {
-        log.info("Resetting password with code for: {}", request.getEmail());
+        log.info("Resetting password with code for: {}", MaskUtils.maskEmail(request.getEmail()));
 
         OtpVerification otpVerification = otpVerificationRepo.findByEmail(request.getEmail())
                 .orElseThrow(() -> {
-                    log.error("Cannot reset password: reset code not found for: {}", request.getEmail());
+                    log.warn("Cannot reset password: reset code not found for: {}", MaskUtils.maskEmail(request.getEmail()));
                     return new RuntimeException("OTP session not found or invalid request.");
                 });
 
         if (otpVerification.getExpiryDate().isBefore(LocalDateTime.now())) {
             otpVerificationRepo.delete(otpVerification);
-            log.error("Cannot reset password: reset code expired for: {}", request.getEmail());
+            log.warn("Cannot reset password: reset code expired for: {}", MaskUtils.maskEmail(request.getEmail()));
             throw new RuntimeException("OTP has expired. Please request a new one.");
         }
 
         if (!passwordEncoder.matches(request.getOtp(), otpVerification.getOtpHash())) {
-            log.error("Cannot reset password: wrong reset code for: {}", request.getEmail());
+            log.warn("Cannot reset password: wrong reset code for: {}", MaskUtils.maskEmail(request.getEmail()));
             throw new RuntimeException("Invalid OTP entered.");
         }
 
         User user = userRepo.findByEmail(request.getEmail())
                 .orElseThrow(() -> {
-                    log.error("Cannot reset password: user not found for email: {}", request.getEmail());
+                    log.warn("Cannot reset password: user not found for email: {}", MaskUtils.maskEmail(request.getEmail()));
                     return new RuntimeException("User not found.");
                 });
 
