@@ -339,7 +339,7 @@ private final RefreshTokenService refreshTokenService;
         if (refreshToken != null && !refreshToken.isEmpty()) {
             refreshTokenRepo.findByToken(refreshToken)
                     .ifPresent(token -> {
-                        refreshTokenRepo.deleteByUser(token.getUser());
+                        refreshTokenRepo.delete(token);
                         log.info("Removed refresh token for user: {}", token.getUser().getHotdropId());
                     });
         }

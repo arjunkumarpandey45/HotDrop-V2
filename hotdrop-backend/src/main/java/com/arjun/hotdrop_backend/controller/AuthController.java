@@ -65,16 +65,16 @@ public ResponseEntity<String> resendVerifyEmail(@Valid @RequestBody ReVerificati
                 .secure(false)//in production set true
                 .path("/")
                 .maxAge(15 * 60)
-                .sameSite("Strict")
+                .sameSite("Lax")
                 .build();
 
         ResponseCookie refreshCookie = ResponseCookie.from("refreshToken", authResult.getRefreshToken())
                 .httpOnly(true)
                 .secure(false)//in production set true
-                .path("/auth/refresh") // Cookie scope strictly refresh at endpoint
+                .path("/") // Cookie scope strictly refresh at endpoint
 
                 .maxAge(30 * 24 * 60 * 60)
-                .sameSite("Strict")
+                .sameSite("Lax")
                 .build();
         log.info("User logged in successfully: {}", authResult.getUserDetails().getHotdropId());
         return ResponseEntity.ok()
@@ -102,16 +102,16 @@ public ResponseEntity<String> resendVerifyEmail(@Valid @RequestBody ReVerificati
                 .secure(false)
                 .path("/")
                 .maxAge(15 * 60)
-                .sameSite("Strict")
+                .sameSite("Lax")
                 .build();
 
 
         ResponseCookie newRefreshCookie = ResponseCookie.from("refreshToken", newRefreshToken.getToken())
                 .httpOnly(true)
                 .secure(false)
-                .path("/auth/refresh")
+                .path("/")
                 .maxAge(30 * 24 * 60 * 60)
-                .sameSite("Strict")
+                .sameSite("lax")
                 .build();
 
         log.info("Refreshed access token successfully for user: {}", newRefreshToken.getUser().getHotdropId());
@@ -140,42 +140,28 @@ public ResponseEntity<String> resendVerifyEmail(@Valid @RequestBody ReVerificati
         return ResponseEntity.ok("Password reset successfully");
     }
 
-    @RateLimited(capacity = 3, refillTokens = 3, refillDurationSeconds = 60)
     @PostMapping("/logout")
-    public ResponseEntity<String> logout(HttpServletRequest request) {
+    public ResponseEntity<String> logout(
+            @CookieValue(name = "accessToken", required = false) String accessToken,
+            @CookieValue(name = "refreshToken", required = false) String refreshToken
+    ) {
         log.info("Logging out user.");
 
-        String refreshTokenFromCookie = null;
-        String accessTokenFromCookie = null;
-
-        // Read both cookies
-        if (request.getCookies() != null) {
-            for (var cookie : request.getCookies()) {
-                if ("refreshToken".equals(cookie.getName())) {
-                    refreshTokenFromCookie = cookie.getValue();
-                } else if ("accessToken".equals(cookie.getName())) {
-                    accessTokenFromCookie = cookie.getValue();
-                }
-            }
-        }
-
-
-        authService.logout(accessTokenFromCookie, refreshTokenFromCookie);
+        authService.logout(accessToken, refreshToken);
 
         ResponseCookie clearAccessCookie = ResponseCookie.from("accessToken", "")
                 .maxAge(0)
                 .httpOnly(true)
-                .secure(false) // Set to true in production
-                .path("/")
-                .sameSite("Strict")
+                .secure(false) // true in production
+                .sameSite("Lax")
                 .build();
 
         ResponseCookie clearRefreshCookie = ResponseCookie.from("refreshToken", "")
                 .maxAge(0)
                 .httpOnly(true)
-                .secure(false) // Set to true in production
+                .secure(false) //  true in production
                 .path("/")
-                .sameSite("Strict")
+                .sameSite("Lax")
                 .build();
 
         log.info("User logged out successfully.");
