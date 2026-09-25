@@ -7,6 +7,7 @@ import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.ScanOptions;
 import org.springframework.stereotype.Component;
 
+import java.nio.charset.StandardCharsets;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -24,7 +25,7 @@ public class RedisEvictionHelper {
             redisTemplate.execute((org.springframework.data.redis.connection.RedisConnection connection) -> {
                 try (Cursor<byte[]> cursor = connection.scan(ScanOptions.scanOptions().match(pattern).count(100).build())) {
                     while (cursor.hasNext()) {
-                        keysToDelete.add(new String(cursor.next()));
+                        keysToDelete.add(new String(cursor.next(), StandardCharsets.UTF_8));
                     }
                 } catch (Exception e) {
                     log.error("Error scanning Redis keys for pattern: {}", pattern, e);
@@ -43,7 +44,6 @@ public class RedisEvictionHelper {
         }
     }
 
-
     public void evictCacheEntryExact(String cacheName, String exactKey) {
         String key = cacheName + "::" + exactKey;
         try {
@@ -52,5 +52,9 @@ public class RedisEvictionHelper {
         } catch (Exception e) {
             log.error("Failed to evict cache entry: {}", key, e);
         }
+    }
+
+    public void evictEntireCache(String cacheName) {
+        evictCacheEntriesByPrefix(cacheName, "");
     }
 }

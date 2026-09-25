@@ -119,10 +119,13 @@ public class UserServiceImpl implements UserService {
 
         int totalFollowers = followRepo.countByFollowing(targetUser);
 
-        redisEvictionHelper.evictCacheEntriesByPrefix("publicUserProfiles", "user:" + targetUser.getHotdropId().toLowerCase().trim());
+                redisEvictionHelper.evictCacheEntriesByPrefix("publicUserProfiles", "user:" + targetUser.getHotdropId().toLowerCase().trim());
         redisEvictionHelper.evictCacheEntriesByPrefix("publicUserProfiles", "user:" + currentUser.getHotdropId().toLowerCase().trim());
-        redisEvictionHelper.evictCacheEntriesByPrefix("userFollowersPaged", "user:" + targetUser.getId() + ":viewer:");
-        redisEvictionHelper.evictCacheEntriesByPrefix("userFollowingPaged", "user:" + currentUser.getId() + ":viewer:");
+        
+        redisEvictionHelper.evictCacheEntriesByPrefix("userFollowersPaged", "user:" + targetUser.getId().toString() + ":viewer:");
+        redisEvictionHelper.evictCacheEntriesByPrefix("userFollowingPaged", "user:" + targetUser.getId().toString() + ":viewer:");
+        redisEvictionHelper.evictCacheEntriesByPrefix("userFollowersPaged", "user:" + currentUser.getId().toString() + ":viewer:");
+        redisEvictionHelper.evictCacheEntriesByPrefix("userFollowingPaged", "user:" + currentUser.getId().toString() + ":viewer:");
 
         return userMapper.toFollowResponseDto(isFollowingNow, totalFollowers, targetUser);
     }
@@ -130,7 +133,7 @@ public class UserServiceImpl implements UserService {
     @Override
     @Cacheable(
             value = "userFollowersPaged",
-            key = "'user:' + #profileUserId + ':viewer:' + (#currentHotdropId != null ? #currentHotdropId : 'guest') + ':page:' + #page + ':size:' + #size",
+            key = "'user:' + #profileUserId.toString() + ':viewer:' + (#currentHotdropId != null ? #currentHotdropId : 'guest') + ':page:' + #page + ':size:' + #size",
             unless = "#result == null"
     )
     public PagedResponse<FollowerUserDto> getUserFollowers(UUID profileUserId, String currentHotdropId, int page, int size) {
@@ -167,7 +170,7 @@ public class UserServiceImpl implements UserService {
     }
     @Override
 
-    @Cacheable(value = "userFollowingPaged", key = "'user:' + #userId + ':viewer:' + (#currentHotdropId != null ? #currentHotdropId : 'guest') + ':page:' + #page + ':size:' + #size", unless = "#result == null")
+    @Cacheable(value = "userFollowingPaged", key = "'user:' + #userId.toString() + ':viewer:' + (#currentHotdropId != null ? #currentHotdropId : 'guest') + ':page:' + #page + ':size:' + #size", unless = "#result == null")
     public PagedResponse<FollowerUserDto> getFollowingList(UUID userId, String currentHotdropId, int page, int size) {
         log.info("Getting accounts followed by user: {}, viewer: {}, page: {}, size: {}", userId, currentHotdropId, page, size);
 
@@ -292,11 +295,14 @@ public class UserServiceImpl implements UserService {
         User updatedUser = userRepo.saveAndFlush(currentUser);
         log.info("Updated profile for user: {}", MaskUtils.maskIdentifier(updatedUser.getHotdropId()));
 
-        redisEvictionHelper.evictCacheEntriesByPrefix("publicUserProfiles", "user:" + oldHotdropId.toLowerCase().trim());
+                redisEvictionHelper.evictCacheEntriesByPrefix("publicUserProfiles", "user:" + oldHotdropId.toLowerCase().trim());
         if (!oldHotdropId.equals(updatedUser.getHotdropId())) {
             redisEvictionHelper.evictCacheEntriesByPrefix("publicUserProfiles", "user:" + updatedUser.getHotdropId().toLowerCase().trim());
         }
-        redisEvictionHelper.evictCacheEntriesByPrefix("userSearchTop5", "");
+        redisEvictionHelper.evictEntireCache("userSearchTop5");
+        redisEvictionHelper.evictCacheEntriesByPrefix("userPostsPaged", "user:" + updatedUser.getId().toString());
+        redisEvictionHelper.evictCacheEntriesByPrefix("userFollowersPaged", "user:" + updatedUser.getId().toString() + ":viewer:");
+        redisEvictionHelper.evictCacheEntriesByPrefix("userFollowingPaged", "user:" + updatedUser.getId().toString() + ":viewer:");
 
         int postCount = postRepo.countByUser(updatedUser);
         int followerCount = followRepo.countByFollowing(updatedUser);
@@ -387,6 +393,9 @@ public class UserServiceImpl implements UserService {
                 .toList();
     }
 }
+
+
+
 
 
 

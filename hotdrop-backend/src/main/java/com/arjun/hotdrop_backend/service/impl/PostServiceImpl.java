@@ -152,7 +152,7 @@ public class PostServiceImpl implements PostService {
 
     @Override
     @Transactional
-    @CacheEvict(value = "compiledFeed", allEntries = true)
+    
     public PostResponseDto createNewPost(CreatePostDto dto, MultipartFile[] files, String hotdropId) {
         log.info("Creating post '{}' for user: {}", dto.getTitle(), MaskUtils.maskIdentifier(hotdropId));
 
@@ -214,17 +214,15 @@ public class PostServiceImpl implements PostService {
         post.setImages(postImages);
 
         Post savedPost = postRepo.save(post);
-        log.info("Created post {} with id: {}", savedPost.getTitle(), savedPost.getId());
-
+        log.info("Created post {} with id: {}", savedPost.getTitle(), savedPost.getId().toString());
+        redisEvictionHelper.evictCacheEntriesByPrefix("userPostsPaged", "user:" + authenticatedUser.getId().toString());
+        redisEvictionHelper.evictEntireCache("compiledFeed");
         return mapToPostResponseDto(savedPost, hotdropId);
     }
 
     @Override
     @Transactional
-    @CacheEvict(
-            value = {"compiledFeed"},
-            allEntries = true
-    )
+    
     public void deleteExistingPost(UUID postId, String currentHotdropId) {
         log.info("Deleting post {} for user: {}", postId, MaskUtils.maskIdentifier(currentHotdropId));
 
@@ -276,15 +274,16 @@ public class PostServiceImpl implements PostService {
         if (post.getShareUrl() != null) {
             redisEvictionHelper.evictCacheEntriesByPrefix("postByShareUrl", "url:" + post.getShareUrl());
         }
-        redisEvictionHelper.evictCacheEntriesByPrefix("userPostsPaged", "user:" + post.getUser().getId());
-        redisEvictionHelper.evictCacheEntriesByPrefix("postComments", "post:" + postId);
-        redisEvictionHelper.evictCacheEntriesByPrefix("postLikedUsers", "post:" + postId);
+        redisEvictionHelper.evictCacheEntriesByPrefix("userPostsPaged", "user:" + post.getUser().getId().toString());
+        redisEvictionHelper.evictCacheEntriesByPrefix("postComments", "post:" + postId.toString());
+        redisEvictionHelper.evictCacheEntriesByPrefix("postLikedUsers", "post:" + postId.toString());
+        redisEvictionHelper.evictEntireCache("compiledFeed");
     }
 
     @Override
     @Cacheable(
             value = "compiledFeed",
-            key = "{#page, #size, #sortBy, #direction, #search, #currentHotdropId != null ? #currentHotdropId : 'guest'}",
+            key = "'page:' + #page + ':size:' + #size + ':sort:' + #sortBy + ':dir:' + #direction + ':search:' + (#search != null ? #search.trim().toLowerCase() : '') + ':viewer:' + (#currentHotdropId != null ? #currentHotdropId : 'guest')",
             unless = "#result == null"
     )
     public PostListResponseDto getAllPostsCompiledFeed(int page, int size, String sortBy, String direction, String search, String currentHotdropId) {
@@ -336,7 +335,7 @@ public class PostServiceImpl implements PostService {
     }
 
     @Override
-    @Cacheable(value = "postDetails", key = "#postId", unless = "#result == null")
+    @Cacheable(value = "postDetails", key = "#postId.toString()", unless = "#result == null")
     public PostResponseDto getPostByPostId(UUID postId) {
         log.info("Finding post with id: {}", postId);
 
@@ -385,10 +384,14 @@ public class PostServiceImpl implements PostService {
         }
 
         postRepo.save(post);
-
         redisEvictionHelper.evictCacheEntryExact("postDetails", postId.toString());
-        redisEvictionHelper.evictCacheEntriesByPrefix("postLikedUsers", "post:" + postId);
-
+        redisEvictionHelper.evictCacheEntriesByPrefix("postLikedUsers", "post:" + postId.toString());
+        redisEvictionHelper.evictEntireCache("compiledFeed");
+        if (post.getShareUrl() != null) {
+            redisEvictionHelper.evictCacheEntriesByPrefix("postByShareUrl", "url:" + post.getShareUrl());
+        }
+        redisEvictionHelper.evictCacheEntriesByPrefix("userPostsPaged", "user:" + post.getUser().getId().toString());
+        redisEvictionHelper.evictEntireCache("compiledFeed");
         return mapToPostResponseDto(post, hotdropId);
     }
 
@@ -436,8 +439,11 @@ public class PostServiceImpl implements PostService {
         var userSummary = postMapper.toUserSummaryDto(user);
 
         redisEvictionHelper.evictCacheEntryExact("postDetails", postId.toString());
-        redisEvictionHelper.evictCacheEntriesByPrefix("postComments", "post:" + postId);
-
+        redisEvictionHelper.evictCacheEntriesByPrefix("postComments", "post:" + postId.toString());
+        if (post.getShareUrl() != null) {
+            redisEvictionHelper.evictCacheEntriesByPrefix("postByShareUrl", "url:" + post.getShareUrl());
+        }
+        redisEvictionHelper.evictEntireCache("compiledFeed");
         return commentMapper.toResponseDto(savedComment, userSummary);
     }
 
@@ -457,8 +463,8 @@ public class PostServiceImpl implements PostService {
                     return new AccessDeniedException("User not found");
                 });
         Post post = comment.getPost();
-        boolean isCommentOwner = comment.getUser().getId().equals(currentUser.getId());
-        boolean isPostOwner = post.getUser().getId().equals(currentUser.getId());
+        boolean isCommentOwner = comment.getUser().getId().equals(currentUser.getId().toString());
+        boolean isPostOwner = post.getUser().getId().equals(currentUser.getId().toString());
 
         if (!isCommentOwner && !isPostOwner) {
             log.warn("User {} is not allowed to delete this comment", MaskUtils.maskIdentifier(hotdropId));
@@ -471,14 +477,18 @@ public class PostServiceImpl implements PostService {
         log.info("Deleted comment {} for user: {}", commentId, MaskUtils.maskIdentifier(hotdropId));
 
         redisEvictionHelper.evictCacheEntryExact("postDetails", post.getId().toString());
-        redisEvictionHelper.evictCacheEntriesByPrefix("postComments", "post:" + post.getId());
+        redisEvictionHelper.evictCacheEntriesByPrefix("postComments", "post:" + post.getId().toString());
+        if (post.getShareUrl() != null) {
+            redisEvictionHelper.evictCacheEntriesByPrefix("postByShareUrl", "url:" + post.getShareUrl());
+        }
+        redisEvictionHelper.evictEntireCache("compiledFeed");
     }
 
     @Override
     @Transactional(readOnly = true)
     @Cacheable(
             value = "userPostsPaged",
-            key = "'user:' + #userId + ':viewer:' + (#currentHotdropId != null ? #currentHotdropId : 'guest') + ':page:' + #page + ':size:' + #size",
+            key = "'user:' + #userId.toString() + ':viewer:' + (#currentHotdropId != null ? #currentHotdropId : 'guest') + ':page:' + #page + ':size:' + #size",
             unless = "#result == null"
     )
     public PagedResponse<PostResponseDto> getPostsByUserIdPaged(UUID userId, int page, int size, String currentHotdropId) {
@@ -533,7 +543,7 @@ public class PostServiceImpl implements PostService {
     @Transactional(readOnly = true)
     @Cacheable(
             value = "postComments",
-            key = "'post:' + #postId + ':page:' + #page + ':size:' + #size",
+            key = "'post:' + #postId.toString() + ':page:' + #page + ':size:' + #size",
             unless = "#result == null"
     )
     public PagedResponse<CommentResponseDto> getCommentsByPostId(UUID postId, int page, int size) {
@@ -565,7 +575,7 @@ public class PostServiceImpl implements PostService {
     @Transactional(readOnly = true)
     @Cacheable(
             value = "postLikedUsers",
-            key = "'post:' + #postId + ':page:' + #page + ':size:' + #size",
+            key = "'post:' + #postId.toString() + ':page:' + #page + ':size:' + #size",
             unless = "#result == null"
     )
     public PagedResponse<PostResponseDto.UserSummaryDto> getUsersWhoLikedPost(UUID postId, int page, int size) {
@@ -591,5 +601,11 @@ public class PostServiceImpl implements PostService {
         return PagedResponse.from(likePage, likedUsers);
     }
 }
+
+
+
+
+
+
 
 
