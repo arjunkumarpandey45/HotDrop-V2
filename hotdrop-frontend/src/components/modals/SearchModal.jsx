@@ -5,7 +5,7 @@ import API from "../../api/Api";
 import dp from "../../assets/dp.jpg";
 
 function SearchModal({ isOpen, onClose, initialMode = "users" }) {
-  const [searchMode, setSearchMode] = useState(initialMode); 
+  const [searchMode, setSearchMode] = useState(initialMode);
   const [searchQuery, setSearchQuery] = useState("");
   const [userSuggestions, setUserSuggestions] = useState([]);
   const [projectSuggestions, setProjectSuggestions] = useState([]);
@@ -15,7 +15,6 @@ function SearchModal({ isOpen, onClose, initialMode = "users" }) {
 
   useEffect(() => {
     if (isOpen) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
       setSearchMode(initialMode);
       setTimeout(() => {
         inputRef.current?.focus();
@@ -30,7 +29,6 @@ function SearchModal({ isOpen, onClose, initialMode = "users" }) {
   useEffect(() => {
     const rawQ = searchQuery.trim();
     if (!rawQ) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
       setUserSuggestions([]);
       setProjectSuggestions([]);
       setLoading(false);
@@ -49,41 +47,20 @@ function SearchModal({ isOpen, onClose, initialMode = "users" }) {
       setLoading(true);
 
       if (searchMode === "users") {
-
         try {
-          let userList = [];
+          const res = await API.get(`/users/suggestions/${encodeURIComponent(cleanQ)}`);
+          const payload = res.data?.data;
 
-          try {
-            const res1 = await API.get(`/users/suggestions/${encodeURIComponent(cleanQ)}`);
-            const payload1 = res1.data?.data;
-            if (Array.isArray(payload1)) {
-              userList = payload1;
-            } else if (payload1?.users) {
-              userList = payload1.users;
-            } else if (payload1?.hotdropId) {
-              userList = [payload1];
-            } else {
-              userList = [];
-            }
-          } catch {
-
-            try {
-              const res2 = await API.get(`/users/search/${encodeURIComponent(cleanQ)}`);
-              const payload2 = res2.data?.data;
-              if (Array.isArray(payload2)) {
-                userList = payload2;
-              } else if (payload2?.hotdropId) {
-                userList = [payload2];
-              } else {
-                userList = [];
-              }
-            } catch {
-              userList = [];
-            }
+          let list = [];
+          if (Array.isArray(payload)) {
+            list = payload;
+          } else if (payload?.users && Array.isArray(payload.users)) {
+            list = payload.users;
+          } else if (payload?.hotdropId) {
+            list = [payload];
           }
 
-          const rawArr = Array.isArray(userList) ? userList : [];
-          setUserSuggestions(rawArr.slice(0, 6));
+          setUserSuggestions(list.slice(0, 6));
         } catch (err) {
           console.error("Live user search error:", err);
           setUserSuggestions([]);
@@ -91,7 +68,6 @@ function SearchModal({ isOpen, onClose, initialMode = "users" }) {
           setLoading(false);
         }
       } else {
-
         try {
           const res = await API.get("/posts/feed", {
             params: { page: 0, size: 6, search: cleanQ, sortBy: "created_at", direction: "DESC" },
@@ -217,7 +193,7 @@ function SearchModal({ isOpen, onClose, initialMode = "users" }) {
       return (
         <div className="space-y-1">
           {projectSuggestions.map((post, index) => {
-            const pTitle = post.title || "Project ";
+            const pTitle = post.title || "Project";
             const pOwner = post.creator || post.user || {};
             const pHandle = pOwner.hotdropId || pOwner.username || "dev";
             const rawImages = post.imageUrls || post.images || [];
@@ -294,7 +270,6 @@ function SearchModal({ isOpen, onClose, initialMode = "users" }) {
         }}
       />
       <div className="relative z-10 bg-white w-full max-w-lg rounded-3xl shadow-2xl border border-slate-100 overflow-hidden animate-in zoom-in-95 duration-150 flex flex-col">
-
         <div className="flex items-center justify-between p-3 px-4 border-b border-slate-100 bg-slate-50/60">
           <div className="inline-flex bg-slate-200/70 p-1 rounded-xl">
             <button
@@ -306,7 +281,7 @@ function SearchModal({ isOpen, onClose, initialMode = "users" }) {
                   : "text-slate-500 hover:text-slate-900"
               }`}
             >
-               HotDrop ID
+              HotDrop ID
             </button>
             <button
               type="button"
@@ -320,7 +295,6 @@ function SearchModal({ isOpen, onClose, initialMode = "users" }) {
               Projects
             </button>
           </div>
-
         </div>
 
         <div className="flex items-center gap-3 p-3.5 px-4 sm:px-5 border-b border-slate-100">

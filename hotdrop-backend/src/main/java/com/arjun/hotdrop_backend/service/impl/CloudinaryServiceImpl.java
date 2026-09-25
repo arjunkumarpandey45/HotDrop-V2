@@ -25,7 +25,7 @@ public class CloudinaryServiceImpl implements CloudinaryService {
         try {
             if (file == null || file.isEmpty()) {
                 log.warn("Cannot upload post image: file is empty.");
-                throw new RuntimeException("Cannot upload empty file.");
+                throw new IllegalArgumentException("Cannot upload empty file.");
             }
 
             Map<?, ?> uploadResult = cloudinary.uploader().upload(file.getBytes(), ObjectUtils.asMap(
@@ -45,7 +45,7 @@ public class CloudinaryServiceImpl implements CloudinaryService {
 
         } catch (IOException e) {
             log.error("Failed to upload post image", e);
-            throw new RuntimeException("Image upload failed: " + e.getMessage(), e);
+            throw new RuntimeException("Image upload failed due to an external service error.", e);
         }
     }
 
@@ -55,7 +55,7 @@ public class CloudinaryServiceImpl implements CloudinaryService {
         try {
             if (file == null || file.isEmpty()) {
                 log.warn("Cannot upload profile picture: file is empty.");
-                throw new RuntimeException("Cannot upload empty file.");
+                throw new IllegalArgumentException("Cannot upload empty file.");
             }
 
             Map<?, ?> uploadResult = cloudinary.uploader().upload(file.getBytes(), ObjectUtils.asMap(
@@ -75,7 +75,7 @@ public class CloudinaryServiceImpl implements CloudinaryService {
 
         } catch (IOException e) {
             log.error("Failed to upload profile picture", e);
-            throw new RuntimeException("Image upload failed: " + e.getMessage(), e);
+            throw new RuntimeException("Image upload failed due to an external service error.", e);
         }
     }
 

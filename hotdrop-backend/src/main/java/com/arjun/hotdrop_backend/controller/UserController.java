@@ -127,13 +127,15 @@ public class UserController {
       return ResponseHandler.generateResponse(HttpStatus.OK, "User found successfully", response);
    }
 
-   @GetMapping("/{userId}/get-all-following")
-   public ResponseEntity<ApiResponse<PagedResponse<UserResponseDto>>> getFollowing(
+      @GetMapping("/{userId}/get-all-following")
+   public ResponseEntity<ApiResponse<PagedResponse<FollowerUserDto>>> getFollowing(
            @PathVariable UUID userId,
+           @AuthenticationPrincipal UserDetails userDetails,
            @RequestParam(defaultValue = "0") int page,
            @RequestParam(defaultValue = "10") int size) {
-      log.info("Getting following list for user ID: {}, page: {}, size: {}", userId, page, size);
-      PagedResponse<UserResponseDto> followingList = userService.getFollowingList(userId, page, size);
+      String currentHotdropId = userDetails != null ? userDetails.getUsername() : null;
+      log.info("Getting following list for user ID: {}, viewer: {}, page: {}, size: {}", userId, currentHotdropId, page, size);
+      PagedResponse<FollowerUserDto> followingList = userService.getFollowingList(userId, currentHotdropId, page, size);
       log.info("Loaded {} users followed by user ID: {}", followingList.getContent().size(), userId);
       return ResponseHandler.generateResponse(
               HttpStatus.OK,
@@ -155,3 +157,4 @@ public class UserController {
       );
    }
 }
+

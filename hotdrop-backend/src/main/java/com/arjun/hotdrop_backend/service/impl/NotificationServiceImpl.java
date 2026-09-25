@@ -1,6 +1,7 @@
 package com.arjun.hotdrop_backend.service.impl;
 
 import com.arjun.hotdrop_backend.dto.NotificationResponseDto;
+import com.arjun.hotdrop_backend.mapper.NotificationMapper;
 import com.arjun.hotdrop_backend.entity.Notification;
 import com.arjun.hotdrop_backend.entity.Post;
 import com.arjun.hotdrop_backend.entity.User;
@@ -24,6 +25,7 @@ public class NotificationServiceImpl implements NotificationService {
     private final SimpMessagingTemplate messagingTemplate;
     private final com.arjun.hotdrop_backend.repository.UserRepo userRepo;
     private final com.arjun.hotdrop_backend.repository.PostRepo postRepo;
+    private final com.arjun.hotdrop_backend.mapper.NotificationMapper notificationMapper;
 
     @Transactional
     public void sendNotification(User sender, User recipient, NotificationType type, String message, UUID referenceId) {
@@ -55,17 +57,7 @@ public class NotificationServiceImpl implements NotificationService {
                     .orElse(null);
         }
 
-        NotificationResponseDto payload = NotificationResponseDto.builder()
-                .id(saved.getId())
-                .senderHotdropId(sender != null ? sender.getHotdropId() : "HotDrop")
-                .senderProfilePicture(sender != null ? sender.getProfileImageUrl() : null)
-                .message(message)
-                .type(type)
-                .referenceId(referenceId)
-                .shareUrl(postShareUrl)
-                .isRead(false)
-                .createdAt(saved.getCreatedAt())
-                .build();
+        NotificationResponseDto payload = notificationMapper.toResponseDto(saved, postShareUrl);
 
         messagingTemplate.convertAndSendToUser(
                 recipient.getHotdropId(),
@@ -96,17 +88,7 @@ public class NotificationServiceImpl implements NotificationService {
                                 .map(com.arjun.hotdrop_backend.entity.Post::getShareUrl)
                                 .orElse(null);
                     }
-                    return NotificationResponseDto.builder()
-                            .id(n.getId())
-                            .senderHotdropId(n.getSender() != null ? n.getSender().getHotdropId() : "HotDrop")
-                            .senderProfilePicture(n.getSender() != null ? n.getSender().getProfileImageUrl() : null)
-                            .message(n.getMessage())
-                            .type(n.getType())
-                            .referenceId(n.getReferenceId())
-                            .shareUrl(postShareUrl)
-                            .isRead(n.isRead())
-                            .createdAt(n.getCreatedAt())
-                            .build();
+                    return notificationMapper.toResponseDto(n, postShareUrl);
                 });
 
         log.info("Loaded {} notifications for user: {}", result.getNumberOfElements(), MaskUtils.maskIdentifier(hotdropId));
@@ -137,13 +119,13 @@ public class NotificationServiceImpl implements NotificationService {
         Notification notification = notificationRepo.findById(notificationId)
                 .orElseThrow(() -> {
                     log.warn("Cannot mark as read: notification {} was not found.", notificationId);
-                    return new RuntimeException("Notification not found");
+                    return new com.arjun.hotdrop_backend.error.ResourceNotFoundException("Notification not found");
                 });
 
         if (!notification.getRecipient().getHotdropId().equalsIgnoreCase(hotdropId) &&
             !notification.getRecipient().getEmail().equalsIgnoreCase(hotdropId)) {
             log.warn("User {} cannot mark notification {} of another user.", MaskUtils.maskIdentifier(hotdropId), notificationId);
-            throw new RuntimeException("Unauthorized to modify this notification");
+            throw new org.springframework.security.access.AccessDeniedException("Unauthorized to modify this notification");
         }
 
         notification.setRead(true);
@@ -160,7 +142,7 @@ public class NotificationServiceImpl implements NotificationService {
                 .or(() -> userRepo.findByEmail(hotdropId))
                 .orElseThrow(() -> {
                     log.warn("Cannot mark all as read: user not found for {}", MaskUtils.maskIdentifier(hotdropId));
-                    return new RuntimeException("User not found: " + hotdropId);
+                    return new com.arjun.hotdrop_backend.error.ResourceNotFoundException("User not found: " + hotdropId);
                 });
 
         org.springframework.data.domain.Page<Notification> page = notificationRepo.findByRecipientOrderByCreatedAtDesc(user, org.springframework.data.domain.Pageable.unpaged());
@@ -173,3 +155,5 @@ public class NotificationServiceImpl implements NotificationService {
         log.info("Marked {} notifications as read for user: {}", unread.size(), MaskUtils.maskIdentifier(hotdropId));
     }
 }
+
+

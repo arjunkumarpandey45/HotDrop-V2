@@ -4,7 +4,8 @@ import com.arjun.hotdrop_backend.dto.*;
 import com.arjun.hotdrop_backend.entity.*;
 import com.arjun.hotdrop_backend.enums.NotificationType;
 import com.arjun.hotdrop_backend.mapper.PostMapper;
-import com.arjun.hotdrop_backend.mapper.PostMapperWithID;
+import com.arjun.hotdrop_backend.mapper.CommentMapper;
+
 import com.arjun.hotdrop_backend.repository.*;
 import com.arjun.hotdrop_backend.service.CloudinaryService;
 import com.arjun.hotdrop_backend.service.NotificationService;
@@ -34,6 +35,9 @@ import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
+import com.arjun.hotdrop_backend.utils.RedisEvictionHelper;
+import org.springframework.security.access.AccessDeniedException;
+import com.arjun.hotdrop_backend.error.ResourceNotFoundException;
 
 @Service
 @RequiredArgsConstructor
@@ -47,24 +51,34 @@ public class PostServiceImpl implements PostService {
     private final TechStackDetectorService techStackDetectorService;
     private final UserAgentProvider userAgentProvider;
     private final CommentRepo commentRepo;
-    private final PostMapperWithID postMapperWithID;
+    
     private final PostMapper postMapper;
+    private final CommentMapper commentMapper;
     private final UserImageHistoryRepo userImageHistoryRepo;
+    private final RedisEvictionHelper redisEvictionHelper;
     private final HttpClient httpClient = HttpClient.newBuilder()
             .followRedirects(HttpClient.Redirect.NORMAL)
             .connectTimeout(Duration.ofSeconds(10))
             .build();
+
+    private PostResponseDto mapToPostResponseDto(Post post, String viewerId) {
+        boolean isLiked = false;
+        if (viewerId != null && !viewerId.equalsIgnoreCase("guest")) {
+            User currentUser = userRepo.findByHotdropId(viewerId).orElse(null);
+            if (currentUser != null) {
+                isLiked = likeRepo.existsByUserAndPost(currentUser, post);
+            }
+        }
+        PostResponseDto.UserSummaryDto creator = postMapper.toUserSummaryDto(post.getUser());
+        return postMapper.toResponseDto(post, isLiked, creator);
+    }
 
     @Override
     public LinkVerificationResponseDto verifyProjectLink(String inputUrl) {
         log.info("Checking link: {}", inputUrl);
         if (inputUrl == null || inputUrl.isBlank()) {
             log.warn("Link check skipped because the URL is empty");
-            return LinkVerificationResponseDto.builder()
-                    .isLive(false)
-                    .url(inputUrl)
-                    .message("URL cannot be empty!")
-                    .build();
+            return postMapper.toLinkVerificationResponseDto(false, inputUrl, "URL cannot be empty!", null);
         }
 
         String cleanUrl = inputUrl.trim();
@@ -88,12 +102,7 @@ public class PostServiceImpl implements PostService {
             if (headResponse.statusCode() >= 200 && headResponse.statusCode() < 400) {
                 Set<String> detectedTags = techStackDetectorService.detectTechStack(cleanUrl);
                 log.info("Link is active: {}", cleanUrl);
-                return LinkVerificationResponseDto.builder()
-                        .isLive(true)
-                        .url(cleanUrl)
-                        .message("Link is live! 🔥 (Verified via HEAD)")
-                        .detectedTags(new ArrayList<>(detectedTags))
-                        .build();
+                return postMapper.toLinkVerificationResponseDto(true, cleanUrl, "Link is live! 🔥 (Verified via HEAD)", new java.util.ArrayList<>(detectedTags));
             }
 
         } catch (InterruptedException e) {
@@ -116,21 +125,11 @@ public class PostServiceImpl implements PostService {
             if (getResponse.statusCode() >= 200 && getResponse.statusCode() < 400) {
                 Set<String> detectedTags = techStackDetectorService.detectTechStack(cleanUrl);
                 log.info("Link is active: {}", cleanUrl);
-                return LinkVerificationResponseDto.builder()
-                        .isLive(true)
-                        .url(cleanUrl)
-                        .message("Link is Live! 🔥 (Verified via GET)")
-                        .detectedTags(new ArrayList<>(detectedTags))
-                        .build();
+                return postMapper.toLinkVerificationResponseDto(true, cleanUrl, "Link is Live! 🔥 (Verified via GET)", new java.util.ArrayList<>(detectedTags));
             }
 
             log.info("Link {} returned non-2xx status code: {}", cleanUrl, getResponse.statusCode());
-            return LinkVerificationResponseDto.builder()
-                    .isLive(false)
-                    .url(cleanUrl)
-                    .message("Link returned bad status code: " + getResponse.statusCode())
-                    .detectedTags(Collections.emptyList())
-                    .build();
+            return postMapper.toLinkVerificationResponseDto(false, cleanUrl, "Link returned bad status code: " + getResponse.statusCode(), java.util.Collections.emptyList());
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             log.warn("Link check was interrupted: {}", cleanUrl);
@@ -139,12 +138,7 @@ public class PostServiceImpl implements PostService {
         }
 
         log.info("Link is unreachable: {}", cleanUrl);
-        return LinkVerificationResponseDto.builder()
-                .isLive(false)
-                .url(cleanUrl)
-                .message("Link is dead or completely unreachable.")
-                .detectedTags(Collections.emptyList())
-                .build();
+        return postMapper.toLinkVerificationResponseDto(false, cleanUrl, "Link is dead or completely unreachable.", java.util.Collections.emptyList());
     }
 
     private String sanitizeInput(String input) {
@@ -164,12 +158,12 @@ public class PostServiceImpl implements PostService {
 
         if (files == null || files.length == 0 || files[0].isEmpty()) {
             log.warn("Cannot create post without images");
-            throw new RuntimeException("At least 1 image must be uploaded.");
+            throw new IllegalArgumentException("At least 1 image must be uploaded.");
         }
         User authenticatedUser = userRepo.findByHotdropId(String.valueOf(hotdropId))
                 .orElseThrow(() -> {
                     log.warn("User not found with id: {}", MaskUtils.maskIdentifier(hotdropId));
-                    return new RuntimeException("User not found ");
+                    return new ResourceNotFoundException("User not found ");
                 });
 
         String cleanTitle = sanitizeInput(dto.getTitle());
@@ -222,13 +216,13 @@ public class PostServiceImpl implements PostService {
         Post savedPost = postRepo.save(post);
         log.info("Created post {} with id: {}", savedPost.getTitle(), savedPost.getId());
 
-        return postMapper.toResponseDto(savedPost);
+        return mapToPostResponseDto(savedPost, hotdropId);
     }
 
     @Override
     @Transactional
     @CacheEvict(
-            value = {"compiledFeed", "postDetails", "postByShareUrl", "userPostsPaged", "postComments", "postLikedUsers"},
+            value = {"compiledFeed"},
             allEntries = true
     )
     public void deleteExistingPost(UUID postId, String currentHotdropId) {
@@ -237,18 +231,18 @@ public class PostServiceImpl implements PostService {
         Post post = postRepo.findById(postId)
                 .orElseThrow(() -> {
                     log.warn("Post not found with id: {}", postId);
-                    return new RuntimeException("Post not found!");
+                    return new ResourceNotFoundException("Post not found!");
                 });
 
         User user = userRepo.findByHotdropId(currentHotdropId)
                 .orElseThrow(() -> {
                     log.warn("User not found with id: {}", MaskUtils.maskIdentifier(currentHotdropId));
-                    return new RuntimeException("Authenticated user session data not found");
+                    return new AccessDeniedException("Authenticated user session data not found");
                 });
 
         if (!post.getUser().getHotdropId().equals(currentHotdropId)) {
             log.warn("User {} cannot delete post {} owned by {}", MaskUtils.maskIdentifier(currentHotdropId), postId, post.getUser().getHotdropId());
-            throw new RuntimeException("Access Denied: You can only delete your own post!!");
+            throw new AccessDeniedException("Access Denied: You can only delete your own post!!");
         }
 
         if (post.getImages() != null && !post.getImages().isEmpty()) {
@@ -277,12 +271,20 @@ public class PostServiceImpl implements PostService {
 
         postRepo.delete(post);
         log.info("Deleted post {} for user: {}", postId, currentHotdropId);
+
+        redisEvictionHelper.evictCacheEntryExact("postDetails", postId.toString());
+        if (post.getShareUrl() != null) {
+            redisEvictionHelper.evictCacheEntriesByPrefix("postByShareUrl", "url:" + post.getShareUrl());
+        }
+        redisEvictionHelper.evictCacheEntriesByPrefix("userPostsPaged", "user:" + post.getUser().getId());
+        redisEvictionHelper.evictCacheEntriesByPrefix("postComments", "post:" + postId);
+        redisEvictionHelper.evictCacheEntriesByPrefix("postLikedUsers", "post:" + postId);
     }
 
     @Override
     @Cacheable(
             value = "compiledFeed",
-            key = "{#page, #size, #sortBy, #direction, #search, #currentHotdropId}",
+            key = "{#page, #size, #sortBy, #direction, #search, #currentHotdropId != null ? #currentHotdropId : 'guest'}",
             unless = "#result == null"
     )
     public PostListResponseDto getAllPostsCompiledFeed(int page, int size, String sortBy, String direction, String search, String currentHotdropId) {
@@ -309,19 +311,12 @@ public class PostServiceImpl implements PostService {
         Page<Post> postPage = postRepo.searchFeedEngine(cleanedKeyword, pageable);
 
         List<PostResponseDto> postResponseDto = postPage.getContent().stream()
-                .map(post -> postMapperWithID.toResponseDto(post, currentHotdropId))
+                .map(post -> mapToPostResponseDto(post, currentHotdropId))
                 .toList();
 
         log.info("Found {} posts for feed", postResponseDto.size());
 
-        return PostListResponseDto.builder()
-                .posts(postResponseDto)
-                .pageNumber(postPage.getNumber())
-                .pageSize(postPage.getSize())
-                .totalElements(postPage.getTotalElements())
-                .totalPages(postPage.getTotalPages())
-                .isLastPage(postPage.isLast())
-                .build();
+        return postMapper.toPostListResponseDto(postResponseDto, postPage.getNumber(), postPage.getSize(), postPage.getTotalElements(), postPage.getTotalPages(), postPage.isLast());
     }
 
     private static @NonNull String getString(String sortBy) {
@@ -352,26 +347,22 @@ public class PostServiceImpl implements PostService {
         }
 
         log.info("Found post {} with id: {}", post.getTitle(), postId);
-        return postMapper.toResponseDto(post);
+        return mapToPostResponseDto(post, null);
     }
 
     @Override
     @Transactional
-    @CacheEvict(
-            value = {"compiledFeed", "postDetails", "postByShareUrl", "userPostsPaged", "postLikedUsers"},
-            allEntries = true
-    )
     public PostResponseDto toggleLike(UUID postId, String hotdropId) {
         log.info("User {} is liking or unliking post: {}", MaskUtils.maskIdentifier(hotdropId), postId);
 
         Post post = postRepo.findById(postId).orElseThrow(() -> {
             log.warn("Post not found with id: {}", postId);
-            return new RuntimeException("Post not found");
+            return new ResourceNotFoundException("Post not found");
         });
 
         User user = userRepo.findByHotdropId(hotdropId).orElseThrow(() -> {
             log.warn("User not found with id: {}", MaskUtils.maskIdentifier(hotdropId));
-            return new RuntimeException("User not found");
+            return new AccessDeniedException("User not found");
         });
 
         Optional<Like> existingLike = likeRepo.findByUserAndPost(user, post);
@@ -395,33 +386,32 @@ public class PostServiceImpl implements PostService {
 
         postRepo.save(post);
 
-        return postMapperWithID.toResponseDto(post, hotdropId);
+        redisEvictionHelper.evictCacheEntryExact("postDetails", postId.toString());
+        redisEvictionHelper.evictCacheEntriesByPrefix("postLikedUsers", "post:" + postId);
+
+        return mapToPostResponseDto(post, hotdropId);
     }
 
     @Override
     @Transactional
-    @CacheEvict(
-            value = {"postComments", "compiledFeed", "postDetails", "postByShareUrl"},
-            allEntries = true
-    )
     public CommentResponseDto addCommentToPost(UUID postId, String hotdropId, String text) {
         log.info("Adding comment to post {} from user: {}", postId, MaskUtils.maskIdentifier(hotdropId));
 
         if (text == null || text.isBlank()) {
             log.warn("Comment text cannot be empty");
-            throw new RuntimeException("Comment text cannot be empty");
+            throw new IllegalArgumentException("Comment text cannot be empty");
         }
 
         Post post = postRepo.findById(postId)
                 .orElseThrow(() -> {
                     log.warn("Post not found with id: {}", postId);
-                    return new RuntimeException("Post not found");
+                    return new ResourceNotFoundException("Post not found");
                 });
 
         User user = userRepo.findByHotdropId(hotdropId)
                 .orElseThrow(() -> {
                     log.warn("User not found with id: {}", MaskUtils.maskIdentifier(hotdropId));
-                    return new RuntimeException("User not found");
+                    return new AccessDeniedException("User not found");
                 });
 
         Comment comment = Comment.builder()
@@ -443,39 +433,28 @@ public class PostServiceImpl implements PostService {
         postRepo.save(post);
         log.info("Added comment to post {} from user {}. Total comments: {}", postId, MaskUtils.maskIdentifier(hotdropId), post.getCommentCount());
 
-        var userSummary = PostResponseDto.UserSummaryDto.builder()
-                .id(user.getId())
-                .hotdropId(user.getHotdropId())
-                .profilePicture(user.getProfileImageUrl())
-                .build();
+        var userSummary = postMapper.toUserSummaryDto(user);
 
-        return CommentResponseDto.builder()
-                .id(savedComment.getId())
-                .text(savedComment.getText())
-                .createdAt(savedComment.getCreatedAt())
-                .user(userSummary)
-                .build();
+        redisEvictionHelper.evictCacheEntryExact("postDetails", postId.toString());
+        redisEvictionHelper.evictCacheEntriesByPrefix("postComments", "post:" + postId);
+
+        return commentMapper.toResponseDto(savedComment, userSummary);
     }
 
     @Override
     @Transactional
-    @CacheEvict(
-            value = {"postComments", "compiledFeed", "postDetails", "postByShareUrl"},
-            allEntries = true
-    )
     public void deleteComment(UUID commentId, String hotdropId) {
         log.info("Deleting comment {} for user: {}", commentId, MaskUtils.maskIdentifier(hotdropId));
 
         Comment comment = commentRepo.findById(commentId)
                 .orElseThrow(() -> {
                     log.warn("Comment not found with id: {}", commentId);
-                    return new RuntimeException("Comment not found");
+                    return new ResourceNotFoundException("Comment not found");
                 });
-        commentRepo.deleteCommentById(commentId);
         User currentUser = userRepo.findByHotdropId(hotdropId)
                 .orElseThrow(() -> {
                     log.warn("User not found with id: {}", MaskUtils.maskIdentifier(hotdropId));
-                    return new RuntimeException("User not found");
+                    return new AccessDeniedException("User not found");
                 });
         Post post = comment.getPost();
         boolean isCommentOwner = comment.getUser().getId().equals(currentUser.getId());
@@ -483,20 +462,23 @@ public class PostServiceImpl implements PostService {
 
         if (!isCommentOwner && !isPostOwner) {
             log.warn("User {} is not allowed to delete this comment", MaskUtils.maskIdentifier(hotdropId));
-            throw new RuntimeException("You are not authorized to delete this comment");
+            throw new AccessDeniedException("You are not authorized to delete this comment");
         }
         commentRepo.delete(comment);
 
         post.setCommentCount(Math.max(0, post.getCommentCount() - 1));
         postRepo.save(post);
         log.info("Deleted comment {} for user: {}", commentId, MaskUtils.maskIdentifier(hotdropId));
+
+        redisEvictionHelper.evictCacheEntryExact("postDetails", post.getId().toString());
+        redisEvictionHelper.evictCacheEntriesByPrefix("postComments", "post:" + post.getId());
     }
 
     @Override
     @Transactional(readOnly = true)
     @Cacheable(
             value = "userPostsPaged",
-            key = "{#userId, #page, #size, #currentHotdropId}",
+            key = "'user:' + #userId + ':viewer:' + (#currentHotdropId != null ? #currentHotdropId : 'guest') + ':page:' + #page + ':size:' + #size",
             unless = "#result == null"
     )
     public PagedResponse<PostResponseDto> getPostsByUserIdPaged(UUID userId, int page, int size, String currentHotdropId) {
@@ -504,14 +486,14 @@ public class PostServiceImpl implements PostService {
 
         if (!userRepo.existsById(userId)) {
             log.warn("User not found with id: {}", userId);
-            throw new RuntimeException("Target user not found");
+            throw new ResourceNotFoundException("Target user not found");
         }
 
         Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt"));
         Page<Post> postPage = postRepo.findByUserId(userId, pageable);
 
         List<PostResponseDto> postResponseDtos = postPage.getContent().stream()
-                .map(post -> postMapperWithID.toResponseDto(post, currentHotdropId))
+                .map(post -> mapToPostResponseDto(post, currentHotdropId))
                 .toList();
 
         log.info("Found {} posts for user: {}", postResponseDtos.size(), userId);
@@ -523,7 +505,7 @@ public class PostServiceImpl implements PostService {
     @Transactional(readOnly = true)
     @Cacheable(
             value = "postByShareUrl",
-            key = "{#shareUrl, #hotdropId}",
+            key = "'url:' + #shareUrl + ':viewer:' + (#hotdropId != null ? #hotdropId : 'guest')",
             unless = "#result == null"
     )
     public PostResponseDto getPostByShareUrl(String shareUrl, String hotdropId) {
@@ -540,18 +522,18 @@ public class PostServiceImpl implements PostService {
                 })
                 .orElseThrow(() -> {
                     log.warn("Post not found with link: {}", shareUrl);
-                    return new RuntimeException("Post not found with shareUrl / id: " + shareUrl);
+                    return new ResourceNotFoundException("Post not found with shareUrl / id: " + shareUrl);
                 });
 
         log.info("Found post {} with link: {}", post.getTitle(), shareUrl);
-        return postMapperWithID.toResponseDto(post, hotdropId);
+        return mapToPostResponseDto(post, hotdropId);
     }
 
     @Override
     @Transactional(readOnly = true)
     @Cacheable(
             value = "postComments",
-            key = "{#postId, #page, #size}",
+            key = "'post:' + #postId + ':page:' + #page + ':size:' + #size",
             unless = "#result == null"
     )
     public PagedResponse<CommentResponseDto> getCommentsByPostId(UUID postId, int page, int size) {
@@ -560,7 +542,7 @@ public class PostServiceImpl implements PostService {
         postRepo.findById(postId)
                 .orElseThrow(() -> {
                     log.warn("Post not found with id: {}", postId);
-                    return new RuntimeException("Post not found with ID: " + postId);
+                    return new ResourceNotFoundException("Post not found with ID: " + postId);
                 });
 
         Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt"));
@@ -570,18 +552,9 @@ public class PostServiceImpl implements PostService {
         List<CommentResponseDto> commentDtos = commentPage.getContent().stream()
                 .map(comment -> {
                     User commenter = comment.getUser();
-                    var userSummary = PostResponseDto.UserSummaryDto.builder()
-                            .id(commenter.getId())
-                            .hotdropId(commenter.getHotdropId())
-                            .profilePicture(commenter.getProfileImageUrl())
-                            .build();
+                    var userSummary = postMapper.toUserSummaryDto(commenter);
 
-                    return CommentResponseDto.builder()
-                            .id(comment.getId())
-                            .text(comment.getText())
-                            .createdAt(comment.getCreatedAt())
-                            .user(userSummary)
-                            .build();
+                    return commentMapper.toResponseDto(comment, userSummary);
                 })
                 .toList();
 
@@ -592,7 +565,7 @@ public class PostServiceImpl implements PostService {
     @Transactional(readOnly = true)
     @Cacheable(
             value = "postLikedUsers",
-            key = "{#postId, #page, #size}",
+            key = "'post:' + #postId + ':page:' + #page + ':size:' + #size",
             unless = "#result == null"
     )
     public PagedResponse<PostResponseDto.UserSummaryDto> getUsersWhoLikedPost(UUID postId, int page, int size) {
@@ -601,7 +574,7 @@ public class PostServiceImpl implements PostService {
         Post post = postRepo.findById(postId)
                 .orElseThrow(() -> {
                     log.warn("Post not found with id: {}", postId);
-                    return new RuntimeException("Post not found with ID: " + postId);
+                    return new ResourceNotFoundException("Post not found with ID: " + postId);
                 });
 
         Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "id"));
@@ -611,16 +584,12 @@ public class PostServiceImpl implements PostService {
         List<PostResponseDto.UserSummaryDto> likedUsers = likePage.getContent().stream()
                 .map(like -> {
                     User user = like.getUser();
-                    return PostResponseDto.UserSummaryDto.builder()
-                            .id(user.getId())
-                            .hotdropId(user.getHotdropId())
-                            .firstName(user.getFirstName())
-                            .lastName(user.getLastName())
-                            .profilePicture(user.getProfileImageUrl())
-                            .build();
+                    return postMapper.toUserSummaryDto(user);
                 })
                 .toList();
 
         return PagedResponse.from(likePage, likedUsers);
     }
 }
+
+

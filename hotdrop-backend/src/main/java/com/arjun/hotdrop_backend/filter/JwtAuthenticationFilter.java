@@ -2,6 +2,7 @@ package com.arjun.hotdrop_backend.filter;
 
 import com.arjun.hotdrop_backend.error.ApiErrorResponseDto;
 import com.arjun.hotdrop_backend.service.JwtService;
+import com.arjun.hotdrop_backend.mapper.ErrorMapper;
 import com.arjun.hotdrop_backend.service.TokenBlacklistService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.micrometer.common.lang.NonNull;
@@ -30,6 +31,7 @@ import java.time.LocalDateTime;
 @RequiredArgsConstructor
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
+    private final ErrorMapper errorMapper;
     private final JwtService jwtService;
     private final UserDetailsService userDetailsService;
     private final TokenBlacklistService tokenBlacklistService;
@@ -94,13 +96,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
         response.setContentType(MediaType.APPLICATION_JSON_VALUE);
 
-        ApiErrorResponseDto errorDto = ApiErrorResponseDto.builder()
-                .status(HttpStatus.UNAUTHORIZED.value())
-                .error(HttpStatus.UNAUTHORIZED.getReasonPhrase())
-                .message("Session has expired or logged out. Please login again.")
-                .timestamp(LocalDateTime.now())
-                .path(path)
-                .build();
+        ApiErrorResponseDto errorDto = errorMapper.toApiErrorResponseDto(HttpStatus.UNAUTHORIZED.value(), HttpStatus.UNAUTHORIZED.getReasonPhrase(), "Session has expired or logged out. Please login again.", path, null);
 
         response.getWriter().write(objectMapper.writeValueAsString(errorDto));
     }

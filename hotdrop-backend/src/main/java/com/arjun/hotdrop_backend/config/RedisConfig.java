@@ -20,11 +20,12 @@ public class RedisConfig {
 
     @Bean
     public RedisCacheConfiguration redisCacheConfiguration() {
-        ObjectMapper objectMapper = new ObjectMapper();
+                ObjectMapper objectMapper = new ObjectMapper();
         objectMapper.registerModule(new JavaTimeModule()); // Support date and time types
+        // Enable polymorphic typing for all non-final types, and crucially arrays/collections (EVERYTHING)
         objectMapper.activateDefaultTyping(
                 LaissezFaireSubTypeValidator.instance,
-                ObjectMapper.DefaultTyping.NON_FINAL,
+                ObjectMapper.DefaultTyping.EVERYTHING,
                 JsonTypeInfo.As.PROPERTY
         );
 

@@ -12,7 +12,7 @@ public interface UserService {
     UserResponseDto updateProfileDetails(UUID userIdFromParams, String currentHotdropId, ProfileUpdateRequestDto requestDto);
     MeResponseDto getMeByHotdropId(String hotdropId);
     MeResponseDto getMe(UUID userId);
-    List<UserResponseDto> getFollowersList(UUID userId);
     List<PostResponseDto.UserSummaryDto> searchTop5Users(String query);
-    PagedResponse<UserResponseDto> getFollowingList(UUID userId, int page, int size);
+    PagedResponse<FollowerUserDto> getFollowingList(UUID userId, String currentHotdropId, int page, int size);
 }
+

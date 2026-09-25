@@ -4,17 +4,19 @@ import com.arjun.hotdrop_backend.dto.*;
 import com.arjun.hotdrop_backend.entity.*;
 
 import com.arjun.hotdrop_backend.enums.NotificationType;
-import com.arjun.hotdrop_backend.mapper.PostMapper;
 import com.arjun.hotdrop_backend.mapper.UserMapper;
+import com.arjun.hotdrop_backend.mapper.PostMapper;
 import com.arjun.hotdrop_backend.repository.*;
 import com.arjun.hotdrop_backend.service.CloudinaryService;
 import com.arjun.hotdrop_backend.service.NotificationService;
 import com.arjun.hotdrop_backend.service.UserService;
 import com.arjun.hotdrop_backend.utils.MaskUtils;
-import jakarta.transaction.Transactional;
+import com.arjun.hotdrop_backend.utils.RedisEvictionHelper;
+import org.springframework.security.access.AccessDeniedException;
+import com.arjun.hotdrop_backend.error.ResourceNotFoundException;
+import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -37,14 +39,15 @@ public class UserServiceImpl implements UserService {
     private final FollowRepo followRepo;
     private final UserMapper userMapper;
     private final PostMapper postMapper;
-    private  final NotificationService notificationService;
+    private final NotificationService notificationService;
     private final LikeRepo likeRepo;
     private final UserImageHistoryRepo userImageHistoryRepo;
+    private final RedisEvictionHelper redisEvictionHelper;
 
     @Override
     @Cacheable(
             value = "publicUserProfiles",
-            key = "{#hotdropId, #currentLoggedInHotdropId}",
+            key = "'user:' + #hotdropId.toLowerCase().trim() + ':viewer:' + (#currentLoggedInHotdropId != null ? #currentLoggedInHotdropId.toLowerCase().trim() : 'guest')",
             unless = "#result == null"
     )
     public UserResponseOnSearchDto getUserByHotDropId(String hotdropId, String currentLoggedInHotdropId) {
@@ -53,55 +56,39 @@ public class UserServiceImpl implements UserService {
         User currentUser = userRepo.findByHotdropId(hotdropId)
                 .orElseThrow(() -> {
                     log.warn("User profile not found: {}", MaskUtils.maskIdentifier(hotdropId));
-                    return new RuntimeException("User profile not found with ID: " + hotdropId);
+                    return new ResourceNotFoundException("User profile not found with ID: " + hotdropId);
                 });
 
-        int postCount = postRepo.countByUser(currentUser);
-        int followerCount = followRepo.countByFollowing(currentUser);
-        int followingCount = followRepo.countByFollower(currentUser);
+
 
         boolean isOwner = currentLoggedInHotdropId != null && currentLoggedInHotdropId.equals(hotdropId);
         log.info("Found profile for user: {}", MaskUtils.maskIdentifier(hotdropId));
-        return UserResponseOnSearchDto.builder()
-                .id(currentUser.getId())
-                .firstName(currentUser.getFirstName())
-                .lastName(currentUser.getLastName())
-                .hotdropId(currentUser.getHotdropId())
-                .email(currentUser.getEmail())
-                .bio(currentUser.getBio())
-                .portfolioUrl(currentUser.getPortfolioUrl())
-                .profileImageUrl(currentUser.getProfileImageUrl())
-                .linkedinUrl(currentUser.getLinkedinUrl())
-                .githubUrl(currentUser.getGithubUrl())
-                .leetcodeUrl(currentUser.getLeetcodeUrl())
-                .postCount(postCount)
-                .followerCount(followerCount)
-                .followingCount(followingCount)
-                .isOwner(isOwner)
-                .build();
+        int postCount = postRepo.countByUser(currentUser);
+        int followerCount = followRepo.countByFollowing(currentUser);
+        int followingCount = followRepo.countByFollower(currentUser);
+        return userMapper.toSearchResponseDto(currentUser, isOwner, postCount, followerCount, followingCount);
     }
 
     @Override
     @Transactional
-    @CacheEvict(value = {"publicUserProfiles", "userFollowersList", "userFollowingList"}, allEntries = true)
     public FollowResponseDto toggleFollowUser(UUID userIdToFollow, String currentHotdropId) {
         log.info("User {} is following or unfollowing user: {}", MaskUtils.maskIdentifier(currentHotdropId), userIdToFollow);
 
         User currentUser = userRepo.findByHotdropId(currentHotdropId)
                 .orElseThrow(() -> {
                     log.warn("User not found: {}", MaskUtils.maskIdentifier(currentHotdropId));
-                    return new RuntimeException("Authenticated user not found");
+                    return new AccessDeniedException("Authenticated user not found");
                 });
 
         User targetUser = userRepo.findById(userIdToFollow)
                 .orElseThrow(() -> {
                     log.warn("Target user not found: {}", userIdToFollow);
-                    return new RuntimeException("Target user not found");
+                    return new ResourceNotFoundException("Target user not found");
                 });
 
         if (currentUser.getId().equals(targetUser.getId())) {
             log.warn("User {} cannot follow themselves", MaskUtils.maskIdentifier(currentHotdropId));
-            throw new RuntimeException("You cannot follow yourself");
+            throw new IllegalArgumentException("You cannot follow yourself");
         }
 
         Optional<Follow> existingFollow = followRepo.findByFollowerAndFollowing(currentUser, targetUser);
@@ -132,19 +119,18 @@ public class UserServiceImpl implements UserService {
 
         int totalFollowers = followRepo.countByFollowing(targetUser);
 
-        return FollowResponseDto.builder()
-                .isFollowing(isFollowingNow)
-                .followerCount(totalFollowers)
-                .hotdropId(targetUser.getHotdropId())
-                .profilePicture(targetUser.getProfileImageUrl())
-                .targetUserId(targetUser.getId())
-                .build();
+        redisEvictionHelper.evictCacheEntriesByPrefix("publicUserProfiles", "user:" + targetUser.getHotdropId().toLowerCase().trim());
+        redisEvictionHelper.evictCacheEntriesByPrefix("publicUserProfiles", "user:" + currentUser.getHotdropId().toLowerCase().trim());
+        redisEvictionHelper.evictCacheEntriesByPrefix("userFollowersPaged", "user:" + targetUser.getId() + ":viewer:");
+        redisEvictionHelper.evictCacheEntriesByPrefix("userFollowingPaged", "user:" + currentUser.getId() + ":viewer:");
+
+        return userMapper.toFollowResponseDto(isFollowingNow, totalFollowers, targetUser);
     }
 
     @Override
     @Cacheable(
-            value = "userFollowersList",
-            key = "{#profileUserId, #currentHotdropId, #page, #size}",
+            value = "userFollowersPaged",
+            key = "'user:' + #profileUserId + ':viewer:' + (#currentHotdropId != null ? #currentHotdropId : 'guest') + ':page:' + #page + ':size:' + #size",
             unless = "#result == null"
     )
     public PagedResponse<FollowerUserDto> getUserFollowers(UUID profileUserId, String currentHotdropId, int page, int size) {
@@ -153,7 +139,7 @@ public class UserServiceImpl implements UserService {
         User targetProfileUser = userRepo.findById(profileUserId)
                 .orElseThrow(() -> {
                     log.warn("Target user not found: {}", profileUserId);
-                    return new RuntimeException("Profile user not found");
+                    return new ResourceNotFoundException("Profile user not found");
                 });
 
         User currentUser = null;
@@ -173,23 +159,47 @@ public class UserServiceImpl implements UserService {
                 isFollowingBack = followRepo.existsByFollowerAndFollowing(loggedInUser, followerUser);
             }
 
-            return FollowerUserDto.builder()
-                    .id(followerUser.getId())
-                    .hotdropId(followerUser.getHotdropId())
-                    .firstName(followerUser.getFirstName())
-                    .lastName(followerUser.getLastName())
-                    .profileImageUrl(followerUser.getProfileImageUrl())
-                    .isFollowing(isFollowingBack)
-                    .build();
+            return userMapper.toFollowerUserDto(followerUser, isFollowingBack);
         }).toList();
 
         log.info("Found {} followers for user: {}", result.size(), profileUserId);
         return PagedResponse.from(followPage, result);
     }
+    @Override
+
+    @Cacheable(value = "userFollowingPaged", key = "'user:' + #userId + ':viewer:' + (#currentHotdropId != null ? #currentHotdropId : 'guest') + ':page:' + #page + ':size:' + #size", unless = "#result == null")
+    public PagedResponse<FollowerUserDto> getFollowingList(UUID userId, String currentHotdropId, int page, int size) {
+        log.info("Getting accounts followed by user: {}, viewer: {}, page: {}, size: {}", userId, currentHotdropId, page, size);
+
+        User profileUser = userRepo.findById(userId)
+                .orElseThrow(() -> {
+                    log.warn("User not found with id: {}", userId);
+                    return new ResourceNotFoundException("User not found");
+                });
+
+        User loggedInUser = null;
+        if (currentHotdropId != null && !currentHotdropId.equalsIgnoreCase("guest")) {
+            loggedInUser = userRepo.findByHotdropId(currentHotdropId).orElse(null);
+        }
+
+        Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt"));
+        Page<Follow> followPage = followRepo.findByFollower(profileUser, pageable);
+        
+        final User finalLoggedInUser = loggedInUser;
+        List<FollowerUserDto> result = followPage.getContent().stream().map(follow -> {
+            User followingUser = follow.getFollowing();
+            boolean isFollowing = false;
+            if (finalLoggedInUser != null) {
+                isFollowing = followRepo.existsByFollowerAndFollowing(finalLoggedInUser, followingUser);
+            }
+            return userMapper.toFollowerUserDto(followingUser, isFollowing);
+        }).toList();
+
+        return PagedResponse.from(followPage, result);
+    }
 
     @Override
     @Transactional
-    @CacheEvict(value = {"publicUserProfiles", "userSearchTop5"}, allEntries = true)
     public UserResponseDto updateProfileDetails(
             UUID userIdFromParams,
             String currentHotdropId,
@@ -204,13 +214,15 @@ public class UserServiceImpl implements UserService {
         User currentUser = userRepo.findByHotdropId(currentHotdropId)
                 .orElseThrow(() -> {
                     log.warn("User not found: {}", MaskUtils.maskIdentifier(currentHotdropId));
-                    return new RuntimeException("Authenticated user session data not found");
+                    return new AccessDeniedException("Authenticated user session data not found");
                 });
 
         if (userIdFromParams != null && !currentUser.getId().equals(userIdFromParams)) {
             log.warn("User {} cannot edit profile of user: {}", MaskUtils.maskIdentifier(currentHotdropId), userIdFromParams);
-            throw new RuntimeException("Access Denied: You are not the owner of this profile");
+            throw new AccessDeniedException("Access Denied: You are not the owner of this profile");
         }
+
+        String oldHotdropId = currentUser.getHotdropId();
 
         if (requestDto.getHotdropId() != null && !requestDto.getHotdropId().isBlank()) {
             String newHotdropId = requestDto.getHotdropId().trim();
@@ -218,7 +230,7 @@ public class UserServiceImpl implements UserService {
                 boolean isTaken = userRepo.existsByHotdropId(newHotdropId);
                 if (isTaken) {
                     log.warn("Hotdrop ID is already taken: {}", MaskUtils.maskIdentifier(newHotdropId));
-                    throw new RuntimeException("HotdropId is already taken");
+                    throw new IllegalArgumentException("HotdropId is already taken");
                 }
                 currentUser.setHotdropId(newHotdropId);
             }
@@ -257,7 +269,7 @@ public class UserServiceImpl implements UserService {
 
                 if (newUploadedUrl == null || newPublicId == null) {
                     log.error("Profile picture upload failed because image details are missing for user: {}", MaskUtils.maskIdentifier(currentUser.getHotdropId()));
-                    throw new RuntimeException("Keys mismatch: Retrieved null values from CloudinaryService response map.");
+                    throw new IllegalStateException("Cloudinary service returned invalid response.");
                 }
 
                 currentUser.setProfileImageUrl(newUploadedUrl);
@@ -265,7 +277,7 @@ public class UserServiceImpl implements UserService {
                 log.info("Updated profile picture for user: {}", MaskUtils.maskIdentifier(currentUser.getHotdropId()));
             } catch (Exception e) {
                 log.error("Failed to upload profile picture for user: {}", MaskUtils.maskIdentifier(currentUser.getHotdropId()), e);
-                throw new RuntimeException("File upload sequence processing failed: " + e.getMessage());
+                throw new IllegalStateException("File upload sequence processing failed due to an external service error.", e);
             }
         }
 
@@ -280,32 +292,41 @@ public class UserServiceImpl implements UserService {
         User updatedUser = userRepo.saveAndFlush(currentUser);
         log.info("Updated profile for user: {}", MaskUtils.maskIdentifier(updatedUser.getHotdropId()));
 
-        return userMapper.toResponseDto(updatedUser);
+        redisEvictionHelper.evictCacheEntriesByPrefix("publicUserProfiles", "user:" + oldHotdropId.toLowerCase().trim());
+        if (!oldHotdropId.equals(updatedUser.getHotdropId())) {
+            redisEvictionHelper.evictCacheEntriesByPrefix("publicUserProfiles", "user:" + updatedUser.getHotdropId().toLowerCase().trim());
+        }
+        redisEvictionHelper.evictCacheEntriesByPrefix("userSearchTop5", "");
+
+        int postCount = postRepo.countByUser(updatedUser);
+        int followerCount = followRepo.countByFollowing(updatedUser);
+        int followingCount = followRepo.countByFollower(updatedUser);
+        return userMapper.toResponseDto(updatedUser, postCount, followerCount, followingCount);
     }
 
     @Override
-    @Transactional
+    @Transactional(readOnly = true)
     public MeResponseDto getMeByHotdropId(String hotdropId) {
         log.info("Getting profile details for user: {}", MaskUtils.maskIdentifier(hotdropId));
 
         User user = userRepo.findByHotdropId(hotdropId)
                 .orElseThrow(() -> {
                     log.warn("User not found with id: {}", MaskUtils.maskIdentifier(hotdropId));
-                    return new RuntimeException("User not found with email: " + hotdropId);
+                    return new ResourceNotFoundException("User not found with email: " + hotdropId);
                 });
 
         return getMe(user.getId());
     }
 
     @Override
-    @Transactional
+    @Transactional(readOnly = true)
     public MeResponseDto getMe(UUID userId) {
         log.info("Getting account details for user: {}", userId);
 
         User user = userRepo.findById(userId)
                 .orElseThrow(() -> {
                     log.warn("User not found with id: {}", userId);
-                    return new RuntimeException("User not found with ID: " + userId);
+                    return new ResourceNotFoundException("User not found with ID: " + userId);
                 });
 
         List<Post> userPosts = postRepo.findByUserIdOrderByCreatedAtDesc(userId);
@@ -314,66 +335,20 @@ public class UserServiceImpl implements UserService {
         Set<String> roleNames = user.getRoles().stream()
                 .map(role -> role.getRoleName().name())
                 .collect(Collectors.toSet());
-
-        UserResponseDto userDto = UserResponseDto.builder()
-                .id(user.getId())
-                .firstName(user.getFirstName())
-                .lastName(user.getLastName())
-                .hotdropId(user.getHotdropId())
-                .email(user.getEmail())
-                .bio(user.getBio())
-                .profileImageUrl(user.getProfileImageUrl())
-                .profileImagePublicId(user.getProfileImagePublicId())
-                .githubUrl(user.getGithubUrl())
-                .linkedinUrl(user.getLinkedinUrl())
-                .leetcodeUrl(user.getLeetcodeUrl())
-                .portfolioUrl(user.getPortfolioUrl())
-                .emailVerified(user.isEmailVerified())
-                .postCount(userPosts.size())
-                .followerCount(followerCount)
-                .followingCount(followingCount)
-                .createdAt(user.getCreatedAt())
-                .roles(roleNames)
-                .build();
-
+        UserResponseDto userDto = userMapper.toResponseDto(user, userPosts.size(), followerCount, followingCount);
+         List<UUID> postIds = userPosts.stream().map(Post::getId).toList();
+         Set<UUID> likedPostIds = postIds.isEmpty()
+                ? Collections.emptySet()
+                : likeRepo.findLikedPostIdsByUserIdAndPostIds(user.getId(), postIds);
+        PostResponseDto.UserSummaryDto creator = postMapper.toUserSummaryDto(user);
         List<PostResponseDto> postDtos = userPosts.stream().map(post -> {
-
-            List<String> imageUrls = post.getImages().stream()
-                    .map(PostImage::getUrl)
-                    .collect(Collectors.toList());
-            boolean isLiked = likeRepo.existsByUserIdAndPostId(user.getId(), post.getId());
-
-            PostResponseDto.UserSummaryDto creator = PostResponseDto.UserSummaryDto.builder()
-                    .id(user.getId())
-                    .hotdropId(user.getHotdropId())
-                    .profilePicture(user.getProfileImageUrl())
-                    .build();
-
-            return PostResponseDto.builder()
-                .id(post.getId())
-                    .title(post.getTitle())
-                    .description(post.getDescription())
-                    .projectUrl(post.getProjectUrl())
-                    .shareUrl(post.getShareUrl())
-                    .isLinkDead(post.isLinkDead())
-                    .isLiked(isLiked)
-                    .likeCount(post.getLikeCount())
-                    .commentCount(post.getCommentCount())
-                    .shareCount(post.getShareCount())
-                    .createdAt(post.getCreatedAt())
-                    .tags(post.getTags())
-                    .imageUrls(imageUrls)
-                    .creator(creator)
-                    .build();
+            boolean isLiked = likedPostIds.contains(post.getId());
+            return postMapper.toResponseDto(post, isLiked, creator);
         }).toList();
 
         log.info("Loaded account details for user {} with {} posts", MaskUtils.maskIdentifier(user.getHotdropId()), postDtos.size());
 
-        return MeResponseDto.builder()
-                .user(userDto)
-                .posts(postDtos)
-                .build();
-    }
+        return userMapper.toMeResponseDto(userDto, postDtos); }
 
     private String extractPublicIdFromUrl(String url) {
         try {
@@ -389,49 +364,11 @@ public class UserServiceImpl implements UserService {
         }
     }
 
-    @Override
-    @Cacheable(value = "userFollowersList", key = "#userId", unless = "#result == null")
-    public List<UserResponseDto> getFollowersList(UUID userId) {
-        log.info("Getting followers for user: {}", userId);
 
-        User targetUser = userRepo.findById(userId)
-                .orElseThrow(() -> {
-                    log.warn("User not found with id: {}", userId);
-                    return new RuntimeException("User not found");
-                });
-
-        List<Follow> follows = followRepo.findAllByFollowing(targetUser);
-        log.info("Found {} followers for user: {}", follows.size(), MaskUtils.maskIdentifier(targetUser.getHotdropId()));
-
-        return follows.stream()
-                .map(follow -> userMapper.toBasicResponseDto(follow.getFollower()))
-                .collect(Collectors.toList());
-    }
-
-    @Override
-    @Cacheable(value = "userFollowingList", key = "{#userId, #page, #size}", unless = "#result == null")
-    public PagedResponse<UserResponseDto> getFollowingList(UUID userId, int page, int size) {
-        log.info("Getting accounts followed by user: {}, page: {}, size: {}", userId, page, size);
-
-        User currentUser = userRepo.findById(userId)
-                .orElseThrow(() -> {
-                    log.warn("User not found with id: {}", userId);
-                    return new RuntimeException("User not found");
-                });
-
-        Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt"));
-        Page<Follow> followPage = followRepo.findByFollower(currentUser, pageable);
-        log.info("Found {} accounts followed by user: {}", followPage.getNumberOfElements(), MaskUtils.maskIdentifier(currentUser.getHotdropId()));
-
-        List<UserResponseDto> result = followPage.getContent().stream()
-                .map(follow -> userMapper.toBasicResponseDto(follow.getFollowing()))
-                .toList();
-
-        return PagedResponse.from(followPage, result);
-    }
-    @Cacheable(
+     @Cacheable(
             value = "userSearchTop5",
-            key = "#query.toLowerCase().trim()",
+             key = "#query.toLowerCase().trim()",
+             condition = "#query != null && !#query.trim().isEmpty()",
             unless = "#result == null || #result.isEmpty()"
     )
     public List<PostResponseDto.UserSummaryDto> searchTop5Users(String query) {
@@ -442,17 +379,20 @@ public class UserServiceImpl implements UserService {
         }
 
         String cleanQuery = query.trim();
-        List<User> users = userRepo.findTop5ByHotdropIdContainingIgnoreCaseOrFirstNameContainingIgnoreCase(cleanQuery, cleanQuery);
+        List<User> users = userRepo.searchTop5Users(cleanQuery);
         log.info("Found {} users matching: {}", users.size(), cleanQuery);
 
         return users.stream()
-                .map(user -> PostResponseDto.UserSummaryDto.builder()
-                        .id(user.getId())
-                        .hotdropId(user.getHotdropId())
-                        .profilePicture(user.getProfileImageUrl())
-                        .firstName(user.getFirstName()) 
-                        .lastName(user.getLastName())
-                        .build())
+                .map(user -> postMapper.toUserSummaryDto(user))
                 .toList();
     }
 }
+
+
+
+
+
+
+
+
+

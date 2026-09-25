@@ -41,7 +41,7 @@ public class EmailServiceImpl implements EmailService {
             log.info("Sent verification email to: {}", MaskUtils.maskEmail(toEmail));
         } catch (Exception e) {
             log.error("Could not send verification email to {}", MaskUtils.maskEmail(toEmail), e);
-            throw new RuntimeException("Failed to send verification email", e);
+            throw new RuntimeException("Failed to send verification email due to an external service error.", e);
         }
     }
 
@@ -100,6 +100,7 @@ public class EmailServiceImpl implements EmailService {
             log.info("Sent email to: {}", MaskUtils.maskEmail(to));
         } catch (Exception e) {
             log.error("Could not send email to {}", MaskUtils.maskEmail(to), e);
+            throw new RuntimeException("Failed to send HTML email due to an external service error.", e);
         }
     }
 
@@ -133,6 +134,7 @@ public class EmailServiceImpl implements EmailService {
 
         } catch (Exception e) {
             log.error("Could not send verification code email to {}", MaskUtils.maskEmail(toEmail), e);
+            throw new RuntimeException("Failed to send verification code email due to an external service error.", e);
         }
     }
 }

@@ -1,5 +1,7 @@
 package com.arjun.hotdrop_backend.service.impl;
 
+import com.arjun.hotdrop_backend.mapper.AuthMapper;
+
 
 import com.arjun.hotdrop_backend.dto.*;
 import com.arjun.hotdrop_backend.entity.OtpVerification;
@@ -51,6 +53,7 @@ private final RefreshTokenService refreshTokenService;
     private final RefreshTokenRepo refreshTokenRepo;
     private final UserMapper userMapper;
     private final JwtService jwtService;
+    private final AuthMapper authMapper;
 
 
     @Transactional
@@ -121,7 +124,7 @@ private final RefreshTokenService refreshTokenService;
                 verificationLink
         );
 
-        return userMapper.toResponseDto(userToSave);
+        return userMapper.toResponseDto(userToSave, 0, 0, 0);
     }
     @Transactional
     @Override
@@ -233,17 +236,9 @@ private final RefreshTokenService refreshTokenService;
                 .map(role -> role.getRoleName().name())
                 .toList();
 
-        LoginResponseDto responseDto = LoginResponseDto.builder()
-                .hotdropId(user.getHotdropId())
-                .email(user.getEmail())
-                .roles(roles)
-                .build();
+        LoginResponseDto responseDto = authMapper.toLoginResponseDto(user.getHotdropId(), user.getEmail(), roles);
         log.info("User {} logged in successfully.", user.getHotdropId());
-        return AuthResultDto.builder()
-                .accessToken(accessToken)
-                .refreshToken(refreshToken.getToken())
-                .userDetails(responseDto)
-                .build();
+        return authMapper.toAuthResultDto(accessToken, refreshToken.getToken(), responseDto);
     }
 
 
@@ -256,12 +251,12 @@ private final RefreshTokenService refreshTokenService;
         User user = userRepo.findByEmail(request.getEmail())
                 .orElseThrow(() -> {
                     log.warn("Cannot reset password: no user found with email: {}", MaskUtils.maskEmail(request.getEmail()));
-                    return new RuntimeException("No account registered with this email address.");
+                    return new ResourceNotFoundException("No account registered with this email address.");
                 });
 
         if (user.isBanned()) {
             log.warn("Cannot reset password: user {} is banned.", user.getHotdropId());
-            throw new RuntimeException("Account is restricted.");
+            throw new org.springframework.security.access.AccessDeniedException("Account is restricted.");
         }
 
         java.security.SecureRandom random = new java.security.SecureRandom();
@@ -291,24 +286,24 @@ private final RefreshTokenService refreshTokenService;
         OtpVerification otpVerification = otpVerificationRepo.findByEmail(request.getEmail())
                 .orElseThrow(() -> {
                     log.warn("Cannot reset password: reset code not found for: {}", MaskUtils.maskEmail(request.getEmail()));
-                    return new RuntimeException("OTP session not found or invalid request.");
+                    return new ResourceNotFoundException("OTP session not found or invalid request.");
                 });
 
         if (otpVerification.getExpiryDate().isBefore(LocalDateTime.now())) {
             otpVerificationRepo.delete(otpVerification);
             log.warn("Cannot reset password: reset code expired for: {}", MaskUtils.maskEmail(request.getEmail()));
-            throw new RuntimeException("OTP has expired. Please request a new one.");
+            throw new IllegalArgumentException("OTP has expired. Please request a new one.");
         }
 
         if (!passwordEncoder.matches(request.getOtp(), otpVerification.getOtpHash())) {
             log.warn("Cannot reset password: wrong reset code for: {}", MaskUtils.maskEmail(request.getEmail()));
-            throw new RuntimeException("Invalid OTP entered.");
+            throw new IllegalArgumentException("Invalid OTP entered.");
         }
 
         User user = userRepo.findByEmail(request.getEmail())
                 .orElseThrow(() -> {
                     log.warn("Cannot reset password: user not found for email: {}", MaskUtils.maskEmail(request.getEmail()));
-                    return new RuntimeException("User not found.");
+                    return new ResourceNotFoundException("User not found.");
                 });
 
         user.setPassword(passwordEncoder.encode(request.getNewPassword()));
@@ -351,3 +346,9 @@ private final RefreshTokenService refreshTokenService;
 
 
 }
+
+
+
+
+
+

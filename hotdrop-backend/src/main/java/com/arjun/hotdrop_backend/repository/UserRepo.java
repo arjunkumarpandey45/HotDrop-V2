@@ -17,7 +17,15 @@ import java.util.UUID;
 public interface UserRepo extends JpaRepository<User, UUID> {
     Optional<User> findByEmail(String email);
 
-    List<User> findTop5ByHotdropIdContainingIgnoreCaseOrFirstNameContainingIgnoreCase(String hotdropId, String firstName);
+        @Query(value = """
+    SELECT * FROM users u 
+    WHERE u.hotdrop_id ILIKE CONCAT('%', :query, '%') 
+       OR u.first_name ILIKE CONCAT('%', :query, '%') 
+       OR u.last_name ILIKE CONCAT('%', :query, '%') 
+    ORDER BY u.hotdrop_id ASC 
+    LIMIT 5
+""", nativeQuery = true)
+    List<User> searchTop5Users(@Param("query") String query);
     Optional<User> findByHotdropId(String hotdropId);
 
     @EntityGraph(attributePaths = {
@@ -31,3 +39,4 @@ public interface UserRepo extends JpaRepository<User, UUID> {
 
 
 }
+

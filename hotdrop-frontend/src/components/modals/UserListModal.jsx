@@ -17,49 +17,12 @@ function UserListModal({
   onUnfollowSuccess,
 }) {
   const [togglingId, setTogglingId] = useState(null);
-  const [myFollowingIds, setMyFollowingIds] = useState(new Set());
   const navigate = useNavigate();
 
   const { user: currentUser } = useAuthStore();
   const currentUserId = currentUser?.id || currentUser?._id || currentUser?.userId;
 
   const isFollowingType = type === "following";
-
-  // 1. Fetch current logged-in user's following list to track follow states
-  useEffect(() => {
-    if (!isOpen || !currentUserId || (isFollowingType && String(currentUserId) === String(userId))) return;
-
-    let isMounted = true;
-    const fetchMyFollowing = async () => {
-      try {
-        const res = await axios.get(`/users/${currentUserId}/get-all-following`, {
-          params: { page: 0, size: 100 },
-        });
-        const payload = res.data?.data || res.data;
-        const list = Array.isArray(payload)
-          ? payload
-          : payload?.content || payload?.following || payload?.users || [];
-
-        if (isMounted) {
-          const idSet = new Set();
-          list.forEach((item) => {
-            const itemID = String(item.id || item._id || item.userId || item);
-            const itemHandle = (item.hotdropId || item.username || "").toLowerCase();
-            if (itemID) idSet.add(itemID);
-            if (itemHandle) idSet.add(itemHandle);
-          });
-          setMyFollowingIds(idSet);
-        }
-      } catch (err) {
-        console.warn(`Could not fetch my following list in UserListModal (${type}):`, err);
-      }
-    };
-
-    fetchMyFollowing();
-    return () => {
-      isMounted = false;
-    };
-  }, [isOpen, currentUserId, userId, isFollowingType, type]);
 
   // 2. Paginated Fetch with deduplication and infinite scroll
   const endpoint = isFollowingType
@@ -104,8 +67,6 @@ function UserListModal({
         isFollowing = u.following;
       } else if (typeof u.isFollowedByMe === "boolean") {
         isFollowing = u.isFollowedByMe;
-      } else if (myFollowingIds.has(uId) || (uHandle && myFollowingIds.has(uHandle))) {
-        isFollowing = true;
       }
 
       return {
@@ -115,7 +76,7 @@ function UserListModal({
         isFollowedByMe: isFollowing,
       };
     });
-  }, [rawUsers, currentUserId, userId, myFollowingIds, isFollowingType]);
+  }, [rawUsers, currentUserId, userId, isFollowingType]);
 
   const handleUserClick = (targetHotdrop) => {
     if (!targetHotdrop) return;
@@ -190,17 +151,6 @@ function UserListModal({
           return u;
         })
       );
-
-      // Keep myFollowingIds in sync
-      setMyFollowingIds((prevSet) => {
-        const nextSet = new Set(prevSet);
-        if (isNowFollowing) {
-          nextSet.add(targetUserId);
-        } else {
-          nextSet.delete(targetUserId);
-        }
-        return nextSet;
-      });
 
       if (onFollowStatusChange) {
         onFollowStatusChange(targetUserId, isNowFollowing);
@@ -386,3 +336,5 @@ function UserListModal({
 }
 
 export default UserListModal;
+
+

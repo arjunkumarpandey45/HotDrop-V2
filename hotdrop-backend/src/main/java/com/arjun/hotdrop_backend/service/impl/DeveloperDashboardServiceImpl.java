@@ -2,6 +2,7 @@ package com.arjun.hotdrop_backend.service.impl;
 
 
 import com.arjun.hotdrop_backend.dto.DeveloperDashboardStatsDto;
+import com.arjun.hotdrop_backend.mapper.DeveloperDashboardMapper;
 import com.arjun.hotdrop_backend.repository.PostRepo;
 import com.arjun.hotdrop_backend.repository.UserRepo;
 import com.arjun.hotdrop_backend.service.DeveloperDashboardService;
@@ -24,6 +25,7 @@ public class DeveloperDashboardServiceImpl implements DeveloperDashboardService 
 
     private final PostRepo postRepository;
     private final UserRepo userRepository;
+    private final DeveloperDashboardMapper developerDashboardMapper;
 
     @Transactional(readOnly = true)
     public DeveloperDashboardStatsDto getUserDashboardStats(String hotdropId) {
@@ -54,14 +56,6 @@ public class DeveloperDashboardServiceImpl implements DeveloperDashboardService 
             topTech.put(techName, count);
         }
 
-        return DeveloperDashboardStatsDto.builder()
-                .totalDrops(total)
-                .liveDrops(live)
-                .deadDrops(dead)
-                .healthScorePercentage(healthPercentage)
-                .totalLikesReceived(totalLikes)
-                .totalCommentReceived(totalComments)
-                .topTechnologies(topTech)
-                .build();
+        return developerDashboardMapper.toStatsDto(total, live, dead, healthPercentage, totalLikes, totalComments, topTech);
     }
 }
