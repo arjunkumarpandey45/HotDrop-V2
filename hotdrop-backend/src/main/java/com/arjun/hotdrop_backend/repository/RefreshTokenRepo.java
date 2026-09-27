@@ -17,6 +17,6 @@ public interface RefreshTokenRepo extends JpaRepository<RefreshToken, UUID> {
     Optional<RefreshToken> findByToken(String token);
     void deleteByUser(User user);
     @Modifying
-    @Query("DELETE FROM RefreshToken r WHERE r.expiryDate < :now")
-    int deleteByExpiryDateBefore(@Param("now") LocalDateTime now);
+    @Query("DELETE FROM RefreshToken r WHERE r.expiryDate < CURRENT_TIMESTAMP")
+    int deleteByExpiryDateBefore();
 }

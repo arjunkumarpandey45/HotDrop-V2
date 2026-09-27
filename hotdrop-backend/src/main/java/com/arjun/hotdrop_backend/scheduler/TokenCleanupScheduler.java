@@ -17,12 +17,12 @@ public class TokenCleanupScheduler {
     private final RefreshTokenRepo refreshTokenRepo;
 
 
-    @Scheduled(cron = "0 0 3 * * ?")
+    @Scheduled(fixedDelay = 600000)
     @Transactional
     public void cleanExpiredTokens() {
         log.info("Starting scheduled cleanup of expired refresh tokens...");
         try {
-            int deletedTokens = refreshTokenRepo.deleteByExpiryDateBefore(LocalDateTime.now());
+            int deletedTokens = refreshTokenRepo.deleteByExpiryDateBefore();
             log.info("Completed token cleanup. Successfully removed {} expired refresh tokens.", deletedTokens);
         } catch (Exception e) {
             log.error("Failed to run scheduled token cleanup", e);

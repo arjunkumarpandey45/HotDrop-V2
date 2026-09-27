@@ -7,17 +7,14 @@ import com.arjun.hotdrop_backend.mapper.PostMapper;
 import com.arjun.hotdrop_backend.mapper.CommentMapper;
 
 import com.arjun.hotdrop_backend.repository.*;
-import com.arjun.hotdrop_backend.service.CloudinaryService;
-import com.arjun.hotdrop_backend.service.NotificationService;
-import com.arjun.hotdrop_backend.service.PostService;
-import com.arjun.hotdrop_backend.service.TechStackDetectorService;
+import com.arjun.hotdrop_backend.service.*;
 import com.arjun.hotdrop_backend.utils.MaskUtils;
 import com.arjun.hotdrop_backend.utils.SlugifyUtil;
 import com.arjun.hotdrop_backend.utils.UserAgentProvider;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.jspecify.annotations.NonNull;
-import org.springframework.cache.annotation.CacheEvict;
+
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -25,6 +22,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.net.URI;
@@ -34,7 +32,7 @@ import java.net.http.HttpResponse;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.*;
-import java.util.stream.Collectors;
+
 import com.arjun.hotdrop_backend.utils.RedisEvictionHelper;
 import org.springframework.security.access.AccessDeniedException;
 import com.arjun.hotdrop_backend.error.ResourceNotFoundException;
@@ -51,7 +49,7 @@ public class PostServiceImpl implements PostService {
     private final TechStackDetectorService techStackDetectorService;
     private final UserAgentProvider userAgentProvider;
     private final CommentRepo commentRepo;
-    
+    private final PostAsyncService postAsyncService;
     private final PostMapper postMapper;
     private final CommentMapper commentMapper;
     private final UserImageHistoryRepo userImageHistoryRepo;
@@ -108,7 +106,8 @@ public class PostServiceImpl implements PostService {
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             log.warn("Link check was interrupted: {}", cleanUrl);
-        } catch (Exception ignored) {
+        } catch (Exception e) {
+            log.warn("HEAD request failed for {}: {}", cleanUrl, e.getMessage());
         }
 
         try {
@@ -177,17 +176,7 @@ public class PostServiceImpl implements PostService {
                     .filter(tag -> !tag.isEmpty())
                     .forEach(finalTagsSet::add);
         }
-        if (cleanProjectUrl != null && !cleanProjectUrl.isBlank()) {
-            try {
-                Set<String> autoTags = techStackDetectorService.detectTechStack(cleanProjectUrl);
-                autoTags.stream()
-                        .map(tag -> sanitizeInput(tag.trim().toLowerCase()))
-                        .filter(tag -> !tag.isEmpty())
-                        .forEach(finalTagsSet::add);
-            } catch (Exception e) {
-                log.warn("Could not detect technologies for post: {}", e.getMessage());
-            }
-        }
+
         List<String> cleanedTags = new ArrayList<>(finalTagsSet);
         Post post = Post.builder()
                 .title(cleanTitle)
@@ -215,8 +204,21 @@ public class PostServiceImpl implements PostService {
 
         Post savedPost = postRepo.save(post);
         log.info("Created post {} with id: {}", savedPost.getTitle(), savedPost.getId().toString());
-        redisEvictionHelper.evictCacheEntriesByPrefix("userPostsPaged", "user:" + authenticatedUser.getId().toString());
-        redisEvictionHelper.evictEntireCache("compiledFeed");
+
+
+     TransactionSynchronizationManager.registerSynchronization(
+                new org.springframework.transaction.support.TransactionSynchronization() {
+                    @Override
+                    public void afterCommit() {
+                        if (cleanProjectUrl != null && !cleanProjectUrl.isBlank()) {
+                            postAsyncService.processTechStackAndStatusAsync(savedPost.getId(), cleanProjectUrl);
+                        }
+                        redisEvictionHelper.evictCacheEntriesByPrefix("userPostsPaged", "user:" + authenticatedUser.getId().toString());
+                        redisEvictionHelper.evictEntireCache("compiledFeed");
+                    }
+                }
+        );
+
         return mapToPostResponseDto(savedPost, hotdropId);
     }
 
