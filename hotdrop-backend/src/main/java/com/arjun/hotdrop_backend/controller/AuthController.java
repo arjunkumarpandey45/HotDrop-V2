@@ -77,11 +77,11 @@ public ResponseEntity<String> resendVerifyEmail(@Valid @RequestBody ReVerificati
                 .maxAge(30 * 24 * 60 * 60)
                 .sameSite("Lax")
                 .build();
-        log.info("User logged in successfully: {}", authResult.getUserDetails().getHotdropId());
+        log.info("User logged in successfully: {}", authResult.getLoginResponse().getHotdropId());
         return ResponseEntity.ok()
                 .header(HttpHeaders.SET_COOKIE, accessCookie.toString())
                 .header(HttpHeaders.SET_COOKIE, refreshCookie.toString())
-                .body(authResult.getUserDetails());
+                .body(authResult.getLoginResponse());
     }
     @RateLimited(capacity = 20, refillTokens = 20, refillDurationSeconds = 60)
     @PostMapping("/refresh")

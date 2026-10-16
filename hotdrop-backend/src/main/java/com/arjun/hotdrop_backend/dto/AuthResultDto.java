@@ -12,5 +12,5 @@ import lombok.NoArgsConstructor;
 public class AuthResultDto {
     private String accessToken;
     private String refreshToken;
-    private LoginResponseDto userDetails;
+    private LoginResponseDto loginResponse;
 }

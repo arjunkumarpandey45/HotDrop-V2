@@ -20,7 +20,7 @@ public class AuthMapper {
         return AuthResultDto.builder()
                 .accessToken(accessToken)
                 .refreshToken(refreshToken)
-                .userDetails(userDetails)
+                .loginResponse(userDetails)
                 .build();
     }
 }
