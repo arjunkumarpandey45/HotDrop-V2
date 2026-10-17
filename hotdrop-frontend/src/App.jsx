@@ -8,6 +8,7 @@ import VerifyLink from './pages/auth/VerifyLink';
 import Login from './pages/auth/Login';
 import ForgotPassword from './pages/auth/ForgotPassword';
 import ResendVerification from './pages/auth/ResendVerification';
+import OAuth2Redirect from './pages/auth/OAuth2Redirect';
 import Navbar from './components/layout/Navbar';
 import BottomNav from './components/layout/BottomNav';
 import CreatePost from './pages/post/CreatePost';
@@ -90,6 +91,10 @@ function App() {
         {
           path: '/login',
           element: <Login />,
+        },
+        {
+          path: '/oauth2/redirect',
+          element: <OAuth2Redirect />,
         },
         {
           path: '/profile/me',

@@ -52,8 +52,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         }
 
         if (tokenBlacklistService.isTokenBlacklisted(jwt)) {
-            log.warn("Blocked request with blacklisted token at [{}]", request.getRequestURI());
-            writeUnauthorizedResponse(response, request.getRequestURI());
+            log.warn("Request with blacklisted token at [{}]; proceeding as unauthenticated", request.getRequestURI());
+            filterChain.doFilter(request, response);
             return;
         }
 

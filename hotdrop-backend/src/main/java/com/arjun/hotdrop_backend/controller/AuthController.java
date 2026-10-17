@@ -154,6 +154,7 @@ public ResponseEntity<String> resendVerifyEmail(@Valid @RequestBody ReVerificati
                 .maxAge(0)
                 .httpOnly(true)
                 .secure(false) // true in production
+                .path("/")
                 .sameSite("Lax")
                 .build();
 

@@ -16,6 +16,8 @@ export const useAuthStore = create((set, get) => ({
   setUser: (updatedUser) =>
     set((state) => ({
       user: state.user ? { ...state.user, ...updatedUser } : updatedUser,
+      isLoggedIn: Boolean(updatedUser),
+      isCheckingAuth: false,
     })),
 
   updatePostCountLocally: (newPost = null) => {
@@ -81,6 +83,10 @@ export const useAuthStore = create((set, get) => ({
 
   checkAuth: async () => {
     const currentPath = window.location.pathname;
+
+    if (currentPath.startsWith("/oauth2/redirect")) {
+      return;
+    }
 
     if (
       currentPath.startsWith("/login") ||

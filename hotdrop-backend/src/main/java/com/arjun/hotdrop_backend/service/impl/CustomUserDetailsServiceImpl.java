@@ -34,7 +34,7 @@ public class CustomUserDetailsServiceImpl implements CustomUserDetailsService {
 
         return org.springframework.security.core.userdetails.User
                 .withUsername(user.getHotdropId())
-                .password(user.getPassword())
+                .password(user.getPassword() != null ? user.getPassword() : "")
                 .authorities(
                         user.getRoles()
                                 .stream()

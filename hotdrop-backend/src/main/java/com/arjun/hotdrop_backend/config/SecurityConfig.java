@@ -29,9 +29,14 @@ import java.util.List;
 @EnableWebSecurity
 @RequiredArgsConstructor
 public class SecurityConfig {
-@Value("${FRONTEND_URL}")
-private String frontendURL;
+    @Value("${FRONTEND_URL}")
+    private String frontendURL;
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
+    private final com.arjun.hotdrop_backend.security.oauth2.CustomOAuth2UserService customOAuth2UserService;
+    private final com.arjun.hotdrop_backend.security.oauth2.CustomOidcUserService customOidcUserService;
+    private final com.arjun.hotdrop_backend.security.oauth2.OAuth2AuthenticationSuccessHandler oAuth2AuthenticationSuccessHandler;
+    private final com.arjun.hotdrop_backend.security.oauth2.OAuth2AuthenticationFailureHandler oAuth2AuthenticationFailureHandler;
+    private final com.arjun.hotdrop_backend.security.oauth2.HttpCookieOAuth2AuthorizationRequestRepository cookieAuthorizationRequestRepository;
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http)
@@ -42,7 +47,7 @@ private String frontendURL;
                         sessionConfig.sessionCreationPolicy(
                                 SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/auth/**")
+                        .requestMatchers("/auth/**", "/oauth2/**", "/login/oauth2/**")
                         .permitAll()
                         .requestMatchers(
                                 "/",
@@ -122,6 +127,21 @@ private String frontendURL;
                                 }
                         )
                 )
+                .oauth2Login(oauth2 -> oauth2
+                        .authorizationEndpoint(authorization -> authorization
+                                .baseUri("/oauth2/authorization")
+                                .authorizationRequestRepository(cookieAuthorizationRequestRepository)
+                        )
+                        .redirectionEndpoint(redirection -> redirection
+                                .baseUri("/login/oauth2/code/*")
+                        )
+                        .userInfoEndpoint(userInfo -> userInfo
+                                .userService(customOAuth2UserService)
+                                .oidcUserService(customOidcUserService)
+                        )
+                        .successHandler(oAuth2AuthenticationSuccessHandler)
+                        .failureHandler(oAuth2AuthenticationFailureHandler)
+                )
                 .addFilterBefore(
                         jwtAuthenticationFilter,
                         UsernamePasswordAuthenticationFilter.class
@@ -144,9 +164,5 @@ private String frontendURL;
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration);
         return source;
-    }
-    @Bean
-    public PasswordEncoder passwordEncoder() {
-        return new BCryptPasswordEncoder();
     }
 }

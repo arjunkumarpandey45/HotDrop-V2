@@ -215,6 +215,11 @@ private final RefreshTokenService refreshTokenService;
                     return new BadCredentialsException("Invalid Hotdrop ID/Email or password.");
                 });
 
+        if (user.getPassword() == null || user.getPassword().isBlank()) {
+            log.warn("Password login attempted on passwordless/OAuth account: {}", user.getHotdropId());
+            throw new BadCredentialsException("This account uses social login (Google/GitHub). Please sign in with your social provider.");
+        }
+
         if (!user.isEmailVerified()) {
             log.warn("Email not verified for user: {}", user.getHotdropId());
             throw new IllegalStateException("Please verify your email before logging in.");

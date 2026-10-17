@@ -53,6 +53,9 @@ spring:
     username: ${POSTGRES_SQL_USER}
     password: ${POSTGRES_SQL_PASS}
     driver-class-name: org.postgresql.Driver
+    hikari:
+      maximum-pool-size: 5
+      minimum-idle: 1
 
   jpa:
     hibernate:
@@ -66,8 +69,23 @@ spring:
   flyway:
     repair-on-migrate: true
     enabled: true
-
-
+  security:
+    oauth2:
+      client:
+        registration:
+          google:
+            client-id: ${GOOGLE_CLIENT_ID:google-client-id-placeholder}
+            client-secret: ${GOOGLE_CLIENT_SECRET:google-client-secret-placeholder}
+            scope:
+              - email
+              - profile
+              - openid
+          github:
+            client-id: ${GITHUB_CLIENT_ID:github-client-id-placeholder}
+            client-secret: ${GITHUB_CLIENT_SECRET:github-client-secret-placeholder}
+            scope:
+              - read:user
+              - user:email
   mail:
     host: "${SMTP_HOST}"
     port: "${SMTP_PORT}"
