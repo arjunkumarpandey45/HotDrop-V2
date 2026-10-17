@@ -355,7 +355,7 @@ function DeveloperAnalytics() {
 
  
 
-  const handleCopySummary = () => {
+  const handleCopySummary = async () => {
     const handle = user?.hotdropId || user?.username || "developer";
     const name = [user?.firstName, user?.lastName].filter(Boolean).join(" ") || `@${handle}`;
     const techStacks = technologiesList.map((t) => `${t.displayName} (${t.count})`).join(", ");
@@ -382,10 +382,15 @@ MONITORING STATUS:
 ✓ Verified on HotDrop Developer Launchpad
 ========================================`;
 
-    navigator.clipboard.writeText(summaryText);
-    setCopiedSummary(true);
-    toast.success("Developer summary copied to clipboard!");
-    setTimeout(() => setCopiedSummary(false), 2500);
+    try {
+      await navigator.clipboard.writeText(summaryText);
+      setCopiedSummary(true);
+      toast.success("Developer summary copied to clipboard!");
+      setTimeout(() => setCopiedSummary(false), 2500);
+    } catch (err) {
+      console.error("Failed to copy developer summary:", err);
+      toast.error("Failed to copy developer summary");
+    }
   };
 
   const handlePrint = () => {
@@ -577,7 +582,7 @@ MONITORING STATUS:
                   <div className="flex items-baseline gap-2">
                     <span className="text-3xl font-black text-slate-900 font-mono">
                       {stats.totalDrops}
-                    </span>{' '}
+                    </span>
                     <span className="text-xs text-slate-500 font-semibold">projects</span>
                   </div>
                   <p className="text-[11px] text-slate-500 font-medium">
@@ -616,7 +621,7 @@ MONITORING STATUS:
 
                   {/* Circular Gauge */}
                   <div className="relative w-16 h-16 shrink-0 flex items-center justify-center">
-                    <svg className="w-full h-full -rotate-90" viewBox="0 0 76 76">
+                    <svg role="img" aria-label="System health score" className="w-full h-full -rotate-90" viewBox="0 0 76 76">
                       <circle
                         cx="38"
                         cy="38"
@@ -720,7 +725,7 @@ MONITORING STATUS:
                   <div className="flex items-baseline gap-2">
                     <span className="text-3xl font-black text-slate-900 font-mono">
                       {stats.totalLikesReceived}
-                    </span>{' '}
+                    </span>
                     <span className="text-xs text-slate-500 font-semibold">likes</span>
                   </div>
 
@@ -750,7 +755,7 @@ MONITORING STATUS:
                   <div className="flex items-baseline gap-2">
                     <span className="text-3xl font-black text-slate-900 font-mono">
                       {stats.totalCommentReceived ?? 0}
-                    </span>{' '}
+                    </span>
                     <span className="text-xs text-slate-500 font-semibold">
                       {(stats.totalCommentReceived ?? 0) === 1 ? "comment" : "comments"}
                     </span>

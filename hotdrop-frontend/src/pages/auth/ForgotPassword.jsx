@@ -41,6 +41,23 @@ const ForgotPassword = () => {
     newPassword.length > 0 &&
     newPassword === confirmPassword;
 
+  let passwordInputClass = "border-slate-200 bg-slate-50 focus:border-blue-500 focus:bg-white focus:ring-4 focus:ring-blue-100";
+  let passwordLockClass = "text-slate-400";
+  if (isPasswordMismatch) {
+    passwordInputClass = "border-rose-500 bg-rose-50/70 text-rose-900 focus:border-rose-600 focus:ring-4 focus:ring-rose-100 placeholder-rose-300";
+    passwordLockClass = "text-rose-500";
+  } else if (isPasswordMatch) {
+    passwordInputClass = "border-emerald-500 bg-emerald-50/50 text-emerald-900 focus:border-emerald-600 focus:ring-4 focus:ring-emerald-100";
+    passwordLockClass = "text-emerald-500";
+  }
+
+  let submitButtonClass = "bg-gradient-to-r from-blue-600 to-indigo-600 hover:-translate-y-0.5 hover:shadow-xl hover:shadow-blue-200";
+  if (loading) {
+    submitButtonClass = "cursor-not-allowed bg-blue-400";
+  } else if (isPasswordMismatch) {
+    submitButtonClass = "bg-gradient-to-r from-rose-600 to-red-600 shadow-md shadow-rose-200 hover:-translate-y-0.5";
+  }
+
   const handleSendOtp = async (e) => {
     e.preventDefault();
     const trimmedEmail = email.trim();
@@ -295,13 +312,7 @@ const ForgotPassword = () => {
                   </label>
                   <div className="relative">
                     <Lock
-                      className={`absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 transition-colors ${
-                        isPasswordMismatch
-                          ? "text-rose-500"
-                          : isPasswordMatch
-                          ? "text-emerald-500"
-                          : "text-slate-400"
-                      }`}
+                      className={`absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 transition-colors ${passwordLockClass}`}
                     />
                     <input
                       id="forgot-newPassword"
@@ -311,13 +322,7 @@ const ForgotPassword = () => {
                       onChange={(e) => setNewPassword(e.target.value)}
                       required
                       placeholder="••••••••"
-                      className={`w-full rounded-xl border py-2.25 pl-10 pr-10 text-sm outline-none transition-all ${
-                        isPasswordMismatch
-                          ? "border-rose-500 bg-rose-50/70 text-rose-900 focus:border-rose-600 focus:ring-4 focus:ring-rose-100 placeholder-rose-300"
-                          : isPasswordMatch
-                          ? "border-emerald-500 bg-emerald-50/50 text-emerald-900 focus:border-emerald-600 focus:ring-4 focus:ring-emerald-100"
-                          : "border-slate-200 bg-slate-50 focus:border-blue-500 focus:bg-white focus:ring-4 focus:ring-blue-100"
-                      }`}
+                      className={`w-full rounded-xl border py-2.25 pl-10 pr-10 text-sm outline-none transition-all ${passwordInputClass}`}
                     />
                     <button
                       type="button"
@@ -339,13 +344,7 @@ const ForgotPassword = () => {
                   </label>
                   <div className="relative">
                     <Lock
-                      className={`absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 transition-colors ${
-                        isPasswordMismatch
-                          ? "text-rose-500"
-                          : isPasswordMatch
-                          ? "text-emerald-500"
-                          : "text-slate-400"
-                      }`}
+                      className={`absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 transition-colors ${passwordLockClass}`}
                     />
                     <input
                       id="forgot-confirmPassword"
@@ -355,13 +354,7 @@ const ForgotPassword = () => {
                       onChange={(e) => setConfirmPassword(e.target.value)}
                       required
                       placeholder="••••••••"
-                      className={`w-full rounded-xl border py-2.25 pl-10 pr-10 text-sm outline-none transition-all ${
-                        isPasswordMismatch
-                          ? "border-rose-500 bg-rose-50/70 text-rose-900 focus:border-rose-600 focus:ring-4 focus:ring-rose-100 placeholder-rose-300"
-                          : isPasswordMatch
-                          ? "border-emerald-500 bg-emerald-50/50 text-emerald-900 focus:border-emerald-600 focus:ring-4 focus:ring-emerald-100"
-                          : "border-slate-200 bg-slate-50 focus:border-blue-500 focus:bg-white focus:ring-4 focus:ring-blue-100"
-                      }`}
+                      className={`w-full rounded-xl border py-2.25 pl-10 pr-10 text-sm outline-none transition-all ${passwordInputClass}`}
                     />
                     <button
                       type="button"
@@ -406,13 +399,7 @@ const ForgotPassword = () => {
                 <button
                   disabled={loading}
                   type="submit"
-                  className={`group flex w-full items-center justify-center gap-2 rounded-xl py-2.5 font-semibold text-white transition-all duration-300 mt-2 ${
-                    loading
-                      ? "cursor-not-allowed bg-blue-400"
-                      : isPasswordMismatch
-                      ? "bg-gradient-to-r from-rose-600 to-red-600 shadow-md shadow-rose-200 hover:-translate-y-0.5"
-                      : "bg-gradient-to-r from-blue-600 to-indigo-600 hover:-translate-y-0.5 hover:shadow-xl hover:shadow-blue-200"
-                  }`}
+                  className={`group flex w-full items-center justify-center gap-2 rounded-xl py-2.5 font-semibold text-white transition-all duration-300 mt-2 ${submitButtonClass}`}
                 >
                   {loading ? (
                     <>

@@ -530,7 +530,9 @@ const Navbar = () => {
                         <button
                           onClick={() => {
                             setIsMobileSettingsOpen(false);
-                            handleLogout();
+                            handleLogout().catch((err) => {
+                              console.error("Logout failed:", err);
+                            });
                           }}
                           className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-xs font-semibold text-red-600 hover:bg-red-50 cursor-pointer"
                         >

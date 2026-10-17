@@ -15,6 +15,8 @@ import dp from "../../assets/dp.jpg";
 
 const Github = ({ size = 14, className = "" }) => (
   <svg
+    role="img"
+    aria-label="GitHub"
     width={size}
     height={size}
     viewBox="0 0 24 24"
@@ -32,6 +34,8 @@ const Github = ({ size = 14, className = "" }) => (
 
 const Linkedin = ({ size = 14, className = "" }) => (
   <svg
+    role="img"
+    aria-label="LinkedIn"
     width={size}
     height={size}
     viewBox="0 0 24 24"

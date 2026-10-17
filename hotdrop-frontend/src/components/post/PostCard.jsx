@@ -59,13 +59,18 @@ function PostCard({
   const likeCount = post.likeCount ?? post.likes?.length ?? 0;
   const commentCount = post.commentCount ?? post.comments?.length ?? 0;
 
-  const handleShareClick = () => {
+  const handleShareClick = async () => {
     if (onShare) {
       onShare(post);
     } else {
       const postUrl = `${window.location.origin}/post/${pId}`;
-      navigator.clipboard?.writeText(postUrl);
-      toast.success("Post link copied to clipboard!");
+      try {
+        await navigator.clipboard?.writeText(postUrl);
+        toast.success("Post link copied to clipboard!");
+      } catch (err) {
+        console.error("Failed to copy post link:", err);
+        toast.error("Failed to copy link to clipboard");
+      }
     }
   };
 

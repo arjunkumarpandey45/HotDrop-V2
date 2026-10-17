@@ -13,33 +13,42 @@ function SearchModal({ isOpen, onClose, initialMode = "users" }) {
   const inputRef = useRef(null);
   const navigate = useNavigate();
 
-  useEffect(() => {
+  const [prevIsOpen, setPrevIsOpen] = useState(isOpen);
+  if (isOpen !== prevIsOpen) {
+    setPrevIsOpen(isOpen);
     if (isOpen) {
       setSearchMode(initialMode);
-      setTimeout(() => {
-        inputRef.current?.focus();
-      }, 50);
     } else {
       setSearchQuery("");
       setUserSuggestions([]);
       setProjectSuggestions([]);
+      setLoading(false);
     }
-  }, [isOpen, initialMode]);
+  }
+
+  const [prevSearchQuery, setPrevSearchQuery] = useState(searchQuery);
+  if (searchQuery !== prevSearchQuery) {
+    setPrevSearchQuery(searchQuery);
+    if (!searchQuery.trim().replace(/^@/, "").trim()) {
+      setUserSuggestions([]);
+      setProjectSuggestions([]);
+      setLoading(false);
+    }
+  }
+
+  useEffect(() => {
+    if (isOpen) {
+      const timer = setTimeout(() => {
+        inputRef.current?.focus();
+      }, 50);
+      return () => clearTimeout(timer);
+    }
+  }, [isOpen]);
 
   useEffect(() => {
     const rawQ = searchQuery.trim();
-    if (!rawQ) {
-      setUserSuggestions([]);
-      setProjectSuggestions([]);
-      setLoading(false);
-      return;
-    }
-
     const cleanQ = rawQ.replace(/^@/, "").trim();
     if (!cleanQ) {
-      setUserSuggestions([]);
-      setProjectSuggestions([]);
-      setLoading(false);
       return;
     }
 

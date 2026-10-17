@@ -3,6 +3,8 @@ import { Mail, Copy, Check, X, Globe, ExternalLink } from "lucide-react";
 
 const GithubIcon = ({ size = 18, className = "" }) => (
   <svg
+    role="img"
+    aria-label="GitHub"
     width={size}
     height={size}
     viewBox="0 0 24 24"
@@ -20,6 +22,8 @@ const GithubIcon = ({ size = 18, className = "" }) => (
 
 const LinkedinIcon = ({ size = 18, className = "" }) => (
   <svg
+    role="img"
+    aria-label="LinkedIn"
     width={size}
     height={size}
     viewBox="0 0 24 24"
@@ -38,6 +42,8 @@ const LinkedinIcon = ({ size = 18, className = "" }) => (
 
 const LeetcodeIcon = ({ size = 18, className = "" }) => (
   <svg
+    role="img"
+    aria-label="LeetCode"
     width={size}
     height={size}
     viewBox="0 0 24 24"
@@ -82,11 +88,15 @@ function EmailModal({ isOpen, onClose, user, email: directEmail }) {
     },
   ].filter((item) => Boolean(item.val));
 
-  const handleCopy = () => {
+  const handleCopy = async () => {
     if (email) {
-      navigator.clipboard.writeText(email);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
+      try {
+        await navigator.clipboard.writeText(email);
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+      } catch (err) {
+        console.error("Failed to copy email:", err);
+      }
     }
   };
 

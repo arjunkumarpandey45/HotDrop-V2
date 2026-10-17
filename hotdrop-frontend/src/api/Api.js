@@ -55,7 +55,7 @@ API.interceptors.response.use(
       }
 
       showRateLimitToast(backendMsg);
-      return Promise.reject(error);
+      throw error;
     }
 
     const originalRequest = error.config;
@@ -74,7 +74,7 @@ API.interceptors.response.use(
       originalRequest.url?.includes("/posts/share-post") ||
       originalRequest.url?.includes("/posts/get-post-by-postId")
     ) {
-      return Promise.reject(error);
+      throw error;
     }
 
     if (error.response?.status === 401 && !originalRequest._retry) {
@@ -83,9 +83,7 @@ API.interceptors.response.use(
       if (isRefreshing) {
         return new Promise((resolve, reject) => {
           failedQueue.push({ resolve, reject });
-        })
-          .then(() => API(originalRequest))
-          .catch((err) => Promise.reject(err));
+        }).then(() => API(originalRequest));
       }
 
       isRefreshing = true;
@@ -104,11 +102,11 @@ API.interceptors.response.use(
         console.warn("❌ Refresh Token Expired or Invalid");
         processQueue(refreshError, null);
         isRefreshing = false;
-        return Promise.reject(refreshError);
+        throw refreshError;
       }
     }
 
-    return Promise.reject(error);
+    throw error;
   }
 );
 

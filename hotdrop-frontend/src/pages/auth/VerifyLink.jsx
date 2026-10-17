@@ -46,7 +46,15 @@ export default function VerifyLink() {
       }
     };
 
-    verifyToken();
+    verifyToken().catch((error) => {
+      if (!mounted) return;
+      setStatus("error");
+      setMessage(
+        error.response?.data?.message ||
+          error.response?.data?.error ||
+          "Verification failed. The link may be expired or invalid."
+      );
+    });
 
     return () => {
       mounted = false;

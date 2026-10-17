@@ -1,5 +1,5 @@
 import { X, UserCheck, Loader2, UserPlus } from "lucide-react";
-import { useState, useEffect, useMemo } from "react";
+import { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "../../api/Api";
 import dp from "../../assets/dp.jpg";
@@ -55,8 +55,6 @@ function UserListModal({
         typeof rawItem === "object" && rawItem !== null
           ? rawItem
           : { id: String(rawItem), hotdropId: String(rawItem) };
-      const uId = String(u.id || u._id || u.userId || u.targetUserId || "");
-      const uHandle = (u.hotdropId || u.username || "").toLowerCase();
 
       let isFollowing = false;
       if (isOwnFollowingModal) {

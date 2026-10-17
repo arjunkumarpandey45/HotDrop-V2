@@ -73,6 +73,18 @@ function UserPost({
     setHoveredPost(post);
   };
 
+  const getPopoverInitialExit = (pos) => {
+    if (pos === "right") return { opacity: 0, scale: 0.88, x: -60 };
+    if (pos === "left") return { opacity: 0, scale: 0.88, x: 60 };
+    return { opacity: 0, scale: 0.88, y: -40 };
+  };
+
+  const getPopoverPositionClass = (pos) => {
+    if (pos === "right") return "right-6 top-1/2 -translate-y-1/2";
+    if (pos === "left") return "left-6 top-1/2 -translate-y-1/2";
+    return "inset-x-0 top-6 flex justify-center";
+  };
+
   const lastTapTimeRef = useRef({});
   const clickTimeoutRef = useRef({});
   const maxLength = 100;
@@ -249,7 +261,9 @@ function UserPost({
 
     const isLiked = post.liked ?? (post.likes?.some((l) => String(l.id || l._id || l) === String(user?.id || user?._id)));
     if (!isLiked) {
-      handleLike(post);
+      handleLike(post).catch((error) => {
+        console.error("Double tap like error:", error);
+      });
     }
 
     setDoubleTapHeartMap((prev) => ({ ...prev, [pId]: true }));
@@ -788,29 +802,11 @@ function UserPost({
         {hoveredPost && (
           <motion.div
             key="hover-zoom"
-            initial={
-              popoverPosition === "right"
-                ? { opacity: 0, scale: 0.88, x: -60 }
-                : popoverPosition === "left"
-                ? { opacity: 0, scale: 0.88, x: 60 }
-                : { opacity: 0, scale: 0.88, y: -40 }
-            }
+            initial={getPopoverInitialExit(popoverPosition)}
             animate={{ opacity: 1, scale: 1, x: 0, y: 0 }}
-            exit={
-              popoverPosition === "right"
-                ? { opacity: 0, scale: 0.88, x: -60 }
-                : popoverPosition === "left"
-                ? { opacity: 0, scale: 0.88, x: 60 }
-                : { opacity: 0, scale: 0.88, y: -40 }
-            }
+            exit={getPopoverInitialExit(popoverPosition)}
             transition={{ duration: 0.22, ease: "easeOut" }}
-            className={`fixed pointer-events-none z-[500] flex items-center justify-center p-4 ${
-              popoverPosition === "right"
-                ? "right-6 top-1/2 -translate-y-1/2"
-                : popoverPosition === "left"
-                ? "left-6 top-1/2 -translate-y-1/2"
-                : "inset-x-0 top-6 flex justify-center"
-            }`}
+            className={`fixed pointer-events-none z-[500] flex items-center justify-center p-4 ${getPopoverPositionClass(popoverPosition)}`}
           >
             <div className="relative w-[46vw] max-w-[760px] h-[50vh] bg-slate-950/92 backdrop-blur-2xl border border-slate-700/60 rounded-3xl overflow-hidden shadow-[0_25px_80px_rgba(0,0,0,0.7)] flex flex-col items-center justify-center p-3">
               {(hoveredPost.imageUrls || hoveredPost.images || []).length > 0 ? (

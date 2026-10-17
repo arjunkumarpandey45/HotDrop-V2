@@ -74,7 +74,11 @@ function FromShare() {
         setLoading(false);
       }
     };
-    if (postId) fetchSinglePost();
+    if (postId) {
+      fetchSinglePost().catch((error) => {
+        console.error("Fetch single post error:", error);
+      });
+    }
   }, [postId]);
 
   const toggleExpand = (e) => {

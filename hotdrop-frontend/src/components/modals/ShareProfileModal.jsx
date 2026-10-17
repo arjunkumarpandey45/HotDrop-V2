@@ -8,10 +8,14 @@ function ShareProfileModal({ isOpen, onClose, user }) {
 
   const profileUrl = `${window.location.origin}/profile/${user?.hotdropId || user?.username || ""}`;
 
-  const handleCopy = () => {
-    navigator.clipboard.writeText(profileUrl);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+  const handleCopy = async () => {
+    try {
+      await navigator.clipboard.writeText(profileUrl);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch (err) {
+      console.error("Failed to copy profile URL:", err);
+    }
   };
 
   return (
