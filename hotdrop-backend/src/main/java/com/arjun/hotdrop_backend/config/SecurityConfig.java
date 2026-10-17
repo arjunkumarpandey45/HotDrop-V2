@@ -47,7 +47,9 @@ private String frontendURL;
                         .requestMatchers(
                                 "/",
                                 "/public/**","/actuator/health",
-                                "/actuator/prometheus",
+                                "/actuator/prometheus/**",
+                                "/actuator/metrics",
+                                "/actuator/metrics/**",
                                 "/ws/**",
                                 "/v3/api-docs",
                                 "/v3/api-docs/**",

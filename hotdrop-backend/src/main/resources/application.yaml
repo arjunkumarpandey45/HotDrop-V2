@@ -1,17 +1,23 @@
 
+
 management:
   endpoints:
     web:
       exposure:
-        include: "health,info,prometheus"
+        include: "health,info,metrics,prometheus"
   endpoint:
     prometheus:
       enabled: true
     health:
       show-details: always
+  prometheus:
+    metrics:
+      export:
+        enabled: true
   metrics:
     tags:
       application: ${spring.application.name}
+
 logging:
   pattern:
     console: "%clr(%d{yyyy-MM-dd HH:mm:ss.SSS}){faint} %clr(%5p) %clr([%15.15t]){faint} %clr([req:%X{requestId:-SYS}]){yellow} %clr(%-40.40logger{39}){cyan} : %m%n"
@@ -24,21 +30,19 @@ logging:
       max-history: 30
       max-file-size: 10MB
       total-size-cap: 1GB
-
 spring:
   application:
     name: hotdrop-backend
+
   data:
     redis:
-      host: ${REDIS_HOST}
-      port: ${REDIS_PORT}
+      url: ${REDIS_URL}
+
   cache:
     type: redis
     redis:
-
+      enable-statistics: true
       time-to-live: ${REDIS_EXPIRY_TIME}
-
-
       cache-null-values: false
   servlet:
     multipart:
